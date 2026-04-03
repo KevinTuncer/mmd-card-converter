@@ -103,7 +103,7 @@ function renderAudioSummary(
   target.textContent = JSON.stringify(summary, null, 2);
 }
 
-function renderCardPngSummary(
+function renderCardExtractSummary(
   target: HTMLElement,
   summary: {
     foundChunkTypes: string[];
@@ -1226,7 +1226,7 @@ export function mountConverterView(
       <!-- Tab bar -->
       <nav class="tab-bar">
         <button class="tab-btn tab-active" data-tab="cardcreate">${viewStrings.tabCardCreate}</button>
-        <button class="tab-btn" data-tab="cardpng">${viewStrings.tabCardExtract}</button>
+        <button class="tab-btn" data-tab="cardextract">${viewStrings.tabCardExtract}</button>
         <button class="tab-btn" data-tab="bpmx2pmx">${viewStrings.tabBpmxToPmx}</button>
         <button class="tab-btn" data-tab="pmx2bpmx">${viewStrings.tabPmxToBpmx}</button>
         <button class="tab-btn" data-tab="motion2bvmd">${viewStrings.tabMotionToBvmd}</button>
@@ -1518,47 +1518,47 @@ export function mountConverterView(
         <pre id="cardcreate-summary" class="report">${text.noCardCreated}</pre>
       </section>
 
-      <section id="tab-cardpng" class="tab-panel panel" hidden>
+      <section id="tab-cardextract" class="tab-panel panel" hidden>
         <h2>${text.cardExtractTitle}</h2>
         <p class="hint">${text.cardExtractHint}</p>
 
-        <div class="drop-zone" id="cardpng-drop-zone">
+        <div class="drop-zone" id="cardextract-drop-zone">
           <div class="drop-zone-hint">
             <span class="drop-icon">🖼️</span>
-            <span id="cardpng-drop-label">${text.cardExtractDropLabel}</span>
+            <span id="cardextract-drop-label">${text.cardExtractDropLabel}</span>
           </div>
           <div class="drop-zone-buttons">
-            <button class="drop-btn" id="cardpng-file-btn" type="button">🖼️ ${text.loadFile}</button>
+            <button class="drop-btn" id="cardextract-file-btn" type="button">🖼️ ${text.loadFile}</button>
           </div>
-          <input id="cardpng-file" type="file" accept=".png,image/png" hidden />
+          <input id="cardextract-file" type="file" accept=".png,image/png" hidden />
         </div>
 
         <div class="encoding-row">
-          <label class="checkbox-label" for="cardpng-convert-legacy">
-            <input id="cardpng-convert-legacy" type="checkbox" />
+          <label class="checkbox-label" for="cardextract-convert-legacy">
+            <input id="cardextract-convert-legacy" type="checkbox" />
             ${text.convertLegacyMmdFiles}
           </label>
         </div>
 
-        <div id="cardpng-legacy-options" class="encoding-row" hidden>
-          <label for="cardpng-encoding">${text.textEncoding}</label>
-          <select id="cardpng-encoding">
+        <div id="cardextract-legacy-options" class="encoding-row" hidden>
+          <label for="cardextract-encoding">${text.textEncoding}</label>
+          <select id="cardextract-encoding">
             <option value="utf8" selected>UTF-8</option>
             <option value="utf16">UTF-16LE</option>
           </select>
-          <label class="checkbox-label" for="cardpng-restore-original-formats">
-            <input id="cardpng-restore-original-formats" type="checkbox" checked />
+          <label class="checkbox-label" for="cardextract-restore-original-formats">
+            <input id="cardextract-restore-original-formats" type="checkbox" checked />
             ${text.restoreOriginalFormats}
           </label>
         </div>
 
         <div class="actions">
-          <button id="cardpng-extract" type="button">${text.extractAsZip}</button>
-          <span id="cardpng-status" class="status">${statusReady}</span>
+          <button id="cardextract-extract" type="button">${text.extractAsZip}</button>
+          <span id="cardextract-status" class="status">${statusReady}</span>
         </div>
 
         <h3>${text.extractionReportTitle}</h3>
-        <pre id="cardpng-summary" class="report">${text.noExtractionYet}</pre>
+        <pre id="cardextract-summary" class="report">${text.noExtractionYet}</pre>
       </section>
 
       <footer class="app-footer">
@@ -1582,7 +1582,7 @@ export function mountConverterView(
   const knownTabs = new Set(
     Array.from(tabBtns, (btn) => btn.dataset.tab ?? "").filter(Boolean),
   );
-  const primaryTabs = new Set(["cardcreate", "cardpng"]);
+  const primaryTabs = new Set(["cardcreate", "cardextract"]);
   let showExtraTabs = false;
 
   for (const locale of Object.keys(LOCALE_LABELS) as AppLocale[]) {
@@ -3317,133 +3317,142 @@ export function mountConverterView(
   void refreshCardCreateMetadataEditors();
   syncCardCreateBuildAvailability(false);
 
-  // ── Card PNG → ZIP ─────────────────────────────────────────────────────
+  // ── Card Extract → ZIP ─────────────────────────────────────────────────
 
-  const cardPngDropZone =
-    container.querySelector<HTMLDivElement>("#cardpng-drop-zone")!;
-  const cardPngFileBtn =
-    container.querySelector<HTMLButtonElement>("#cardpng-file-btn")!;
-  const cardPngFileInput =
-    container.querySelector<HTMLInputElement>("#cardpng-file")!;
-  const cardPngDropLabel = container.querySelector<HTMLSpanElement>(
-    "#cardpng-drop-label",
+  const cardExtractDropZone = container.querySelector<HTMLDivElement>(
+    "#cardextract-drop-zone",
   )!;
-  const cardPngConvertLegacyInput = container.querySelector<HTMLInputElement>(
-    "#cardpng-convert-legacy",
+  const cardExtractFileBtn = container.querySelector<HTMLButtonElement>(
+    "#cardextract-file-btn",
   )!;
-  const cardPngLegacyOptions = container.querySelector<HTMLDivElement>(
-    "#cardpng-legacy-options",
+  const cardExtractFileInput =
+    container.querySelector<HTMLInputElement>("#cardextract-file")!;
+  const cardExtractDropLabel = container.querySelector<HTMLSpanElement>(
+    "#cardextract-drop-label",
   )!;
-  const cardPngEncoding =
-    container.querySelector<HTMLSelectElement>("#cardpng-encoding")!;
-  const cardPngRestoreOriginalFormatsInput =
+  const cardExtractConvertLegacyInput =
+    container.querySelector<HTMLInputElement>("#cardextract-convert-legacy")!;
+  const cardExtractLegacyOptions = container.querySelector<HTMLDivElement>(
+    "#cardextract-legacy-options",
+  )!;
+  const cardExtractEncoding = container.querySelector<HTMLSelectElement>(
+    "#cardextract-encoding",
+  )!;
+  const cardExtractRestoreOriginalFormatsInput =
     container.querySelector<HTMLInputElement>(
-      "#cardpng-restore-original-formats",
+      "#cardextract-restore-original-formats",
     )!;
-  const cardPngExtractBtn =
-    container.querySelector<HTMLButtonElement>("#cardpng-extract")!;
-  const cardPngStatus =
-    container.querySelector<HTMLSpanElement>("#cardpng-status")!;
-  const cardPngSummary =
-    container.querySelector<HTMLPreElement>("#cardpng-summary")!;
+  const cardExtractExtractBtn = container.querySelector<HTMLButtonElement>(
+    "#cardextract-extract",
+  )!;
+  const cardExtractStatus = container.querySelector<HTMLSpanElement>(
+    "#cardextract-status",
+  )!;
+  const cardExtractSummary = container.querySelector<HTMLPreElement>(
+    "#cardextract-summary",
+  )!;
 
-  let stagedCardPngFile: File | null = null;
+  let stagedCardExtractFile: File | null = null;
 
-  function syncCardPngAvailability(): void {
-    cardPngExtractBtn.disabled = stagedCardPngFile === null;
-    if (stagedCardPngFile === null) {
-      cardPngStatus.textContent = EMPTY_INPUT_STATUS;
+  function syncCardExtractAvailability(): void {
+    cardExtractExtractBtn.disabled = stagedCardExtractFile === null;
+    if (stagedCardExtractFile === null) {
+      cardExtractStatus.textContent = EMPTY_INPUT_STATUS;
     }
   }
 
-  function setStagedCardPngFile(file: File): void {
-    stagedCardPngFile = file;
-    cardPngDropLabel.textContent = `${file.name} (${formatSize(file.size)})`;
-    cardPngStatus.textContent = `${statusReady} - ${file.name}`;
-    syncCardPngAvailability();
+  function setStagedCardExtractFile(file: File): void {
+    stagedCardExtractFile = file;
+    cardExtractDropLabel.textContent = `${file.name} (${formatSize(file.size)})`;
+    cardExtractStatus.textContent = `${statusReady} - ${file.name}`;
+    syncCardExtractAvailability();
   }
 
-  function setCardPngBusy(nextBusy: boolean): void {
-    cardPngFileBtn.disabled = nextBusy;
-    cardPngFileInput.disabled = nextBusy;
-    cardPngConvertLegacyInput.disabled = nextBusy;
-    cardPngEncoding.disabled = nextBusy || !cardPngConvertLegacyInput.checked;
-    cardPngRestoreOriginalFormatsInput.disabled =
-      nextBusy || !cardPngConvertLegacyInput.checked;
-    cardPngExtractBtn.disabled = nextBusy || stagedCardPngFile === null;
+  function setCardExtractBusy(nextBusy: boolean): void {
+    cardExtractFileBtn.disabled = nextBusy;
+    cardExtractFileInput.disabled = nextBusy;
+    cardExtractConvertLegacyInput.disabled = nextBusy;
+    cardExtractEncoding.disabled =
+      nextBusy || !cardExtractConvertLegacyInput.checked;
+    cardExtractRestoreOriginalFormatsInput.disabled =
+      nextBusy || !cardExtractConvertLegacyInput.checked;
+    cardExtractExtractBtn.disabled = nextBusy || stagedCardExtractFile === null;
     tabBtns.forEach((btn) => {
       btn.disabled = nextBusy;
     });
-    cardPngDropZone.classList.toggle("drop-zone-disabled", nextBusy);
+    cardExtractDropZone.classList.toggle("drop-zone-disabled", nextBusy);
   }
 
-  function syncCardPngLegacyOptions(): void {
-    const enabled = cardPngConvertLegacyInput.checked;
-    cardPngLegacyOptions.hidden = !enabled;
-    cardPngEncoding.disabled = !enabled;
-    cardPngRestoreOriginalFormatsInput.disabled = !enabled;
+  function syncCardExtractLegacyOptions(): void {
+    const enabled = cardExtractConvertLegacyInput.checked;
+    cardExtractLegacyOptions.hidden = !enabled;
+    cardExtractEncoding.disabled = !enabled;
+    cardExtractRestoreOriginalFormatsInput.disabled = !enabled;
   }
 
-  cardPngFileBtn.addEventListener("click", () => cardPngFileInput.click());
-  cardPngFileInput.addEventListener("change", () => {
-    const file = cardPngFileInput.files?.[0];
-    if (file) setStagedCardPngFile(file);
+  cardExtractFileBtn.addEventListener("click", () =>
+    cardExtractFileInput.click(),
+  );
+  cardExtractFileInput.addEventListener("change", () => {
+    const file = cardExtractFileInput.files?.[0];
+    if (file) setStagedCardExtractFile(file);
   });
-  cardPngConvertLegacyInput.addEventListener("change", () => {
-    syncCardPngLegacyOptions();
+  cardExtractConvertLegacyInput.addEventListener("change", () => {
+    syncCardExtractLegacyOptions();
   });
 
-  cardPngDropZone.addEventListener("dragover", (e) => {
+  cardExtractDropZone.addEventListener("dragover", (e) => {
     e.preventDefault();
-    cardPngDropZone.classList.add("drag-over");
+    cardExtractDropZone.classList.add("drag-over");
   });
-  cardPngDropZone.addEventListener("dragleave", () => {
-    cardPngDropZone.classList.remove("drag-over");
+  cardExtractDropZone.addEventListener("dragleave", () => {
+    cardExtractDropZone.classList.remove("drag-over");
   });
-  cardPngDropZone.addEventListener("drop", (e) => {
+  cardExtractDropZone.addEventListener("drop", (e) => {
     e.preventDefault();
-    cardPngDropZone.classList.remove("drag-over");
+    cardExtractDropZone.classList.remove("drag-over");
     const file = e.dataTransfer?.files[0];
-    if (file) setStagedCardPngFile(file);
+    if (file) setStagedCardExtractFile(file);
   });
 
-  cardPngExtractBtn.addEventListener("click", async () => {
-    if (!stagedCardPngFile) {
-      cardPngStatus.textContent = text.pleaseSelectCardPng;
+  cardExtractExtractBtn.addEventListener("click", async () => {
+    if (!stagedCardExtractFile) {
+      cardExtractStatus.textContent = text.pleaseSelectCardPng;
       return;
     }
 
-    setCardPngBusy(true);
-    cardPngStatus.textContent = text.extractCardInProgress;
+    setCardExtractBusy(true);
+    cardExtractStatus.textContent = text.extractCardInProgress;
     try {
       const encoding =
-        cardPngEncoding.value === "utf16"
+        cardExtractEncoding.value === "utf16"
           ? PmxObject.Header.Encoding.Utf16le
           : PmxObject.Header.Encoding.Utf8;
-      const result = await extractCardPngToZip(stagedCardPngFile, {
-        convertToLegacyMmdFiles: cardPngConvertLegacyInput.checked,
+      const result = await extractCardPngToZip(stagedCardExtractFile, {
+        convertToLegacyMmdFiles: cardExtractConvertLegacyInput.checked,
         encoding,
-        restoreOriginalImageFormats: cardPngRestoreOriginalFormatsInput.checked,
+        restoreOriginalImageFormats:
+          cardExtractRestoreOriginalFormatsInput.checked,
       });
-      renderCardPngSummary(cardPngSummary, result.report);
+      renderCardExtractSummary(cardExtractSummary, result.report);
       downloadAs(
         result.zipBuffer,
-        `${stripExt(stagedCardPngFile.name)}.card-extract.zip`,
+        `${stripExt(stagedCardExtractFile.name)}.card-extract.zip`,
         "application/zip",
       );
-      cardPngStatus.textContent = formatTemplate(
+      cardExtractStatus.textContent = formatTemplate(
         text.downloadedZipFilesStatus,
         {
           count: result.report.exportedFiles.length,
         },
       );
     } catch (err) {
-      cardPngStatus.textContent = `${statusErrorPrefix}: ${err instanceof Error ? err.message : String(err)}`;
+      cardExtractStatus.textContent = `${statusErrorPrefix}: ${err instanceof Error ? err.message : String(err)}`;
     } finally {
-      setCardPngBusy(false);
+      setCardExtractBusy(false);
     }
   });
 
-  syncCardPngLegacyOptions();
-  syncCardPngAvailability();
+  syncCardExtractLegacyOptions();
+  syncCardExtractAvailability();
 }
