@@ -1,0 +1,124 @@
+import { encode as encodeAvifWithJsquash } from "@jsquash/avif";
+import { getErrorStrings } from "@/i18n/localization";
+
+function getExt(name: string): string {
+  return (name.split(".").pop() ?? "").toLowerCase();
+}
+
+function makeImageData(
+  data: Uint8ClampedArray,
+  width: number,
+  height: number,
+): ImageData {
+  if (typeof ImageData !== "undefined") {
+    return new ImageData(new Uint8ClampedArray(data), width, height);
+  }
+
+  return { data, width, height } as ImageData;
+}
+
+function decodeBmpToImageData(buffer: ArrayBuffer): ImageData {
+  const bytes = new Uint8Array(buffer);
+  const view = new DataView(buffer);
+
+  if (bytes.length < 54 || bytes[0] !== 0x42 || bytes[1] !== 0x4d) {
+    throw new Error(getErrorStrings().bmpUnsupportedFile);
+  }
+
+  const pixelOffset = view.getUint32(10, true);
+  const dibHeaderSize = view.getUint32(14, true);
+  const width = view.getInt32(18, true);
+  const rawHeight = view.getInt32(22, true);
+  const planes = view.getUint16(26, true);
+  const bitsPerPixel = view.getUint16(28, true);
+  const compression = view.getUint32(30, true);
+
+  if (dibHeaderSize < 40 || width <= 0 || rawHeight === 0 || planes !== 1) {
+    throw new Error(getErrorStrings().bmpUnsupportedHeader);
+  }
+
+  if (compression !== 0 || (bitsPerPixel !== 24 && bitsPerPixel !== 32)) {
+    throw new Error(getErrorStrings().bmpUnsupportedPixelFormat);
+  }
+
+  const height = Math.abs(rawHeight);
+  const topDown = rawHeight < 0;
+  const bytesPerPixel = bitsPerPixel / 8;
+  const rowStride = Math.floor((bitsPerPixel * width + 31) / 32) * 4;
+  const expectedLength = pixelOffset + rowStride * height;
+
+  if (expectedLength > bytes.length) {
+    throw new Error(getErrorStrings().bmpCorruptFile);
+  }
+
+  const rgba = new Uint8ClampedArray(width * height * 4);
+  for (let y = 0; y < height; y++) {
+    const srcY = topDown ? y : height - 1 - y;
+    const rowStart = pixelOffset + srcY * rowStride;
+    for (let x = 0; x < width; x++) {
+      const src = rowStart + x * bytesPerPixel;
+      const dest = (y * width + x) * 4;
+      rgba[dest] = bytes[src + 2];
+      rgba[dest + 1] = bytes[src + 1];
+      rgba[dest + 2] = bytes[src];
+      rgba[dest + 3] = bytesPerPixel === 4 ? bytes[src + 3] : 0xff;
+    }
+  }
+
+  return makeImageData(rgba, width, height);
+}
+
+async function decodeFileToImageData(file: File): Promise<ImageData> {
+  if (typeof createImageBitmap === "function") {
+    const bitmap = await createImageBitmap(file);
+    try {
+      if (typeof OffscreenCanvas !== "undefined") {
+        const canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
+        const ctx = canvas.getContext("2d");
+        if (!ctx) {
+          throw new Error(getErrorStrings().no2dOffscreen);
+        }
+        ctx.drawImage(bitmap, 0, 0);
+        return ctx.getImageData(0, 0, bitmap.width, bitmap.height);
+      }
+
+      if (typeof document !== "undefined") {
+        const canvas = document.createElement("canvas");
+        canvas.width = bitmap.width;
+        canvas.height = bitmap.height;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) {
+          throw new Error(getErrorStrings().no2dCanvas);
+        }
+        ctx.drawImage(bitmap, 0, 0);
+        return ctx.getImageData(0, 0, bitmap.width, bitmap.height);
+      }
+    } finally {
+      bitmap.close();
+    }
+  }
+
+  if (getExt(file.name) === "bmp") {
+    return decodeBmpToImageData(await file.arrayBuffer());
+  }
+
+  throw new Error(`No decoder available for ${file.name}`);
+}
+
+export async function encodeToAvifViaJsquash(
+  file: File,
+  quality: number,
+): Promise<Blob> {
+  const imageData = await decodeFileToImageData(file);
+  const avifBuffer = await encodeAvifWithJsquash(
+    imageData,
+    quality >= 1
+      ? { lossless: true }
+      : {
+          lossless: false,
+          quality: Math.max(0, Math.min(100, Math.round(quality * 100))),
+        },
+  );
+
+  return new Blob([avifBuffer], { type: "image/avif" });
+}
