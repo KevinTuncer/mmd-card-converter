@@ -34,4 +34,5 @@ export interface ConversionResult {
 export interface ConvertOptions {
   encoding?: PmxObject.Header.Encoding;
   restoreOriginalImageFormats?: boolean;
+  onImageProgress?: (done: number, total: number) => void;
 }

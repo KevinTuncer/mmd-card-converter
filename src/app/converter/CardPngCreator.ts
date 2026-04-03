@@ -73,7 +73,14 @@ export interface CardPngCreateOptions {
   preferDefaultBaseImage?: boolean;
   compressionMode?: CardCreateCompressionMode;
   forceAvif?: boolean;
+  lossyImageTargets?: ReadonlySet<File>;
+  onImageProgress?: (done: number, total: number) => void;
   metadataOverrides?: Partial<Record<MetadataChunkType, unknown>>;
+}
+
+export interface CardPreparedImageResult {
+  sourcePath: string;
+  resultFile: File;
 }
 
 export interface CardPngCreateReport {
@@ -81,6 +88,7 @@ export interface CardPngCreateReport {
   usedBaseImage: string;
   embeddedChunkTypes: LegacyCardChunkType[];
   convertedFiles: string[];
+  preparedImageFiles: CardPreparedImageResult[];
   outputFileName: string;
   warnings: ConverterWarning[];
 }
@@ -116,6 +124,7 @@ type MetadataChunkType = "uInf" | "fBtn" | "moAi";
 interface CardChunkBuildResult {
   chunkPayloads: CardChunkPayload[];
   convertedFiles: string[];
+  preparedImageFiles: CardPreparedImageResult[];
 }
 
 interface ChosenFile<T extends File | null> {
@@ -164,12 +173,8 @@ export async function createCardPngFromFiles(
   const warnings: ConverterWarning[] = [];
   const classified = classifyCardInputs(files, warnings);
   const baseImage = await resolveBaseImage(classified, options, warnings);
-  const { chunkPayloads, convertedFiles } = await buildCardChunkPayloads(
-    classified,
-    files,
-    options,
-    warnings,
-  );
+  const { chunkPayloads, convertedFiles, preparedImageFiles } =
+    await buildCardChunkPayloads(classified, files, options, warnings);
   const pngBuffer = await embedChunksIntoPng(baseImage.buffer, chunkPayloads);
   const outputFileName = deriveCardOutputFileName(
     classified,
@@ -183,6 +188,7 @@ export async function createCardPngFromFiles(
       usedBaseImage: baseImage.label,
       embeddedChunkTypes: chunkPayloads.map((chunk) => chunk.chunkType),
       convertedFiles,
+      preparedImageFiles,
       outputFileName,
       warnings,
     },
@@ -333,6 +339,7 @@ async function buildCardChunkPayloads(
 ): Promise<CardChunkBuildResult> {
   const chunkPayloads: CardChunkPayload[] = [];
   const convertedFiles: string[] = [];
+  let preparedImageFiles: CardPreparedImageResult[] = [];
 
   if (classified.bpmxFile) {
     chunkPayloads.push({
@@ -344,10 +351,12 @@ async function buildCardChunkPayloads(
   } else if (classified.pmxFiles.length > 0) {
     const pmxFile =
       pickDefaultPmx(classified.pmxFiles) ?? classified.pmxFiles[0];
-    const filesForConversion = await preparePmxFilesForCardConversion(
+    const pmxPreparation = await preparePmxFilesForCardConversion(
       files,
       options,
     );
+    const filesForConversion = pmxPreparation.filesForConversion;
+    preparedImageFiles = pmxPreparation.preparedImageFiles;
     const bpmxBuffer = await convertPmxToBpmx(pmxFile, filesForConversion);
     chunkPayloads.push({
       chunkType: "bPMX",
@@ -471,33 +480,70 @@ async function buildCardChunkPayloads(
     });
   }
 
-  return { chunkPayloads, convertedFiles };
+  return { chunkPayloads, convertedFiles, preparedImageFiles };
 }
 
 async function preparePmxFilesForCardConversion(
   files: readonly File[],
   options: CardPngCreateOptions,
-): Promise<File[]> {
+): Promise<{
+  filesForConversion: File[];
+  preparedImageFiles: CardPreparedImageResult[];
+}> {
   const pmxReferenceFiles = collectPmxReferenceFiles(files);
   const compressionMode = options.compressionMode ?? "lossless";
+  const preparedImageFiles = pmxReferenceFiles
+    .filter((file) =>
+      COMPRESSIBLE_IMAGE_EXTS.has(getFileExt(getFilePath(file))),
+    )
+    .map((file) => ({
+      sourcePath: getFilePath(file),
+      resultFile: file,
+    }));
+
   if (compressionMode === "raw") {
-    return pmxReferenceFiles;
+    return {
+      filesForConversion: pmxReferenceFiles,
+      preparedImageFiles,
+    };
   }
 
   const compressibleFiles = pmxReferenceFiles.filter((file) =>
     COMPRESSIBLE_IMAGE_EXTS.has(getFileExt(getFilePath(file))),
   );
   const lossyTargets =
-    compressionMode === "lossy" ? new Set<File>(compressibleFiles) : undefined;
+    compressionMode === "lossy"
+      ? options.lossyImageTargets
+        ? new Set<File>(
+            compressibleFiles.filter((file) =>
+              options.lossyImageTargets?.has(file),
+            ),
+          )
+        : new Set<File>(compressibleFiles)
+      : undefined;
 
-  return compressImagesToAvif(
+  const filesForConversion = await compressImagesToAvif(
     pmxReferenceFiles,
-    () => {
-      return;
-    },
+    options.onImageProgress,
     lossyTargets,
     { forceAvif: options.forceAvif ?? false },
   );
+
+  return {
+    filesForConversion,
+    preparedImageFiles: pmxReferenceFiles.flatMap((file, index) => {
+      if (!COMPRESSIBLE_IMAGE_EXTS.has(getFileExt(getFilePath(file)))) {
+        return [];
+      }
+
+      return [
+        {
+          sourcePath: getFilePath(file),
+          resultFile: filesForConversion[index],
+        },
+      ];
+    }),
+  };
 }
 
 async function embedChunksIntoPng(

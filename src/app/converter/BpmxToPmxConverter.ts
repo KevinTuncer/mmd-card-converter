@@ -24,7 +24,11 @@ export async function convertBpmxToPmx(
   const { pmx, report } = mapBpmxToPmxObject(bpmx, encoding);
   const pmxBuffer = serializePmx(pmx);
   const outputImages = restoreOriginalImageFormats
-    ? await restoreImagesToNamedFormats(bpmx.images, true)
+    ? await restoreImagesToNamedFormats(
+        bpmx.images,
+        true,
+        options.onImageProgress,
+      )
     : bpmx.images;
 
   const pmxFileName = modelNameToFileName(bpmx.header.modelName);

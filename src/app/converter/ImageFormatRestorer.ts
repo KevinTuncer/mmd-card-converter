@@ -293,8 +293,21 @@ async function encodeImageData(
 export async function restoreImagesToNamedFormats(
   images: readonly BpmxObject.Image[],
   preferLossless = true,
+  onProgress?: (done: number, total: number) => void,
 ): Promise<BpmxObject.Image[]> {
+  const imagesToRestore = images.filter((image) => {
+    const actualFormat = detectFormatFromBytes(new Uint8Array(image.data));
+    const targetFormat = targetFormatFromPath(image.relativePath);
+
+    return (
+      targetFormat !== null &&
+      actualFormat !== "?" &&
+      actualFormat !== targetFormat
+    );
+  });
+
   const restoredImages: BpmxObject.Image[] = [];
+  let restoredCount = 0;
 
   for (const image of images) {
     const actualFormat = detectFormatFromBytes(new Uint8Array(image.data));
@@ -325,6 +338,9 @@ export async function restoreImagesToNamedFormats(
       });
     } catch {
       restoredImages.push(image);
+    } finally {
+      restoredCount += 1;
+      onProgress?.(restoredCount, imagesToRestore.length);
     }
   }
 

@@ -170,6 +170,21 @@ describe("createCardPngFromFiles", () => {
     expect(sanitizedChunkTypes).not.toContain("weBm");
   });
 
+  it("reports live image preparation progress for PMX-based card creation", async () => {
+    const { allFiles } = loadPmxFolder("public/example/TestModelAsPmx");
+    const progressCalls: Array<[number, number]> = [];
+
+    await createCardPngFromFiles(allFiles, {
+      defaultBaseImageBuffer: loadBuffer("public/eroLogo.png"),
+      onImageProgress: (done, total) => {
+        progressCalls.push([done, total]);
+      },
+    });
+
+    expect(progressCalls.length).toBeGreaterThan(0);
+    expect(progressCalls.at(-1)?.[0]).toBe(progressCalls.at(-1)?.[1]);
+  });
+
   it("uses the default base image when explicitly preferred over an auto-detected card image", async () => {
     const files = [
       new File([toArrayBuffer(BASE_PNG)], "ero.dance.png", {

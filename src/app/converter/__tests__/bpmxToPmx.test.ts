@@ -91,6 +91,32 @@ describe("convertBpmxToPmx (BPMX → PMX)", () => {
     expect(restored.mimeType).toBe("image/bmp");
     expect(await detectImageFormat(restoredFile)).toBe("BMP");
   });
+
+  it("reports live image restoration progress", async () => {
+    const source = new File(
+      [loadBuffer("public/example/TestModelAsPmx/TEX/4.bmp")],
+      "4.bmp",
+      { type: "image/bmp" },
+    );
+    const avifBlob = await encodeToAvifViaJsquash(source, 1.0);
+    const progressCalls: Array<[number, number]> = [];
+
+    await restoreImagesToNamedFormats(
+      [
+        {
+          relativePath: "TEX/4.bmp",
+          mimeType: "image/avif",
+          data: await avifBlob.arrayBuffer(),
+        },
+      ],
+      true,
+      (done, total) => {
+        progressCalls.push([done, total]);
+      },
+    );
+
+    expect(progressCalls).toEqual([[1, 1]]);
+  });
 });
 
 describe("BPMX → PMX binary validity (PmxReader)", () => {

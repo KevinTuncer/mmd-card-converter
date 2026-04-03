@@ -93,6 +93,7 @@ export interface CardPngExtractionOptions {
   convertToLegacyMmdFiles?: boolean;
   encoding?: PmxObject.Header.Encoding;
   restoreOriginalImageFormats?: boolean;
+  onImageProgress?: (done: number, total: number) => void;
 }
 
 interface ParsedChunk {
@@ -345,6 +346,7 @@ async function convertBpmxChunkToLegacyFiles(
   const result = await convertBpmxToPmx(bpmxBuffer, {
     encoding: options.encoding ?? PmxObject.Header.Encoding.Utf8,
     restoreOriginalImageFormats: options.restoreOriginalImageFormats ?? true,
+    onImageProgress: options.onImageProgress,
   });
   const zipEntries = unzipSync(new Uint8Array(result.zipBuffer));
 

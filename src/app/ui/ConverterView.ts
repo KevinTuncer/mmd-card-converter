@@ -1507,6 +1507,7 @@ export function mountConverterView(
             <input id="cardcreate-force-avif" type="checkbox" />
             ${text.forceAvifLabel}
           </label>
+          <button class="drop-btn" id="cardcreate-select-all-compress" type="button" hidden>${text.allLossy}</button>
         </div>
 
         <div class="actions">
@@ -2558,6 +2559,10 @@ export function mountConverterView(
   const cardCreateForceAvifInput = container.querySelector<HTMLInputElement>(
     "#cardcreate-force-avif",
   )!;
+  const cardCreateSelectAllCompressBtn =
+    container.querySelector<HTMLButtonElement>(
+      "#cardcreate-select-all-compress",
+    )!;
   const cardCreateBuildBtn =
     container.querySelector<HTMLButtonElement>("#cardcreate-build")!;
   const cardCreateStatus =
@@ -2619,10 +2624,15 @@ export function mountConverterView(
 
   let stagedCardCreateFiles: File[] = [];
   let selectedCardCreateBaseImage: File | null = null;
+  let selectedCardCreateModelFile: File | null = null;
   let cardCreatePreviewUrl: string | null = null;
   let defaultCardCreateBaseImageBuffer: ArrayBuffer | null = null;
   let cardCreatePreferDefaultBaseImage = false;
+  let cardCreateLastSourceLabel: string | null = null;
   let cardCreateMetadataRefreshToken = 0;
+  let cardCreateBusy = false;
+  let cardCreateCompressToAvifSet: Set<File> = new Set();
+  let cardCreateActualResultFiles: Map<string, File> | null = null;
   let cardCreateUInfDraft = createEmptyUInfDraft();
   let cardCreateFBtnDrafts: CardCreateFastButtonDraft[] = [
     createEmptyFastButtonDraft(),
@@ -2656,6 +2666,151 @@ export function mountConverterView(
       (file as File & { webkitRelativePath?: string }).webkitRelativePath ??
       file.name
     ).replace(/\\/g, "/");
+  }
+
+  function pickShallowestCardCreateFile(files: readonly File[]): File | null {
+    const sorted = files.slice().sort((left, right) => {
+      const leftPath = getCardCreateFileKey(left);
+      const rightPath = getCardCreateFileKey(right);
+      const depthDifference =
+        (leftPath.match(/\//g)?.length ?? 0) -
+        (rightPath.match(/\//g)?.length ?? 0);
+      return depthDifference !== 0
+        ? depthDifference
+        : leftPath.localeCompare(rightPath);
+    });
+    return sorted[0] ?? null;
+  }
+
+  function pickDefaultCardCreateModel(files: readonly File[]): File | null {
+    const bpmxFiles = files.filter(
+      (file) => getCardCreatorInputKind(file) === "bpmx",
+    );
+    if (bpmxFiles.length > 0) {
+      return pickShallowestCardCreateFile(bpmxFiles);
+    }
+
+    return pickDefaultPmx(
+      files.filter((file) => getCardCreatorInputKind(file) === "pmx"),
+    );
+  }
+
+  function isCardCreateModelCandidate(file: File): boolean {
+    const kind = getCardCreatorInputKind(file);
+    return kind === "pmx" || kind === "bpmx";
+  }
+
+  function isCardCreateTextureCandidate(file: File): boolean {
+    switch (getCardCreatorInputKind(file)) {
+      case "bpmx":
+      case "pmx":
+      case "bpmv":
+      case "bvmd":
+      case "motion-source":
+      case "webm":
+      case "audio-source":
+      case "audio-url":
+      case "metadata-eroV":
+      case "metadata-uInf":
+      case "metadata-fBtn":
+      case "metadata-moAi":
+      case "base-image":
+        return false;
+      default:
+        return COMPRESSIBLE_IMAGE_EXTS.has(
+          getFileExt(getCardCreateFileKey(file)),
+        );
+    }
+  }
+
+  function cardCreateUsesPmxConversion(): boolean {
+    return (
+      selectedCardCreateModelFile !== null &&
+      getCardCreatorInputKind(selectedCardCreateModelFile) === "pmx"
+    );
+  }
+
+  function syncCardCreateModelSelection(): void {
+    if (
+      selectedCardCreateModelFile &&
+      stagedCardCreateFiles.includes(selectedCardCreateModelFile)
+    ) {
+      return;
+    }
+
+    selectedCardCreateModelFile = pickDefaultCardCreateModel(
+      stagedCardCreateFiles,
+    );
+  }
+
+  function syncCardCreateLossySelection(
+    previousFiles: readonly File[] = [],
+  ): void {
+    const previousKeys = new Set(previousFiles.map(getCardCreateFileKey));
+    const selectedKeys = new Set(
+      Array.from(cardCreateCompressToAvifSet, (file) =>
+        getCardCreateFileKey(file),
+      ),
+    );
+    const nextSelection = new Set<File>();
+
+    for (const file of stagedCardCreateFiles) {
+      if (!isCardCreateTextureCandidate(file)) continue;
+
+      const key = getCardCreateFileKey(file);
+      if (selectedKeys.has(key) || !previousKeys.has(key)) {
+        nextSelection.add(file);
+      }
+    }
+
+    cardCreateCompressToAvifSet = nextSelection;
+  }
+
+  function clearCardCreateActualResultFiles(): void {
+    cardCreateActualResultFiles = null;
+  }
+
+  function updateCardCreateLoadedState(preferSelectionMessage = false): void {
+    if (stagedCardCreateFiles.length === 0) {
+      cardCreateDropLabel.textContent = text.cardCreateDropLabel;
+      cardCreateStatus.textContent = EMPTY_INPUT_STATUS;
+      return;
+    }
+
+    cardCreateDropLabel.textContent = formatTemplate(text.filesLoadedLabel, {
+      count: stagedCardCreateFiles.length,
+    });
+
+    if (
+      preferSelectionMessage &&
+      selectedCardCreateModelFile &&
+      cardCreateLastSourceLabel
+    ) {
+      cardCreateStatus.textContent = formatTemplate(text.selectedFilesStatus, {
+        ready: statusReady,
+        name: selectedCardCreateModelFile.name,
+        count: stagedCardCreateFiles.length,
+        source: cardCreateLastSourceLabel,
+      });
+      return;
+    }
+
+    if (cardCreateLastSourceLabel) {
+      cardCreateStatus.textContent = formatTemplate(
+        text.filesLoadedFromSourceStatus,
+        {
+          ready: statusReady,
+          count: stagedCardCreateFiles.length,
+          source: cardCreateLastSourceLabel,
+        },
+      );
+      return;
+    }
+
+    cardCreateStatus.textContent = formatTemplate(text.filesLoadedStatus, {
+      ready: statusReady,
+      count: stagedCardCreateFiles.length,
+    });
   }
 
   function describeCardCreateRole(file: File): string {
@@ -2699,12 +2854,111 @@ export function mountConverterView(
     }
   }
 
+  function updateCardCreateSelectAllBtn(): void {
+    const compressible = stagedCardCreateFiles.filter((file) =>
+      isCardCreateTextureCandidate(file),
+    );
+    const allSelected =
+      compressible.length > 0 &&
+      compressible.every((file) => cardCreateCompressToAvifSet.has(file));
+    cardCreateSelectAllCompressBtn.textContent = allSelected
+      ? text.noneLossy
+      : text.allLossy;
+  }
+
   function syncCardCreateForceAvif(): void {
     const disabled = cardCreateCompressMode.value === "raw";
     cardCreateForceAvifInput.disabled = disabled;
     cardCreateForceAvifInput.title = disabled
       ? "RAW deaktiviert die Bildkomprimierung."
       : "Erzwingt echte AVIF-Ausgabe via @jsquash/avif.";
+  }
+
+  function syncCardCreateCompressionUi(): void {
+    syncCardCreateForceAvif();
+
+    const showLossySelector =
+      cardCreateUsesPmxConversion() && cardCreateCompressMode.value === "lossy";
+
+    cardCreateSelectAllCompressBtn.hidden = !showLossySelector;
+    cardCreateSelectAllCompressBtn.disabled =
+      cardCreateBusy || !showLossySelector;
+
+    if (showLossySelector) {
+      updateCardCreateSelectAllBtn();
+    }
+  }
+
+  function cardCreateModeLabel(mode: string): string {
+    if (mode === "lossless") return text.losslessTag;
+    if (mode === "lossy") return text.lossyTag;
+    if (mode === "already-avif") return text.alreadyAvif;
+    return "";
+  }
+
+  function getCardCreateEffectiveCompressionMode(
+    originalFile: File,
+    resultFile: File,
+  ): string {
+    if (resultFile.type !== "image/avif") {
+      return "lossless";
+    }
+
+    const requestedLossy =
+      cardCreateCompressMode.value === "lossy" &&
+      cardCreateCompressToAvifSet.has(originalFile);
+
+    return requestedLossy ? "lossy" : "lossless";
+  }
+
+  function buildCardCreateResultSpan(
+    originalFile: File,
+    resultFile: File,
+  ): HTMLSpanElement {
+    const sizeAfter = document.createElement("span");
+    sizeAfter.className = "size-after";
+
+    const sizeValEl = document.createElement("span");
+    sizeValEl.className = "size-value";
+
+    const fmtTagEl = document.createElement("span");
+    fmtTagEl.className = "fmt-tag";
+
+    const modeTagEl = document.createElement("span");
+    modeTagEl.className = "mode-tag";
+
+    if (resultFile !== originalFile) {
+      sizeValEl.textContent = "\u2192 " + formatSize(resultFile.size);
+      sizeAfter.classList.add("size-smaller");
+      fmtTagEl.textContent =
+        resultFile.type === "image/avif"
+          ? "AVIF"
+          : (resultFile.type.split("/")[1]?.toUpperCase() ??
+            getFileExt(resultFile.name).toUpperCase());
+      const mode = getCardCreateEffectiveCompressionMode(
+        originalFile,
+        resultFile,
+      );
+      modeTagEl.textContent =
+        mode === "lossy"
+          ? `Q${Math.round(LOSSY_QUALITY * 100)}`
+          : cardCreateModeLabel(mode);
+      modeTagEl.dataset.mode = mode;
+      modeTagEl.hidden = false;
+    } else {
+      sizeValEl.textContent = "=";
+      fmtTagEl.textContent =
+        resultFile.type === "image/avif"
+          ? "AVIF"
+          : (resultFile.type.split("/")[1]?.toUpperCase() ??
+            getFileExt(resultFile.name).toUpperCase());
+      modeTagEl.textContent = cardCreateModeLabel("lossless");
+      modeTagEl.dataset.mode = "lossless";
+      modeTagEl.hidden = false;
+    }
+
+    sizeAfter.append(sizeValEl, fmtTagEl, modeTagEl);
+    return sizeAfter;
   }
 
   function getCardCreateMetadataFile(key: CardCreateMetadataKey): File | null {
@@ -2945,6 +3199,7 @@ export function mountConverterView(
   }
 
   function setCardCreateBusy(nextBusy: boolean): void {
+    cardCreateBusy = nextBusy;
     cardCreateFolderBtn.disabled = nextBusy;
     cardCreateZipBtn.disabled = nextBusy;
     cardCreateFilesBtn.disabled = nextBusy;
@@ -2961,15 +3216,21 @@ export function mountConverterView(
     tabBtns.forEach((btn) => {
       btn.disabled = nextBusy;
     });
-    syncCardCreateForceAvif();
+    syncCardCreateCompressionUi();
     syncCardCreateMetadataEditorsDisabledState(nextBusy);
     syncCardCreateBuildAvailability(nextBusy);
+    renderCardCreateFileList();
   }
 
   function resetCardCreateInputs(): void {
     stagedCardCreateFiles = [];
     selectedCardCreateBaseImage = null;
+    selectedCardCreateModelFile = null;
     cardCreatePreferDefaultBaseImage = false;
+    cardCreateLastSourceLabel = null;
+    cardCreateBusy = false;
+    cardCreateCompressToAvifSet = new Set();
+    cardCreateActualResultFiles = null;
     cardCreateUInfDraft = createEmptyUInfDraft();
     cardCreateFBtnDrafts = [createEmptyFastButtonDraft()];
     cardCreateMoAiDraft = createEmptyMoAiDraft();
@@ -2983,9 +3244,10 @@ export function mountConverterView(
     cardCreateZipInput.value = "";
     cardCreateFilesInput.value = "";
     cardCreateImageInput.value = "";
-    cardCreateDropLabel.textContent = text.cardCreateDropLabel;
     renderCardCreateFileList();
     updateCardCreatePreview();
+    syncCardCreateCompressionUi();
+    updateCardCreateLoadedState();
     void refreshCardCreateMetadataEditors();
     syncCardCreateBuildAvailability(false);
   }
@@ -3032,17 +3294,36 @@ export function mountConverterView(
     updateCardCreatePreview();
   }
 
+  function getCardCreateBuildFiles(): File[] {
+    return stagedCardCreateFiles.filter((file) => {
+      if (!isCardCreateModelCandidate(file)) {
+        return true;
+      }
+
+      return (
+        !selectedCardCreateModelFile || file === selectedCardCreateModelFile
+      );
+    });
+  }
+
   function renderCardCreateFileList(): void {
     cardCreateFileList.innerHTML = "";
     cardCreateFileListWrap.hidden = stagedCardCreateFiles.length === 0;
 
     for (const file of stagedCardCreateFiles) {
+      const fileKey = getCardCreateFileKey(file);
+      const isModelCandidate = isCardCreateModelCandidate(file);
+      const canSelectForLossy =
+        cardCreateUsesPmxConversion() &&
+        isCardCreateTextureCandidate(file) &&
+        cardCreateCompressMode.value !== "raw";
+      const resultFile = cardCreateActualResultFiles?.get(fileKey) ?? null;
       const li = document.createElement("li");
-      li.classList.add("other-entry");
+      li.classList.add(isModelCandidate ? "pmx-entry" : "other-entry");
 
       const pathSpan = document.createElement("span");
       pathSpan.className = "file-path";
-      pathSpan.textContent = getCardCreateFileKey(file);
+      pathSpan.textContent = fileKey;
 
       const roleTag = document.createElement("span");
       roleTag.className = "card-role-tag";
@@ -3052,33 +3333,104 @@ export function mountConverterView(
       meta.className = "file-meta";
       meta.textContent = formatSize(file.size);
 
+      if (isModelCandidate) {
+        const radio = document.createElement("input");
+        radio.type = "radio";
+        radio.name = "cardcreate-model-selector";
+        radio.value = fileKey;
+        radio.checked = file === selectedCardCreateModelFile;
+        radio.disabled = cardCreateBusy;
+        radio.addEventListener("change", () => {
+          if (cardCreateBusy || !radio.checked) return;
+          selectedCardCreateModelFile = file;
+          clearCardCreateActualResultFiles();
+          syncCardCreateCompressionUi();
+          updateCardCreateLoadedState(true);
+          renderCardCreateFileList();
+        });
+
+        li.append(radio, pathSpan, roleTag, meta);
+
+        li.addEventListener("click", (event) => {
+          if (cardCreateBusy) return;
+          const target = event.target as HTMLElement;
+          if (target.closest("input, button")) {
+            return;
+          }
+          radio.checked = true;
+          radio.dispatchEvent(new Event("change"));
+        });
+      } else if (
+        canSelectForLossy &&
+        cardCreateCompressMode.value === "lossy"
+      ) {
+        li.classList.add("compressible-entry");
+
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.className = "compress-check";
+        checkbox.checked = cardCreateCompressToAvifSet.has(file);
+        checkbox.disabled = cardCreateBusy;
+        checkbox.addEventListener("change", () => {
+          if (cardCreateBusy) return;
+          if (checkbox.checked) {
+            cardCreateCompressToAvifSet.add(file);
+          } else {
+            cardCreateCompressToAvifSet.delete(file);
+          }
+          clearCardCreateActualResultFiles();
+          updateCardCreateSelectAllBtn();
+          renderCardCreateFileList();
+        });
+
+        li.append(checkbox, pathSpan, roleTag, meta);
+
+        li.addEventListener("click", (event) => {
+          if (cardCreateBusy) return;
+          const target = event.target as HTMLElement;
+          if (target.closest("input, button")) {
+            return;
+          }
+          checkbox.checked = !checkbox.checked;
+          checkbox.dispatchEvent(new Event("change"));
+        });
+      } else {
+        li.append(pathSpan, roleTag, meta);
+      }
+
+      if (resultFile && canSelectForLossy) {
+        li.append(buildCardCreateResultSpan(file, resultFile));
+      }
+
       const removeBtn = document.createElement("button");
       removeBtn.type = "button";
       removeBtn.className = "card-remove-btn";
       removeBtn.textContent = text.remove;
+      removeBtn.disabled = cardCreateBusy;
       removeBtn.addEventListener("click", () => {
+        if (cardCreateBusy) return;
+        const previousFiles = stagedCardCreateFiles;
         stagedCardCreateFiles = stagedCardCreateFiles.filter(
           (candidate) => candidate !== file,
         );
         if (selectedCardCreateBaseImage === file) {
           selectedCardCreateBaseImage = null;
         }
+        if (selectedCardCreateModelFile === file) {
+          selectedCardCreateModelFile = null;
+        }
+        syncCardCreateModelSelection();
         syncCardCreateBaseImage();
+        syncCardCreateLossySelection(previousFiles);
+        clearCardCreateActualResultFiles();
+        syncCardCreateCompressionUi();
         renderCardCreateFileList();
         void refreshCardCreateMetadataEditors();
         syncCardCreateBuildAvailability(false);
-        if (stagedCardCreateFiles.length > 0) {
-          cardCreateStatus.textContent = formatTemplate(
-            text.filesLoadedStatus,
-            {
-              ready: statusReady,
-              count: stagedCardCreateFiles.length,
-            },
-          );
-        }
+        updateCardCreateLoadedState(true);
       });
 
-      li.append(pathSpan, roleTag, meta, removeBtn);
+      li.append(removeBtn);
       cardCreateFileList.appendChild(li);
     }
   }
@@ -3087,6 +3439,7 @@ export function mountConverterView(
     incomingFiles: File[],
     sourceLabel: string,
   ): void {
+    const previousFiles = stagedCardCreateFiles;
     const merged = new Map<string, File>();
     for (const file of stagedCardCreateFiles) {
       merged.set(getCardCreateFileKey(file), file);
@@ -3098,21 +3451,16 @@ export function mountConverterView(
     stagedCardCreateFiles = Array.from(merged.values()).sort((left, right) =>
       getCardCreateFileKey(left).localeCompare(getCardCreateFileKey(right)),
     );
+    cardCreateLastSourceLabel = sourceLabel;
+    syncCardCreateModelSelection();
     syncCardCreateBaseImage();
+    syncCardCreateLossySelection(previousFiles);
+    clearCardCreateActualResultFiles();
     renderCardCreateFileList();
     void refreshCardCreateMetadataEditors();
     syncCardCreateBuildAvailability(false);
-    cardCreateDropLabel.textContent = formatTemplate(text.filesLoadedLabel, {
-      count: stagedCardCreateFiles.length,
-    });
-    cardCreateStatus.textContent = formatTemplate(
-      text.filesLoadedFromSourceStatus,
-      {
-        ready: statusReady,
-        count: stagedCardCreateFiles.length,
-        source: sourceLabel,
-      },
-    );
+    syncCardCreateCompressionUi();
+    updateCardCreateLoadedState(true);
   }
 
   async function loadCardCreateZipFile(
@@ -3128,37 +3476,45 @@ export function mountConverterView(
   }
 
   cardCreateFolderBtn.addEventListener("click", () => {
+    if (cardCreateBusy) return;
     cardCreateFolderInput.click();
   });
   cardCreateZipBtn.addEventListener("click", () => {
+    if (cardCreateBusy) return;
     cardCreateZipInput.click();
   });
   cardCreateFilesBtn.addEventListener("click", () => {
+    if (cardCreateBusy) return;
     cardCreateFilesInput.click();
   });
   cardCreateReplaceImageBtn.addEventListener("click", () => {
+    if (cardCreateBusy) return;
     cardCreateImageInput.click();
   });
 
   cardCreateFolderInput.addEventListener("change", () => {
+    if (cardCreateBusy) return;
     const files = Array.from(cardCreateFolderInput.files ?? []);
     if (files.length === 0) return;
     mergeCardCreateFiles(files, text.sourceFolder);
   });
 
   cardCreateZipInput.addEventListener("change", async () => {
+    if (cardCreateBusy) return;
     const file = cardCreateZipInput.files?.[0];
     if (!file) return;
     await loadCardCreateZipFile(file, text.sourceZip);
   });
 
   cardCreateFilesInput.addEventListener("change", () => {
+    if (cardCreateBusy) return;
     const files = Array.from(cardCreateFilesInput.files ?? []);
     if (files.length === 0) return;
     mergeCardCreateFiles(files, text.sourceFiles);
   });
 
   cardCreateImageInput.addEventListener("change", () => {
+    if (cardCreateBusy) return;
     const file = cardCreateImageInput.files?.[0];
     if (!file) return;
     mergeCardCreateFiles([file], text.sourceBaseImage);
@@ -3169,6 +3525,7 @@ export function mountConverterView(
   });
 
   cardCreateRemoveImageBtn.addEventListener("click", () => {
+    if (cardCreateBusy) return;
     const hadExplicitImage = !!selectedCardCreateBaseImage;
     const hadAutoDetectedImage =
       !selectedCardCreateBaseImage &&
@@ -3178,6 +3535,7 @@ export function mountConverterView(
       return;
     }
 
+    const previousFiles = stagedCardCreateFiles;
     if (selectedCardCreateBaseImage) {
       stagedCardCreateFiles = stagedCardCreateFiles.filter(
         (file) => file !== selectedCardCreateBaseImage,
@@ -3186,10 +3544,15 @@ export function mountConverterView(
 
     cardCreatePreferDefaultBaseImage = true;
     selectedCardCreateBaseImage = null;
+    syncCardCreateModelSelection();
     syncCardCreateBaseImage();
+    syncCardCreateLossySelection(previousFiles);
+    clearCardCreateActualResultFiles();
+    syncCardCreateCompressionUi();
     renderCardCreateFileList();
     void refreshCardCreateMetadataEditors();
     syncCardCreateBuildAvailability(false);
+    updateCardCreateLoadedState(true);
     cardCreateStatus.textContent = text.defaultImageActivated;
   });
 
@@ -3234,17 +3597,43 @@ export function mountConverterView(
   });
 
   cardCreateCompressMode.addEventListener("change", () => {
-    syncCardCreateForceAvif();
+    clearCardCreateActualResultFiles();
+    syncCardCreateCompressionUi();
+    renderCardCreateFileList();
+  });
+
+  cardCreateSelectAllCompressBtn.addEventListener("click", () => {
+    if (cardCreateBusy) return;
+
+    const compressible = stagedCardCreateFiles.filter((file) =>
+      isCardCreateTextureCandidate(file),
+    );
+    const allSelected =
+      compressible.length > 0 &&
+      compressible.every((file) => cardCreateCompressToAvifSet.has(file));
+
+    if (allSelected) {
+      compressible.forEach((file) => cardCreateCompressToAvifSet.delete(file));
+    } else {
+      compressible.forEach((file) => cardCreateCompressToAvifSet.add(file));
+    }
+
+    clearCardCreateActualResultFiles();
+    updateCardCreateSelectAllBtn();
+    renderCardCreateFileList();
   });
 
   cardCreateDropZone.addEventListener("dragover", (event) => {
+    if (cardCreateBusy) return;
     event.preventDefault();
     cardCreateDropZone.classList.add("drag-over");
   });
   cardCreateDropZone.addEventListener("dragleave", () => {
+    if (cardCreateBusy) return;
     cardCreateDropZone.classList.remove("drag-over");
   });
   cardCreateDropZone.addEventListener("drop", async (event) => {
+    if (cardCreateBusy) return;
     event.preventDefault();
     cardCreateDropZone.classList.remove("drag-over");
     const transfer = event.dataTransfer;
@@ -3283,13 +3672,15 @@ export function mountConverterView(
   });
 
   cardCreateBuildBtn.addEventListener("click", async () => {
+    if (cardCreateBusy) return;
     setCardCreateBusy(true);
     cardCreateStatus.textContent = text.createCardInProgress;
     try {
+      const filesForBuild = getCardCreateBuildFiles();
       const defaultBaseImageBuffer = selectedCardCreateBaseImage
         ? undefined
         : await getDefaultCardCreateBaseImageBuffer();
-      const result = await createCardPngFromFiles(stagedCardCreateFiles, {
+      const result = await createCardPngFromFiles(filesForBuild, {
         baseImageFile: selectedCardCreateBaseImage,
         defaultBaseImageBuffer,
         preferDefaultBaseImage: cardCreatePreferDefaultBaseImage,
@@ -3299,8 +3690,32 @@ export function mountConverterView(
           | "lossy"
           | "raw",
         forceAvif: cardCreateForceAvifInput.checked,
+        lossyImageTargets:
+          cardCreateCompressMode.value === "lossy"
+            ? new Set(
+                Array.from(cardCreateCompressToAvifSet).filter((file) =>
+                  filesForBuild.includes(file),
+                ),
+              )
+            : undefined,
+        onImageProgress: (done, total) => {
+          cardCreateStatus.textContent = formatTemplate(
+            text.optimizingTextures,
+            {
+              done,
+              total,
+            },
+          );
+        },
       });
+      cardCreateActualResultFiles = new Map(
+        result.report.preparedImageFiles.map((entry) => [
+          entry.sourcePath,
+          entry.resultFile,
+        ]),
+      );
       renderCardCreateSummary(cardCreateSummary, result.report);
+      renderCardCreateFileList();
       downloadAs(result.pngBuffer, result.report.outputFileName, "image/png");
       cardCreateStatus.textContent = formatTemplate(text.downloadedStatus, {
         file: result.report.outputFileName,
@@ -3312,8 +3727,9 @@ export function mountConverterView(
     }
   });
 
-  syncCardCreateForceAvif();
+  syncCardCreateCompressionUi();
   updateCardCreatePreview();
+  renderCardCreateFileList();
   void refreshCardCreateMetadataEditors();
   syncCardCreateBuildAvailability(false);
 
@@ -3433,6 +3849,15 @@ export function mountConverterView(
         encoding,
         restoreOriginalImageFormats:
           cardExtractRestoreOriginalFormatsInput.checked,
+        onImageProgress: (done, total) => {
+          cardExtractStatus.textContent = formatTemplate(
+            text.optimizingTextures,
+            {
+              done,
+              total,
+            },
+          );
+        },
       });
       renderCardExtractSummary(cardExtractSummary, result.report);
       downloadAs(
