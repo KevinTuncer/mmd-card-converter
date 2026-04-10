@@ -21,6 +21,7 @@ const LEGACY_CARD_CHUNK_TYPES = [
   "uInf",
   "fBtn",
   "moAi",
+  "vcAu",
 ] as const;
 
 const NEW_CARD_CHUNK_NAMES: Record<LegacyCardChunkType, string> = {
@@ -33,6 +34,7 @@ const NEW_CARD_CHUNK_NAMES: Record<LegacyCardChunkType, string> = {
   uInf: "uiNf",
   fBtn: "fbTn",
   moAi: "moAi",
+  vcAu: "vcAu",
 };
 
 const SUPPORTED_PRIVATE_CHUNK_NAMES = new Set<string>([
@@ -65,6 +67,7 @@ export type CardCreatorInputKind =
   | "metadata-uInf"
   | "metadata-fBtn"
   | "metadata-moAi"
+  | "voice-clone-sample"
   | "unknown";
 
 export interface CardPngCreateOptions {
@@ -76,6 +79,7 @@ export interface CardPngCreateOptions {
   lossyImageTargets?: ReadonlySet<File>;
   onImageProgress?: (done: number, total: number) => void;
   metadataOverrides?: Partial<Record<MetadataChunkType, unknown>>;
+  voiceCloneSampleFiles?: File[];
 }
 
 export interface CardPreparedImageResult {
@@ -111,6 +115,7 @@ interface ClassifiedCardInputs {
   metadataUInfFile: File | null;
   metadataFBtnFile: File | null;
   metadataMoAiFile: File | null;
+  voiceCloneSampleFiles: File[];
   baseImageCandidates: File[];
 }
 
@@ -151,7 +156,13 @@ export function getCardCreatorInputKind(file: File): CardCreatorInputKind {
   if (extension === "vmd" || extension === "vpd" || extension === "vmp") {
     return "motion-source";
   }
-  if (extension === "webm") return "webm";
+  if (extension === "webm") {
+    // Files from the metadata.voiceSamples/ subfolder (extracted from cards)
+    if (path.includes("metadata.voiceSamples/")) return "voice-clone-sample";
+    // Legacy naming convention
+    if (baseName.startsWith("voice_sample")) return "voice-clone-sample";
+    return "webm";
+  }
   if (extension === "wav" || extension === "mp3") return "audio-source";
   if (extension === "png") return "png-image";
 
@@ -263,6 +274,9 @@ function classifyCardInputs(
       "Mehrere metadata.moAi.json-Dateien gefunden. Es wird die erste verwendet.",
       warnings,
     ).file,
+    voiceCloneSampleFiles: files.filter(
+      (file) => getCardCreatorInputKind(file) === "voice-clone-sample",
+    ),
     baseImageCandidates,
   };
 }
@@ -463,6 +477,26 @@ async function buildCardChunkPayloads(
       }
     }
     chunkPayloads.push({ chunkType, data: bytes });
+  }
+
+  // Voice clone audio samples → vcAu chunk (not gzip-compressed, variable-length encoded)
+  let voiceCloneFiles = options.voiceCloneSampleFiles?.length
+    ? options.voiceCloneSampleFiles
+    : classified.voiceCloneSampleFiles;
+  if (voiceCloneFiles.length > 0) {
+    // Reorder voice clone files to match moAi voiceSamples[].fileName order
+    voiceCloneFiles = await reorderVoiceCloneFilesAsync(
+      voiceCloneFiles,
+      classified.metadataMoAiFile,
+    );
+    const audioArrays: Uint8Array[] = [];
+    for (const file of voiceCloneFiles) {
+      audioArrays.push(new Uint8Array(await file.arrayBuffer()));
+    }
+    chunkPayloads.push({
+      chunkType: "vcAu",
+      data: serializeArrayVarLength(audioArrays),
+    });
   }
 
   if (chunkPayloads.length === 0) {
@@ -717,6 +751,7 @@ function collectPmxReferenceFiles(files: readonly File[]): File[] {
         case "metadata-fBtn":
         case "metadata-moAi":
         case "base-image":
+        case "voice-clone-sample":
           return false;
         default:
           return true;
@@ -761,6 +796,106 @@ function ensureRelativePath(file: File): File {
     // Ignore environments that disallow redefining this property.
   }
   return file;
+}
+
+/**
+ * Reorders voice clone sample files to match the order defined in moAi metadata's
+ * voiceSamples[].fileName. Files not referenced in metadata are appended at the end.
+ */
+async function reorderVoiceCloneFilesAsync(
+  voiceCloneFiles: readonly File[],
+  metadataMoAiFile: File | null,
+): Promise<File[]> {
+  if (!metadataMoAiFile || voiceCloneFiles.length === 0) {
+    return [...voiceCloneFiles];
+  }
+
+  try {
+    const textDecoder = new TextDecoder();
+    const rawBytes = new Uint8Array(await metadataMoAiFile.arrayBuffer());
+    const json = JSON.parse(textDecoder.decode(rawBytes));
+
+    const orderedFileNames: string[] =
+      (json.voiceSamples as Array<{ fileName: string }>)
+        ?.map((s) => s.fileName)
+        ?.filter(Boolean) ?? [];
+
+    if (orderedFileNames.length === 0) return [...voiceCloneFiles];
+
+    // Build a map: baseName → File (for quick lookup)
+    const fileMap = new Map<string, File>();
+    for (const file of voiceCloneFiles) {
+      const path = getFilePath(file);
+      const baseName = getBaseName(path);
+      fileMap.set(baseName, file);
+      // Also map by full relative path for subfolder files
+      if (path.includes("/")) {
+        fileMap.set(path.replace(/\\/g, "/"), file);
+      }
+    }
+
+    const ordered: File[] = [];
+    const used = new Set<File>();
+
+    // First, add files in the moAi metadata order
+    for (const fileName of orderedFileNames) {
+      // Try exact match first, then baseName match
+      let matched = fileMap.get(fileName);
+      if (!matched) {
+        // Try with metadata.voiceSamples/ prefix
+        matched = fileMap.get(`metadata.voiceSamples/${fileName}`);
+      }
+      if (matched && !used.has(matched)) {
+        ordered.push(matched);
+        used.add(matched);
+      }
+    }
+
+    // Then append any remaining files not referenced in metadata
+    for (const file of voiceCloneFiles) {
+      if (!used.has(file)) {
+        ordered.push(file);
+      }
+    }
+
+    return ordered;
+  } catch {
+    return [...voiceCloneFiles];
+  }
+}
+
+/**
+ * Serializes an array of Uint8Array into a single byte buffer using
+ * variable-length quantity (VLQ) encoding for each element's length prefix.
+ * This matches the format used in the main application's imageCard.ts.
+ */
+function serializeArrayVarLength(items: Uint8Array[]): Uint8Array {
+  const parts: Uint8Array[] = [];
+
+  for (const item of items) {
+    if (item.length === 0) continue;
+
+    // Encode length as a variable-length quantity
+    let length = item.length;
+    const lengthBuffer: number[] = [];
+    while (length > 127) {
+      lengthBuffer.push((length & 0x7f) | 0x80);
+      length >>= 7;
+    }
+    lengthBuffer.push(length & 0x7f);
+    parts.push(new Uint8Array(lengthBuffer), item);
+  }
+
+  if (parts.length === 0) return new Uint8Array(0);
+
+  const totalLength = parts.reduce((sum, part) => sum + part.length, 0);
+  const result = new Uint8Array(totalLength);
+  let offset = 0;
+  for (const part of parts) {
+    result.set(part, offset);
+    offset += part.length;
+  }
+  return result;
 }
 
 function concatUint8Arrays(parts: readonly Uint8Array[]): Uint8Array {

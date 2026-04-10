@@ -20,6 +20,7 @@ const CARD_CHUNK_TYPES = [
   "uInf",
   "fBtn",
   "moAi",
+  "vcAu",
 ] as const;
 
 const RENAMED_CARD_CHUNK_TYPES = [
@@ -32,6 +33,7 @@ const RENAMED_CARD_CHUNK_TYPES = [
   "uiNf",
   "fbTn",
   "moAi",
+  "vcAu",
 ] as const;
 
 const textDecoder = new TextDecoder();
@@ -62,6 +64,7 @@ const SUPPORTED_CARD_CHUNK_TO_CANONICAL: Record<
   erOv: "eroV",
   uiNf: "uInf",
   fbTn: "fBtn",
+  vcAu: "vcAu",
 };
 
 const SUPPORTED_CARD_CHUNK_TYPE_SET = new Set<string>([
@@ -201,9 +204,35 @@ async function buildExportFiles(
   const baseName = getCardBaseName(sourceName);
   const effectiveChunks = getEffectiveChunks(cardChunks, warnings);
 
+  // Pre-parse moAi chunk to extract voiceSamples metadata for vcAu file naming
+  let voiceSampleMetadata: Array<{ fileName?: string; sampleName?: string }> =
+    [];
+  const moAiChunk = effectiveChunks.find((c) => c.type === "moAi");
+  if (moAiChunk) {
+    try {
+      const moAiObj = JSON.parse(textDecoder.decode(moAiChunk.data)) as Record<
+        string,
+        unknown
+      >;
+      if (Array.isArray(moAiObj.voiceSamples)) {
+        voiceSampleMetadata = moAiObj.voiceSamples as Array<{
+          fileName?: string;
+          sampleName?: string;
+        }>;
+      }
+    } catch {
+      // ignore parse errors – vcAu will use fallback naming
+    }
+  }
+
   for (const chunk of effectiveChunks) {
     try {
-      const entries = await mapChunkToFiles(chunk, baseName, options);
+      const entries = await mapChunkToFiles(
+        chunk,
+        baseName,
+        options,
+        voiceSampleMetadata,
+      );
       if (entries.length === 0) {
         continue;
       }
@@ -266,6 +295,7 @@ async function mapChunkToFiles(
   chunk: ParsedChunk,
   baseName: string,
   options: CardPngExtractionOptions,
+  voiceSampleMetadata: Array<{ fileName?: string; sampleName?: string }> = [],
 ): Promise<CardPngExportFile[]> {
   switch (chunk.type) {
     case "bPMX":
@@ -332,6 +362,22 @@ async function mapChunkToFiles(
       return [buildJsonFile(chunk, "metadata.fBtn.json")];
     case "moAi":
       return [buildJsonFile(chunk, "metadata.moAi.json")];
+    case "vcAu": {
+      const parts = deserializeArrayVarLength(chunk.data);
+      return parts.map((part, index) => {
+        const metaFileName = voiceSampleMetadata[index]?.fileName;
+        const fileName =
+          metaFileName && metaFileName.length > 0
+            ? metaFileName
+            : `voice_sample_${index}.webm`;
+        return {
+          fileName: `metadata.voiceSamples/${fileName}`,
+          mime: "video/webm",
+          data: toArrayBuffer(part),
+          sourceChunk: chunk.type,
+        };
+      });
+    }
     default:
       return [];
   }
@@ -547,4 +593,36 @@ function ensureUniqueFileName(
     nextName = `${stem}-${suffix}${extension}`;
   }
   return nextName;
+}
+
+/**
+ * Deserializes a variable-length encoded array from a single byte buffer.
+ * Each element is prefixed with a variable-length quantity (VLQ) encoding its byte length.
+ * Ported from the main application's imageCard.ts serialization format.
+ */
+function deserializeArrayVarLength(data: Uint8Array): Uint8Array[] {
+  const results: Uint8Array[] = [];
+  let index = 0;
+
+  while (index < data.length) {
+    // Decode variable-length quantity
+    let length = 0;
+    let shift = 0;
+    let byte: number;
+    do {
+      byte = data[index++];
+      length |= (byte & 0x7f) << shift;
+      shift += 7;
+    } while (byte >= 128);
+
+    const content = new Uint8Array(
+      data.buffer,
+      data.byteOffset + index,
+      length,
+    );
+    results.push(content);
+    index += length;
+  }
+
+  return results;
 }

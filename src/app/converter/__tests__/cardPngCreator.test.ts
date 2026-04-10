@@ -303,6 +303,77 @@ describe("createCardPngFromFiles", () => {
       '{"auth":"fresh","ch":["alpha"],"info":"new"}',
     );
   });
+
+  it("roundtrips vcAu voice clone samples with moAi metadata", async () => {
+    const voiceSample1 = new TextEncoder().encode("voice-clip-1");
+    const voiceSample2 = new TextEncoder().encode("voice-clip-2-longer");
+
+    const files = [
+      new File([toArrayBuffer(BASE_PNG)], "ero.dance.png", {
+        type: "image/png",
+      }),
+      new File([loadBuffer("public/example/TestModel.bpmx")], "dance.bpmx"),
+      new File([toArrayBuffer(voiceSample1)], "voice_sample_intro.webm", {
+        type: "audio/webm",
+      }),
+      new File([toArrayBuffer(voiceSample2)], "voice_sample_greeting.webm", {
+        type: "audio/webm",
+      }),
+    ];
+
+    const result = await createCardPngFromFiles(files, {
+      metadataOverrides: {
+        moAi: {
+          name: "VoiceTest",
+          gender: "f",
+          info: "test",
+          morphs: [{ index: 0, name: "Smile", desc: "Happy expression" }],
+          voiceSamples: [
+            {
+              index: 0,
+              fileName: "voice_sample_intro.webm",
+              sampleName: "Intro",
+              locale: "ja",
+            },
+            {
+              index: 1,
+              fileName: "voice_sample_greeting.webm",
+              sampleName: "Greeting",
+            },
+          ],
+        },
+      },
+    });
+
+    const chunkTypes = listChunkTypes(new Uint8Array(result.pngBuffer));
+    expect(chunkTypes).toContain("vcAu");
+    expect(result.report.embeddedChunkTypes).toContain("vcAu");
+
+    const extracted = await extractCardPngToZip(
+      new File([result.pngBuffer], result.report.outputFileName, {
+        type: "image/png",
+      }),
+    );
+    const entries = unzipSync(new Uint8Array(extracted.zipBuffer));
+
+    expect(
+      decodeUtf8(entries["metadata.voiceSamples/voice_sample_intro.webm"]),
+    ).toBe("voice-clip-1");
+    expect(
+      decodeUtf8(entries["metadata.voiceSamples/voice_sample_greeting.webm"]),
+    ).toBe("voice-clip-2-longer");
+
+    const moAi = JSON.parse(decodeUtf8(entries["metadata.moAi.json"]));
+    expect(moAi.morphs).toHaveLength(1);
+    expect(moAi.morphs[0]).toEqual({
+      index: 0,
+      name: "Smile",
+      desc: "Happy expression",
+    });
+    expect(moAi.voiceSamples).toHaveLength(2);
+    expect(moAi.voiceSamples[0].fileName).toBe("voice_sample_intro.webm");
+    expect(moAi.voiceSamples[1].sampleName).toBe("Greeting");
+  });
 });
 
 function listChunkTypes(bytes: Uint8Array): string[] {

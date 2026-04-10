@@ -145,4 +145,5 @@ vite.config.ts.timestamp-*
 deploy/
 
 # Example files
+JUSTFORCOMPARISON/
 public/example/

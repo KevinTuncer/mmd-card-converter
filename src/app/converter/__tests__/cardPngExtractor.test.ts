@@ -343,6 +343,82 @@ describe("extractCardPngToZip", () => {
       "Datei ist zu klein fuer eine gueltige PNG.",
     );
   });
+
+  it("extracts vcAu voice clone samples using metadata file names", async () => {
+    const sample1 = new TextEncoder().encode("voice-audio-1");
+    const sample2 = new TextEncoder().encode("voice-audio-2-longer");
+    const vcAuData = serializeTestArrayVarLength([sample1, sample2]);
+    const moAiPayload = JSON.stringify({
+      name: "Test",
+      gender: "f",
+      info: "test",
+      voiceSamples: [
+        {
+          index: 0,
+          fileName: "voice_sample_intro.webm",
+          sampleName: "Intro",
+          locale: "ja",
+        },
+        {
+          index: 1,
+          fileName: "voice_sample_greeting.webm",
+          sampleName: "Greeting",
+        },
+      ],
+    });
+
+    const pngBytes = createCardPng([
+      {
+        type: "moAi",
+        data: new TextEncoder().encode(moAiPayload),
+      },
+      {
+        type: "vcAu",
+        data: vcAuData,
+      },
+    ]);
+
+    const result = await extractCardPngToZip(
+      new File([toArrayBuffer(pngBytes)], "voice-card.png", {
+        type: "image/png",
+      }),
+    );
+    const entries = unzipSync(new Uint8Array(result.zipBuffer));
+
+    expect(result.report.foundChunkTypes).toContain("vcAu");
+    expect(
+      decodeUtf8(entries["metadata.voiceSamples/voice_sample_intro.webm"]),
+    ).toBe("voice-audio-1");
+    expect(
+      decodeUtf8(entries["metadata.voiceSamples/voice_sample_greeting.webm"]),
+    ).toBe("voice-audio-2-longer");
+    const moAi = JSON.parse(decodeUtf8(entries["metadata.moAi.json"]));
+    expect(moAi.voiceSamples).toHaveLength(2);
+    expect(moAi.voiceSamples[0].fileName).toBe("voice_sample_intro.webm");
+  });
+
+  it("uses fallback names for vcAu samples when no moAi metadata is present", async () => {
+    const sample = new TextEncoder().encode("fallback-audio");
+    const vcAuData = serializeTestArrayVarLength([sample]);
+
+    const pngBytes = createCardPng([
+      {
+        type: "vcAu",
+        data: vcAuData,
+      },
+    ]);
+
+    const result = await extractCardPngToZip(
+      new File([toArrayBuffer(pngBytes)], "no-meta-voice.png", {
+        type: "image/png",
+      }),
+    );
+    const entries = unzipSync(new Uint8Array(result.zipBuffer));
+
+    expect(
+      decodeUtf8(entries["metadata.voiceSamples/voice_sample_0.webm"]),
+    ).toBe("fallback-audio");
+  });
 });
 
 function createCardPng(
@@ -425,4 +501,28 @@ function toArrayBuffer(bytes: Uint8Array): ArrayBuffer {
     bytes.byteOffset,
     bytes.byteOffset + bytes.byteLength,
   ) as ArrayBuffer;
+}
+
+function serializeTestArrayVarLength(items: Uint8Array[]): Uint8Array {
+  const parts: Uint8Array[] = [];
+  for (const item of items) {
+    if (item.length === 0) continue;
+    let length = item.length;
+    const lengthBuffer: number[] = [];
+    while (length > 127) {
+      lengthBuffer.push((length & 0x7f) | 0x80);
+      length >>= 7;
+    }
+    lengthBuffer.push(length & 0x7f);
+    parts.push(new Uint8Array(lengthBuffer), item);
+  }
+  if (parts.length === 0) return new Uint8Array(0);
+  const totalLength = parts.reduce((sum, part) => sum + part.length, 0);
+  const result = new Uint8Array(totalLength);
+  let offset = 0;
+  for (const part of parts) {
+    result.set(part, offset);
+    offset += part.length;
+  }
+  return result;
 }

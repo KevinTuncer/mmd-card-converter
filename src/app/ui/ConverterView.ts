@@ -143,10 +143,25 @@ interface CardCreateFastButtonDraft {
   morph: string;
 }
 
+interface MorphDescDraft {
+  index: string;
+  name: string;
+  desc: string;
+}
+
+interface VoiceCloneSampleDraft {
+  index: string;
+  fileName: string;
+  sampleName: string;
+  locale: string;
+}
+
 interface CardCreateMoAiDraft {
   name: string;
   gender: string;
   info: string;
+  morphs: MorphDescDraft[];
+  voiceSamples: VoiceCloneSampleDraft[];
 }
 
 const CARD_CREATE_REQUIRED_KINDS = new Set([
@@ -177,7 +192,7 @@ function createEmptyFastButtonDraft(): CardCreateFastButtonDraft {
 }
 
 function createEmptyMoAiDraft(): CardCreateMoAiDraft {
-  return { name: "", gender: "", info: "" };
+  return { name: "", gender: "", info: "", morphs: [], voiceSamples: [] };
 }
 
 function hasCardCreateEmbeddableInput(files: readonly File[]): boolean {
@@ -222,10 +237,33 @@ function parseFastButtonDrafts(value: unknown): CardCreateFastButtonDraft[] {
 
 function parseMoAiDraft(value: unknown): CardCreateMoAiDraft {
   const data = (value ?? {}) as Record<string, unknown>;
+  const morphs = Array.isArray(data.morphs)
+    ? data.morphs.map((entry: unknown) => {
+        const m = (entry ?? {}) as Record<string, unknown>;
+        return {
+          index: String(m.index ?? "0"),
+          name: String(m.name ?? ""),
+          desc: String(m.desc ?? ""),
+        };
+      })
+    : [];
+  const voiceSamples = Array.isArray(data.voiceSamples)
+    ? data.voiceSamples.map((entry: unknown) => {
+        const s = (entry ?? {}) as Record<string, unknown>;
+        return {
+          index: String(s.index ?? "0"),
+          fileName: String(s.fileName ?? ""),
+          sampleName: String(s.sampleName ?? ""),
+          locale: String(s.locale ?? ""),
+        };
+      })
+    : [];
   return {
     name: String(data.name ?? ""),
     gender: String(data.gender ?? ""),
     info: String(data.info ?? ""),
+    morphs,
+    voiceSamples,
   };
 }
 
@@ -260,11 +298,37 @@ function buildMoAiOverride(draft: CardCreateMoAiDraft): {
   name: string;
   gender: string;
   info: string;
+  morphs: Array<{ index: number; name: string; desc: string }>;
+  voiceSamples: Array<{
+    index: number;
+    fileName: string;
+    sampleName: string;
+    locale?: string;
+  }>;
 } {
+  const morphs = draft.morphs
+    .filter((m) => m.name.trim().length > 0 || m.desc.trim().length > 0)
+    .map((m) => ({
+      index: Number(m.index) || 0,
+      name: m.name.trim(),
+      desc: m.desc.trim(),
+    }));
+  const voiceSamples = draft.voiceSamples
+    .filter(
+      (s) => s.fileName.trim().length > 0 || s.sampleName.trim().length > 0,
+    )
+    .map((s) => ({
+      index: Number(s.index) || 0,
+      fileName: s.fileName.trim(),
+      sampleName: s.sampleName.trim(),
+      ...(s.locale.trim() ? { locale: s.locale.trim() } : {}),
+    }));
   return {
     name: draft.name,
     gender: draft.gender,
     info: draft.info,
+    morphs,
+    voiceSamples,
   };
 }
 
@@ -478,6 +542,25 @@ interface ConverterViewText {
   defaultImageActivated: string;
   createCardInProgress: string;
   extractCardInProgress: string;
+  morphDescTitle: string;
+  morphDescIndexLabel: string;
+  morphDescNameLabel: string;
+  morphDescDescLabel: string;
+  morphDescRemove: string;
+  morphDescAdd: string;
+  voiceCloneTitle: string;
+  voiceCloneFileNameLabel: string;
+  voiceCloneSampleNameLabel: string;
+  voiceCloneLocaleLabel: string;
+  voiceCloneRemove: string;
+  voiceCloneAdd: string;
+  voiceCloneHint: string;
+  voiceCloneSelectFile: string;
+  voiceClonePlay: string;
+  voiceCloneStop: string;
+  voiceCloneDurationError: string;
+  voiceCloneFileMissing: string;
+  voiceCloneLocalePlaceholder: string;
 }
 
 function getConverterViewText(locale: AppLocale): ConverterViewText {
@@ -617,6 +700,26 @@ function getConverterViewText(locale: AppLocale): ConverterViewText {
     defaultImageActivated: "Base image removed. eroLogo.png will be used.",
     createCardInProgress: "Creating card PNG...",
     extractCardInProgress: "Extracting card data...",
+    morphDescTitle: "Morph Descriptions",
+    morphDescIndexLabel: "Index",
+    morphDescNameLabel: "Name",
+    morphDescDescLabel: "Description",
+    morphDescRemove: "Remove",
+    morphDescAdd: "Add morph",
+    voiceCloneTitle: "Voice Clone Samples",
+    voiceCloneFileNameLabel: "File name",
+    voiceCloneSampleNameLabel: "Sample name",
+    voiceCloneLocaleLabel: "Locale",
+    voiceCloneRemove: "Remove",
+    voiceCloneAdd: "Add sample",
+    voiceCloneHint:
+      "Files named voice_sample_*.webm or in metadata.voiceSamples/ will be embedded as voice clone audio.",
+    voiceCloneSelectFile: "Select file…",
+    voiceClonePlay: "Play",
+    voiceCloneStop: "Stop",
+    voiceCloneDurationError: "Duration must be 3–20 seconds",
+    voiceCloneFileMissing: "File not found",
+    voiceCloneLocalePlaceholder: "Select locale…",
   };
 
   const de: ConverterViewText = {
@@ -758,6 +861,26 @@ function getConverterViewText(locale: AppLocale): ConverterViewText {
     defaultImageActivated: "Basisbild entfernt. Es wird eroLogo.png verwendet.",
     createCardInProgress: "Erstelle Card-PNG...",
     extractCardInProgress: "Extrahiere Card-Daten...",
+    morphDescTitle: "Morph-Beschreibungen",
+    morphDescIndexLabel: "Index",
+    morphDescNameLabel: "Name",
+    morphDescDescLabel: "Beschreibung",
+    morphDescRemove: "Entfernen",
+    morphDescAdd: "Morph hinzufügen",
+    voiceCloneTitle: "Voice-Clone-Samples",
+    voiceCloneFileNameLabel: "Dateiname",
+    voiceCloneSampleNameLabel: "Sample-Name",
+    voiceCloneLocaleLabel: "Locale",
+    voiceCloneRemove: "Entfernen",
+    voiceCloneAdd: "Sample hinzufügen",
+    voiceCloneHint:
+      "Dateien mit dem Namen voice_sample_*.webm oder im Ordner metadata.voiceSamples/ werden als Voice-Clone-Audio eingebettet.",
+    voiceCloneSelectFile: "Datei auswählen…",
+    voiceClonePlay: "Abspielen",
+    voiceCloneStop: "Stoppen",
+    voiceCloneDurationError: "Dauer muss zwischen 3 und 20 Sekunden liegen",
+    voiceCloneFileMissing: "Datei nicht gefunden",
+    voiceCloneLocalePlaceholder: "Locale auswählen…",
   };
 
   const ja: ConverterViewText = {
@@ -902,6 +1025,26 @@ function getConverterViewText(locale: AppLocale): ConverterViewText {
       "ベース画像を削除しました。eroLogo.png を使用します。",
     createCardInProgress: "Card PNG を作成中...",
     extractCardInProgress: "カードデータを抽出中...",
+    morphDescTitle: "モーフ説明",
+    morphDescIndexLabel: "インデックス",
+    morphDescNameLabel: "名前",
+    morphDescDescLabel: "説明",
+    morphDescRemove: "削除",
+    morphDescAdd: "モーフを追加",
+    voiceCloneTitle: "ボイスクローンサンプル",
+    voiceCloneFileNameLabel: "ファイル名",
+    voiceCloneSampleNameLabel: "サンプル名",
+    voiceCloneLocaleLabel: "ロケール",
+    voiceCloneRemove: "削除",
+    voiceCloneAdd: "サンプルを追加",
+    voiceCloneHint:
+      "voice_sample_*.webm または metadata.voiceSamples/ 内のファイルは、ボイスクローンオーディオとして埋め込まれます。",
+    voiceCloneSelectFile: "ファイルを選択…",
+    voiceClonePlay: "再生",
+    voiceCloneStop: "停止",
+    voiceCloneDurationError: "再生時間は3～20秒にしてください",
+    voiceCloneFileMissing: "ファイルが見つかりません",
+    voiceCloneLocalePlaceholder: "ロケールを選択…",
   };
 
   const zhCN: ConverterViewText = {
@@ -1037,6 +1180,26 @@ function getConverterViewText(locale: AppLocale): ConverterViewText {
     defaultImageActivated: "已移除基础图像。将使用 eroLogo.png。",
     createCardInProgress: "正在创建 Card PNG...",
     extractCardInProgress: "正在提取卡片数据...",
+    morphDescTitle: "变形描述",
+    morphDescIndexLabel: "索引",
+    morphDescNameLabel: "名称",
+    morphDescDescLabel: "描述",
+    morphDescRemove: "删除",
+    morphDescAdd: "添加变形",
+    voiceCloneTitle: "语音克隆样本",
+    voiceCloneFileNameLabel: "文件名",
+    voiceCloneSampleNameLabel: "样本名",
+    voiceCloneLocaleLabel: "区域",
+    voiceCloneRemove: "删除",
+    voiceCloneAdd: "添加样本",
+    voiceCloneHint:
+      "名为 voice_sample_*.webm 或在 metadata.voiceSamples/ 中的文件将作为语音克隆音频嵌入。",
+    voiceCloneSelectFile: "选择文件…",
+    voiceClonePlay: "播放",
+    voiceCloneStop: "停止",
+    voiceCloneDurationError: "时长必须在3到20秒之间",
+    voiceCloneFileMissing: "文件未找到",
+    voiceCloneLocalePlaceholder: "选择区域…",
   };
 
   const zhTW: ConverterViewText = {
@@ -1172,6 +1335,26 @@ function getConverterViewText(locale: AppLocale): ConverterViewText {
     defaultImageActivated: "已移除基底圖片。將使用 eroLogo.png。",
     createCardInProgress: "正在建立 Card PNG...",
     extractCardInProgress: "正在擷取卡片資料...",
+    morphDescTitle: "變形描述",
+    morphDescIndexLabel: "索引",
+    morphDescNameLabel: "名稱",
+    morphDescDescLabel: "描述",
+    morphDescRemove: "移除",
+    morphDescAdd: "新增變形",
+    voiceCloneTitle: "語音克隆樣本",
+    voiceCloneFileNameLabel: "檔案名稱",
+    voiceCloneSampleNameLabel: "樣本名稱",
+    voiceCloneLocaleLabel: "地區",
+    voiceCloneRemove: "移除",
+    voiceCloneAdd: "新增樣本",
+    voiceCloneHint:
+      "名為 voice_sample_*.webm 或在 metadata.voiceSamples/ 中的檔案將作為語音克隆音訊嵌入。",
+    voiceCloneSelectFile: "選擇檔案…",
+    voiceClonePlay: "播放",
+    voiceCloneStop: "停止",
+    voiceCloneDurationError: "時長必須在3到20秒之間",
+    voiceCloneFileMissing: "檔案未找到",
+    voiceCloneLocalePlaceholder: "選擇地區…",
   };
 
   const map: Partial<Record<AppLocale, ConverterViewText>> = {
@@ -1491,6 +1674,15 @@ export function mountConverterView(
                 <input id="cardcreate-moai-gender" type="text" />
                 <label class="card-field-label" for="cardcreate-moai-info">${text.infoLabel}</label>
                 <textarea id="cardcreate-moai-info" rows="4"></textarea>
+
+                <h4 class="card-subsection-title">${text.morphDescTitle}</h4>
+                <div id="cardcreate-morph-list" class="card-fast-button-list"></div>
+                <button class="drop-btn" id="cardcreate-morph-add" type="button">${text.morphDescAdd}</button>
+
+                <h4 class="card-subsection-title">${text.voiceCloneTitle}</h4>
+                <div id="cardcreate-voice-list" class="card-fast-button-list"></div>
+                <button class="drop-btn" id="cardcreate-voice-add" type="button">${text.voiceCloneAdd}</button>
+                <p class="status" id="cardcreate-voice-hint">${text.voiceCloneHint}</p>
               </div>
             </section>
           </div>
@@ -2621,6 +2813,18 @@ export function mountConverterView(
   const cardCreateMoAiInfoInput = container.querySelector<HTMLTextAreaElement>(
     "#cardcreate-moai-info",
   )!;
+  const cardCreateMorphList = container.querySelector<HTMLDivElement>(
+    "#cardcreate-morph-list",
+  )!;
+  const cardCreateMorphAddBtn = container.querySelector<HTMLButtonElement>(
+    "#cardcreate-morph-add",
+  )!;
+  const cardCreateVoiceList = container.querySelector<HTMLDivElement>(
+    "#cardcreate-voice-list",
+  )!;
+  const cardCreateVoiceAddBtn = container.querySelector<HTMLButtonElement>(
+    "#cardcreate-voice-add",
+  )!;
 
   let stagedCardCreateFiles: File[] = [];
   let selectedCardCreateBaseImage: File | null = null;
@@ -2630,6 +2834,11 @@ export function mountConverterView(
   let cardCreatePreferDefaultBaseImage = false;
   let cardCreateLastSourceLabel: string | null = null;
   let cardCreateMetadataRefreshToken = 0;
+  let activeVoiceAudio: {
+    audio: HTMLAudioElement;
+    objectUrl: string;
+    rowIndex: number;
+  } | null = null;
   let cardCreateBusy = false;
   let cardCreateCompressToAvifSet: Set<File> = new Set();
   let cardCreateActualResultFiles: Map<string, File> | null = null;
@@ -2714,6 +2923,7 @@ export function mountConverterView(
       case "metadata-uInf":
       case "metadata-fBtn":
       case "metadata-moAi":
+      case "voice-clone-sample":
       case "base-image":
         return false;
       default:
@@ -2847,6 +3057,8 @@ export function mountConverterView(
         return `${text.metadataSourceRolePrefix} fBtn`;
       case "metadata-moAi":
         return `${text.metadataSourceRolePrefix} moAi`;
+      case "voice-clone-sample":
+        return "Voice";
       case "png-image":
         return "PNG";
       default:
@@ -3046,6 +3258,520 @@ export function mountConverterView(
     });
   }
 
+  function renderCardCreateMorphRows(): void {
+    cardCreateMorphList.innerHTML = "";
+    cardCreateMoAiDraft.morphs.forEach((draft, index) => {
+      const row = document.createElement("div");
+      row.className = "card-morph-row";
+
+      const indexInput = document.createElement("input");
+      indexInput.type = "number";
+      indexInput.step = "any";
+      indexInput.placeholder = text.morphDescIndexLabel;
+      indexInput.value = draft.index;
+      indexInput.addEventListener("input", () => {
+        cardCreateMoAiDraft.morphs[index].index = indexInput.value;
+      });
+
+      const nameInput = document.createElement("input");
+      nameInput.type = "text";
+      nameInput.placeholder = text.morphDescNameLabel;
+      nameInput.value = draft.name;
+      nameInput.addEventListener("input", () => {
+        cardCreateMoAiDraft.morphs[index].name = nameInput.value;
+      });
+
+      const descInput = document.createElement("input");
+      descInput.type = "text";
+      descInput.placeholder = text.morphDescDescLabel;
+      descInput.value = draft.desc;
+      descInput.addEventListener("input", () => {
+        cardCreateMoAiDraft.morphs[index].desc = descInput.value;
+      });
+
+      const removeBtn = document.createElement("button");
+      removeBtn.type = "button";
+      removeBtn.className = "card-remove-btn";
+      removeBtn.textContent = "🗑";
+      removeBtn.ariaLabel = text.morphDescRemove;
+      removeBtn.title = text.morphDescRemove;
+      removeBtn.addEventListener("click", () => {
+        cardCreateMoAiDraft.morphs = cardCreateMoAiDraft.morphs.filter(
+          (_, rowIndex) => rowIndex !== index,
+        );
+        renderCardCreateMorphRows();
+        syncCardCreateMetadataEditorsDisabledState(false);
+      });
+
+      row.append(indexInput, nameInput, descInput, removeBtn);
+      cardCreateMorphList.appendChild(row);
+    });
+  }
+
+  const VOICE_CLONE_LOCALE_OPTIONS: ReadonlyArray<{
+    value: string;
+    label: string;
+  }> = [
+    { value: "", label: "—" },
+    { value: "ar", label: "العربية (ar)" },
+    { value: "cs", label: "Čeština (cs)" },
+    { value: "da", label: "Dansk (da)" },
+    { value: "de", label: "Deutsch (de)" },
+    { value: "de-AT", label: "Deutsch (de-AT)" },
+    { value: "de-CH", label: "Deutsch (de-CH)" },
+    { value: "de-DE", label: "Deutsch (de-DE)" },
+    { value: "el", label: "Ελληνικά (el)" },
+    { value: "en", label: "English (en)" },
+    { value: "en-AU", label: "English (en-AU)" },
+    { value: "en-GB", label: "English (en-GB)" },
+    { value: "en-US", label: "English (en-US)" },
+    { value: "es", label: "Español (es)" },
+    { value: "es-ES", label: "Español (es-ES)" },
+    { value: "fi", label: "Suomi (fi)" },
+    { value: "fr", label: "Français (fr)" },
+    { value: "fr-CA", label: "Français (fr-CA)" },
+    { value: "fr-FR", label: "Français (fr-FR)" },
+    { value: "he", label: "עברית (he)" },
+    { value: "hi", label: "हिन्दी (hi)" },
+    { value: "hu", label: "Magyar (hu)" },
+    { value: "id", label: "Bahasa Indonesia (id)" },
+    { value: "it", label: "Italiano (it)" },
+    { value: "ja", label: "日本語 (ja)" },
+    { value: "ko", label: "한국어 (ko)" },
+    { value: "nl", label: "Nederlands (nl)" },
+    { value: "no", label: "Norsk (no)" },
+    { value: "pl", label: "Polski (pl)" },
+    { value: "pt", label: "Português (pt)" },
+    { value: "pt-BR", label: "Português (pt-BR)" },
+    { value: "ro", label: "Română (ro)" },
+    { value: "ru", label: "Русский (ru)" },
+    { value: "sk", label: "Slovenčina (sk)" },
+    { value: "sv", label: "Svenska (sv)" },
+    { value: "th", label: "ไทย (th)" },
+    { value: "tr", label: "Türkçe (tr)" },
+    { value: "uk", label: "Українська (uk)" },
+    { value: "vi", label: "Tiếng Việt (vi)" },
+    { value: "zh", label: "中文 (zh)" },
+    { value: "zh-CN", label: "简体中文 (zh-CN)" },
+    { value: "zh-TW", label: "繁體中文 (zh-TW)" },
+  ];
+
+  function filterLocaleOptions(
+    query: string,
+    options: ReadonlyArray<{ value: string; label: string }>,
+    maxResults: number,
+  ): Array<{ value: string; label: string }> {
+    const normalized = query.toLowerCase().trim();
+    if (!normalized) return options.slice(0, maxResults);
+    return options
+      .filter((o) => `${o.label} ${o.value}`.toLowerCase().includes(normalized))
+      .slice(0, maxResults);
+  }
+
+  function findVoiceCloneFileForDraft(
+    draft: VoiceCloneSampleDraft,
+  ): File | null {
+    if (!draft.fileName) return null;
+    return (
+      stagedCardCreateFiles.find((file) => {
+        const key = getCardCreateFileKey(file);
+        const path = key.replace(/\\/g, "/");
+        const baseName = path.split("/").pop() ?? path;
+        // Match by baseName, by exact path, or by metadata.voiceSamples/fileName
+        return (
+          baseName === draft.fileName ||
+          path === draft.fileName ||
+          path === `metadata.voiceSamples/${draft.fileName}` ||
+          key === draft.fileName
+        );
+      }) ?? null
+    );
+  }
+
+  function getUnassignedVoiceCloneFiles(excludeIndex: number): File[] {
+    const assigned = new Set<string>();
+    cardCreateMoAiDraft.voiceSamples.forEach((draft, i) => {
+      if (i !== excludeIndex && draft.fileName) {
+        assigned.add(draft.fileName);
+      }
+    });
+    return stagedCardCreateFiles.filter((file) => {
+      if (getCardCreatorInputKind(file) !== "voice-clone-sample") return false;
+      const key = getCardCreateFileKey(file);
+      const path = key.replace(/\\/g, "/");
+      const baseName = path.split("/").pop() ?? path;
+      // Check if this file's name is already assigned to another row
+      return !assigned.has(baseName) && !assigned.has(path);
+    });
+  }
+
+  function stopActiveVoiceAudio(): void {
+    if (activeVoiceAudio) {
+      activeVoiceAudio.audio.pause();
+      activeVoiceAudio.audio.currentTime = 0;
+      URL.revokeObjectURL(activeVoiceAudio.objectUrl);
+      activeVoiceAudio = null;
+    }
+  }
+
+  function closeAllVoiceDropdowns(): void {
+    document
+      .querySelectorAll(".card-voice-dropdown, .card-voice-locale-dropdown")
+      .forEach((el) => el.remove());
+  }
+
+  function renderCardCreateVoiceRows(): void {
+    // Stop any playing audio before re-rendering
+    stopActiveVoiceAudio();
+    closeAllVoiceDropdowns();
+    cardCreateVoiceList.innerHTML = "";
+
+    cardCreateMoAiDraft.voiceSamples.forEach((draft, index) => {
+      const row = document.createElement("div");
+      row.className = "card-voice-row";
+
+      // --- File selection button (replaces text input) ---
+      const matchedFile = findVoiceCloneFileForDraft(draft);
+      const isMissing = draft.fileName !== "" && !matchedFile;
+
+      const fileBtn = document.createElement("button");
+      fileBtn.type = "button";
+      fileBtn.className = "card-voice-file-btn";
+      if (isMissing) {
+        fileBtn.classList.add("card-voice-file-btn-missing");
+        fileBtn.title = text.voiceCloneFileMissing;
+      }
+      fileBtn.textContent = draft.fileName || text.voiceCloneSelectFile;
+
+      fileBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        // Close any other open dropdowns
+        closeAllVoiceDropdowns();
+
+        const availableFiles = getUnassignedVoiceCloneFiles(index);
+        if (availableFiles.length === 0) return;
+
+        // Create dropdown and append to body
+        const dropdown = document.createElement("div");
+        dropdown.className = "card-voice-dropdown";
+
+        for (const file of availableFiles) {
+          const key = getCardCreateFileKey(file);
+          const path = key.replace(/\\/g, "/");
+          const baseName = path.split("/").pop() ?? path;
+
+          const item = document.createElement("button");
+          item.type = "button";
+          item.className = "card-voice-dropdown-item";
+          item.textContent = baseName;
+          item.title = path;
+
+          item.addEventListener("click", async (ev) => {
+            ev.stopPropagation();
+            // Validate duration
+            const objectUrl = URL.createObjectURL(file);
+            try {
+              const duration = await getAudioDuration(objectUrl);
+              if (duration < 3 || duration > 20) {
+                // Block selection with error
+                fileBtn.classList.add("card-voice-duration-error");
+                fileBtn.textContent = baseName;
+                fileBtn.title = text.voiceCloneDurationError;
+                cardCreateMoAiDraft.voiceSamples[index].fileName = baseName;
+                // Remove error styling after a moment
+                setTimeout(() => {
+                  fileBtn.classList.remove("card-voice-duration-error");
+                  fileBtn.title = isMissing ? text.voiceCloneFileMissing : "";
+                }, 3000);
+                dropdown.remove();
+                return;
+              }
+            } catch {
+              // If we can't determine duration, allow it
+            } finally {
+              URL.revokeObjectURL(objectUrl);
+            }
+
+            cardCreateMoAiDraft.voiceSamples[index].fileName = baseName;
+            dropdown.remove();
+            renderCardCreateVoiceRows();
+          });
+
+          dropdown.appendChild(item);
+        }
+
+        // Position dropdown below the button using fixed positioning
+        document.body.appendChild(dropdown);
+        const btnRect = fileBtn.getBoundingClientRect();
+        dropdown.style.left = `${btnRect.left}px`;
+        dropdown.style.top = `${btnRect.bottom}px`;
+        dropdown.style.minWidth = `${btnRect.width}px`;
+
+        // Close dropdown when clicking outside
+        const closeHandler = (ev: MouseEvent) => {
+          if (!dropdown.contains(ev.target as Node)) {
+            dropdown.remove();
+            document.removeEventListener("click", closeHandler);
+          }
+        };
+        setTimeout(() => document.addEventListener("click", closeHandler), 0);
+      });
+
+      // --- Details row (second line): sampleName, locale, play, remove ---
+      const details = document.createElement("div");
+      details.className = "card-voice-details";
+
+      // --- Sample name input ---
+      const sampleNameInput = document.createElement("input");
+      sampleNameInput.type = "text";
+      sampleNameInput.placeholder = text.voiceCloneSampleNameLabel;
+      sampleNameInput.value = draft.sampleName;
+      sampleNameInput.addEventListener("input", () => {
+        cardCreateMoAiDraft.voiceSamples[index].sampleName =
+          sampleNameInput.value;
+      });
+
+      // --- Locale typeahead button ---
+      const localeBtn = document.createElement("button");
+      localeBtn.type = "button";
+      localeBtn.className = "card-voice-locale-btn";
+
+      const currentLocaleOption = VOICE_CLONE_LOCALE_OPTIONS.find(
+        (o) => o.value === draft.locale,
+      );
+      if (currentLocaleOption && currentLocaleOption.value) {
+        localeBtn.textContent = currentLocaleOption.label;
+      } else {
+        localeBtn.textContent = text.voiceCloneLocalePlaceholder;
+        localeBtn.classList.add("card-voice-locale-btn-placeholder");
+      }
+
+      localeBtn.addEventListener("click", () => {
+        // Close any other open dropdowns
+        closeAllVoiceDropdowns();
+
+        const dropdown = document.createElement("div");
+        dropdown.className = "card-voice-locale-dropdown";
+
+        // Filter input
+        const filterInput = document.createElement("input");
+        filterInput.type = "text";
+        filterInput.className = "card-voice-locale-filter";
+        filterInput.placeholder = text.voiceCloneLocalePlaceholder;
+
+        // Options container
+        const optionsContainer = document.createElement("div");
+        optionsContainer.className = "card-voice-locale-options";
+
+        let activeIdx = -1;
+        let filtered: Array<{ value: string; label: string }> = [];
+
+        function renderOptions(query: string): void {
+          filtered = filterLocaleOptions(query, VOICE_CLONE_LOCALE_OPTIONS, 12);
+          activeIdx = filtered.findIndex((o) => o.value === draft.locale);
+          if (activeIdx < 0 && filtered.length > 0) activeIdx = 0;
+          optionsContainer.innerHTML = "";
+
+          filtered.forEach((option, i) => {
+            const optBtn = document.createElement("button");
+            optBtn.type = "button";
+            optBtn.className = "card-voice-locale-option";
+            optBtn.textContent = option.label;
+            optBtn.title = option.value;
+            if (i === activeIdx) optBtn.classList.add("active");
+            if (option.value === draft.locale) optBtn.classList.add("selected");
+
+            optBtn.addEventListener("click", (ev) => {
+              ev.stopPropagation();
+              cardCreateMoAiDraft.voiceSamples[index].locale = option.value;
+              dropdown.remove();
+              renderCardCreateVoiceRows();
+            });
+
+            optBtn.addEventListener("mouseenter", () => {
+              activeIdx = i;
+              optionsContainer
+                .querySelectorAll(".card-voice-locale-option")
+                .forEach((el, j) => {
+                  el.classList.toggle("active", j === activeIdx);
+                });
+            });
+
+            optionsContainer.appendChild(optBtn);
+          });
+        }
+
+        filterInput.addEventListener("input", () => {
+          renderOptions(filterInput.value);
+        });
+
+        filterInput.addEventListener("keydown", (ev) => {
+          if (ev.key === "ArrowDown") {
+            ev.preventDefault();
+            if (filtered.length === 0) return;
+            activeIdx = activeIdx < 0 ? 0 : (activeIdx + 1) % filtered.length;
+            optionsContainer
+              .querySelectorAll(".card-voice-locale-option")
+              .forEach((el, j) => {
+                el.classList.toggle("active", j === activeIdx);
+              });
+            // Scroll active into view
+            const activeEl = optionsContainer.children[activeIdx] as
+              | HTMLElement
+              | undefined;
+            activeEl?.scrollIntoView({ block: "nearest" });
+          } else if (ev.key === "ArrowUp") {
+            ev.preventDefault();
+            if (filtered.length === 0) return;
+            activeIdx = activeIdx <= 0 ? filtered.length - 1 : activeIdx - 1;
+            optionsContainer
+              .querySelectorAll(".card-voice-locale-option")
+              .forEach((el, j) => {
+                el.classList.toggle("active", j === activeIdx);
+              });
+            const activeEl = optionsContainer.children[activeIdx] as
+              | HTMLElement
+              | undefined;
+            activeEl?.scrollIntoView({ block: "nearest" });
+          } else if (ev.key === "Enter") {
+            ev.preventDefault();
+            if (activeIdx >= 0 && filtered[activeIdx]) {
+              cardCreateMoAiDraft.voiceSamples[index].locale =
+                filtered[activeIdx].value;
+              dropdown.remove();
+              renderCardCreateVoiceRows();
+            }
+          } else if (ev.key === "Escape") {
+            ev.preventDefault();
+            dropdown.remove();
+          }
+        });
+
+        dropdown.appendChild(filterInput);
+        dropdown.appendChild(optionsContainer);
+        renderOptions("");
+
+        // Position dropdown
+        document.body.appendChild(dropdown);
+        const btnRect = localeBtn.getBoundingClientRect();
+        dropdown.style.left = `${btnRect.left}px`;
+        dropdown.style.top = `${btnRect.bottom + 2}px`;
+
+        // Auto-focus filter on desktop
+        const hasCoarsePointer =
+          window.matchMedia?.("(pointer: coarse)").matches ?? false;
+        if (navigator.maxTouchPoints <= 0 && !hasCoarsePointer) {
+          setTimeout(() => filterInput.focus(), 0);
+        }
+
+        // Close on outside click
+        const closeHandler = (ev: MouseEvent) => {
+          if (!dropdown.contains(ev.target as Node)) {
+            dropdown.remove();
+            document.removeEventListener("click", closeHandler);
+          }
+        };
+        setTimeout(() => document.addEventListener("click", closeHandler), 0);
+      });
+
+      // --- Play/Stop button ---
+      const playBtn = document.createElement("button");
+      playBtn.type = "button";
+      playBtn.className = "card-voice-play-btn";
+      playBtn.textContent = "▶";
+      playBtn.ariaLabel = text.voiceClonePlay;
+      playBtn.title = text.voiceClonePlay;
+      playBtn.disabled = !matchedFile;
+
+      playBtn.addEventListener("click", () => {
+        if (!matchedFile) return;
+
+        // If this row's audio is already playing, stop it
+        if (activeVoiceAudio && activeVoiceAudio.rowIndex === index) {
+          stopActiveVoiceAudio();
+          playBtn.textContent = "▶";
+          playBtn.ariaLabel = text.voiceClonePlay;
+          playBtn.title = text.voiceClonePlay;
+          playBtn.classList.remove("card-voice-playing");
+          return;
+        }
+
+        // Stop any other playing audio
+        stopActiveVoiceAudio();
+        // Reset any other play buttons in the list
+        cardCreateVoiceList
+          .querySelectorAll(".card-voice-play-btn")
+          .forEach((btn) => {
+            (btn as HTMLElement).textContent = "▶";
+            btn.classList.remove("card-voice-playing");
+          });
+
+        const objectUrl = URL.createObjectURL(matchedFile);
+        const audio = new Audio(objectUrl);
+        activeVoiceAudio = { audio, objectUrl, rowIndex: index };
+
+        playBtn.textContent = "⏹";
+        playBtn.ariaLabel = text.voiceCloneStop;
+        playBtn.title = text.voiceCloneStop;
+        playBtn.classList.add("card-voice-playing");
+
+        audio.addEventListener("ended", () => {
+          if (activeVoiceAudio?.rowIndex === index) {
+            stopActiveVoiceAudio();
+          }
+          playBtn.textContent = "▶";
+          playBtn.ariaLabel = text.voiceClonePlay;
+          playBtn.title = text.voiceClonePlay;
+          playBtn.classList.remove("card-voice-playing");
+        });
+
+        audio.play().catch(() => {
+          stopActiveVoiceAudio();
+          playBtn.textContent = "▶";
+          playBtn.ariaLabel = text.voiceClonePlay;
+          playBtn.title = text.voiceClonePlay;
+          playBtn.classList.remove("card-voice-playing");
+        });
+      });
+
+      // --- Remove button ---
+      const removeBtn = document.createElement("button");
+      removeBtn.type = "button";
+      removeBtn.className = "card-remove-btn";
+      removeBtn.textContent = "🗑";
+      removeBtn.ariaLabel = text.voiceCloneRemove;
+      removeBtn.title = text.voiceCloneRemove;
+      removeBtn.addEventListener("click", () => {
+        if (activeVoiceAudio?.rowIndex === index) {
+          stopActiveVoiceAudio();
+        }
+        cardCreateMoAiDraft.voiceSamples =
+          cardCreateMoAiDraft.voiceSamples.filter(
+            (_, rowIndex) => rowIndex !== index,
+          );
+        renderCardCreateVoiceRows();
+        syncCardCreateMetadataEditorsDisabledState(false);
+      });
+
+      details.append(sampleNameInput, localeBtn, removeBtn);
+      row.append(fileBtn, playBtn, details);
+      cardCreateVoiceList.appendChild(row);
+    });
+  }
+
+  function getAudioDuration(objectUrl: string): Promise<number> {
+    return new Promise((resolve, reject) => {
+      const audio = new Audio();
+      audio.addEventListener("loadedmetadata", () => {
+        resolve(audio.duration);
+      });
+      audio.addEventListener("error", () => {
+        reject(new Error("Failed to load audio"));
+      });
+      audio.src = objectUrl;
+    });
+  }
+
   function syncCardCreateMetadataEditorsDisabledState(nextBusy: boolean): void {
     const hasModelInput = hasCardCreateModelInput(stagedCardCreateFiles);
     cardCreateUInfEditInput.disabled = nextBusy || !hasModelInput;
@@ -3179,6 +3905,8 @@ export function mountConverterView(
     cardCreateMoAiGenderInput.value = cardCreateMoAiDraft.gender;
     cardCreateMoAiInfoInput.value = cardCreateMoAiDraft.info;
     renderCardCreateFastButtonRows();
+    renderCardCreateMorphRows();
+    renderCardCreateVoiceRows();
     syncCardCreateMetadataEditorsDisabledState(false);
   }
 
@@ -3234,6 +3962,8 @@ export function mountConverterView(
     cardCreateUInfDraft = createEmptyUInfDraft();
     cardCreateFBtnDrafts = [createEmptyFastButtonDraft()];
     cardCreateMoAiDraft = createEmptyMoAiDraft();
+    renderCardCreateMorphRows();
+    renderCardCreateVoiceRows();
     cardCreateMetadataSourceKeys.uInf = null;
     cardCreateMetadataSourceKeys.fBtn = null;
     cardCreateMetadataSourceKeys.moAi = null;
@@ -3575,6 +4305,22 @@ export function mountConverterView(
       createEmptyFastButtonDraft(),
     ];
     renderCardCreateFastButtonRows();
+    syncCardCreateMetadataEditorsDisabledState(false);
+  });
+  cardCreateMorphAddBtn.addEventListener("click", () => {
+    cardCreateMoAiDraft.morphs = [
+      ...cardCreateMoAiDraft.morphs,
+      { index: "", name: "", desc: "" },
+    ];
+    renderCardCreateMorphRows();
+    syncCardCreateMetadataEditorsDisabledState(false);
+  });
+  cardCreateVoiceAddBtn.addEventListener("click", () => {
+    cardCreateMoAiDraft.voiceSamples = [
+      ...cardCreateMoAiDraft.voiceSamples,
+      { index: "", fileName: "", sampleName: "", locale: "" },
+    ];
+    renderCardCreateVoiceRows();
     syncCardCreateMetadataEditorsDisabledState(false);
   });
   cardCreateUInfAuthInput.addEventListener("input", () => {
