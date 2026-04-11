@@ -12,7 +12,8 @@
     "lint:fix": "eslint . --fix",
     "preview": "vite preview",
     "test": "vitest",
-    "test:run": "vitest run"
+    "test:run": "vitest run",
+    "cli": "bun run cli.ts"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
@@ -31,6 +32,7 @@
   "dependencies": {
     "@babylonjs/core": "^9.1.0",
     "@jsquash/avif": "^2.1.1",
+    "@napi-rs/canvas": "^0.1.97",
     "babylon-mmd": "^1.1.0",
     "encoding-japanese": "^2.2.0",
     "fflate": "^0.8.2",
