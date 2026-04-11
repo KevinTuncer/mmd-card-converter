@@ -761,9 +761,34 @@ if (typeof globalThis.XMLHttpRequest === "undefined") {
       response: ArrayBuffer | null = null;
       responseType = "";
       withCredentials = false;
+      timeout = 0;
       private _method = "";
       private _url = "";
       private _headers: Record<string, string> = {};
+      private _listeners: Record<string, Set<Function>> = {};
+
+      addEventListener(type: string, listener: Function): void {
+        if (!this._listeners[type]) {
+          this._listeners[type] = new Set();
+        }
+        this._listeners[type]!.add(listener);
+      }
+
+      removeEventListener(type: string, listener: Function): void {
+        this._listeners[type]?.delete(listener);
+      }
+
+      private _dispatchEvent(type: string, event?: unknown): void {
+        // Call property handlers (e.g., this.onload)
+        const handler = (this as any)[`on${type}`];
+        if (typeof handler === "function") {
+          handler.call(this, event ?? { type, target: this });
+        }
+        // Call registered listeners
+        this._listeners[type]?.forEach((listener) => {
+          listener.call(this, event ?? { type, target: this });
+        });
+      }
 
       open(method: string, url: string): void {
         this._method = method;
@@ -787,10 +812,29 @@ if (typeof globalThis.XMLHttpRequest === "undefined") {
 
       private async _fetchData(url: string): Promise<void> {
         try {
+          // In CLI, we don't have a web server to resolve relative URLs.
+          // Native fetch for relative URLs might hang or fail depending on the environment.
+          if (
+            typeof url === "string" &&
+            !url.startsWith("http") &&
+            !url.startsWith("data:") &&
+            !url.startsWith("blob:")
+          ) {
+            this.status = 404;
+            this.statusText = "Not Found (Relative URL not supported in CLI)";
+            this.readyState = 4;
+            this._dispatchEvent("readystatechange");
+            this._dispatchEvent(
+              "error",
+              new Error(`Relative URL not supported in CLI: ${url}`),
+            );
+            return;
+          }
+
           // Try native fetch (supports blob:, file:, data: URLs in Bun)
           const response = await fetch(url as "url");
-          this.status = 200;
-          this.statusText = "OK";
+          this.status = response.status;
+          this.statusText = response.statusText;
 
           if (this.responseType === "arraybuffer") {
             this.response = await response.arrayBuffer();
@@ -800,12 +844,12 @@ if (typeof globalThis.XMLHttpRequest === "undefined") {
           }
 
           this.readyState = 4;
-          this.onreadystatechange?.();
-          this.onload?.();
+          this._dispatchEvent("readystatechange");
+          this._dispatchEvent("load");
         } catch (err) {
           this.status = 0;
           this.readyState = 4;
-          this.onerror?.(err);
+          this._dispatchEvent("error", err);
         }
       }
 

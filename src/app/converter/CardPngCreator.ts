@@ -74,6 +74,7 @@ export interface CardPngCreateOptions {
   baseImageFile?: File | null;
   defaultBaseImageBuffer?: ArrayBuffer;
   preferDefaultBaseImage?: boolean;
+  primaryModelFile?: File | null;
   compressionMode?: CardCreateCompressionMode;
   forceAvif?: boolean;
   lossyImageTargets?: ReadonlySet<File>;
@@ -355,7 +356,34 @@ async function buildCardChunkPayloads(
   const convertedFiles: string[] = [];
   let preparedImageFiles: CardPreparedImageResult[] = [];
 
-  if (classified.bpmxFile) {
+  const primaryModel = options.primaryModelFile;
+  const primaryIsBpmx = primaryModel?.name.toLowerCase().endsWith(".bpmx");
+  const primaryIsPmx = primaryModel?.name.toLowerCase().endsWith(".pmx");
+
+  if (primaryIsBpmx) {
+    chunkPayloads.push({
+      chunkType: "bPMX",
+      data: await compressCardChunk(
+        new Uint8Array(await primaryModel!.arrayBuffer()),
+      ),
+    });
+  } else if (primaryIsPmx) {
+    const pmxFile = primaryModel!;
+    const pmxPreparation = await preparePmxFilesForCardConversion(
+      files,
+      options,
+    );
+    const filesForConversion = pmxPreparation.filesForConversion;
+    preparedImageFiles = pmxPreparation.preparedImageFiles;
+    const bpmxBuffer = await convertPmxToBpmx(pmxFile, filesForConversion);
+    chunkPayloads.push({
+      chunkType: "bPMX",
+      data: await compressCardChunk(new Uint8Array(bpmxBuffer)),
+    });
+    convertedFiles.push(
+      `${getFilePath(pmxFile)} -> ${stripExt(getBaseName(getFilePath(pmxFile)))}.bpmx`,
+    );
+  } else if (classified.bpmxFile) {
     chunkPayloads.push({
       chunkType: "bPMX",
       data: await compressCardChunk(
@@ -703,7 +731,7 @@ function stripCardLikeSuffix(name: string): string {
   return parts.join(".") || name;
 }
 
-function pickDefaultPmx(files: readonly File[]): File | null {
+export function pickDefaultPmx(files: readonly File[]): File | null {
   const sorted = files.slice().sort((left, right) => {
     const leftPath = getFilePath(left);
     const rightPath = getFilePath(right);
@@ -715,23 +743,23 @@ function pickDefaultPmx(files: readonly File[]): File | null {
   return sorted[0] ?? null;
 }
 
-function getFilePath(file: File): string {
+export function getFilePath(file: File): string {
   return (
     (file as File & { webkitRelativePath?: string }).webkitRelativePath ||
     file.name
   );
 }
 
-function getFileExt(name: string): string {
+export function getFileExt(name: string): string {
   return (name.split(".").pop() ?? "").toLowerCase();
 }
 
-function getBaseName(path: string): string {
+export function getBaseName(path: string): string {
   const segments = path.replace(/\\/g, "/").split("/");
   return segments[segments.length - 1] ?? path;
 }
 
-function stripExt(name: string): string {
+export function stripExt(name: string): string {
   return name.replace(/\.[^.]+$/, "") || "card";
 }
 

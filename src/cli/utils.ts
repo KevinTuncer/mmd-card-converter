@@ -4,6 +4,8 @@
 
 import * as fs from "node:fs";
 import * as path from "node:path";
+import * as readline from "node:readline";
+import { readZipFiles } from "../app/converter/ZipReader";
 
 // ── Argument parsing ─────────────────────────────────────────────────────────
 
@@ -211,4 +213,90 @@ export function resolveOutputPath(
     return path.resolve(options["output"]);
   }
   return deriveOutputPath(inputPath, newExtension);
+}
+
+/**
+ * Expands a list of file paths into a flat list of File objects.
+ * Handles directories (recursively) and ZIP files (extracted).
+ */
+export async function expandInputPaths(paths: string[]): Promise<File[]> {
+  const files: File[] = [];
+  const seenPaths = new Set<string>();
+
+  function addFile(file: File, absSourcePath: string) {
+    if (seenPaths.has(absSourcePath)) return;
+    seenPaths.add(absSourcePath);
+    files.push(file);
+  }
+
+  for (const p of paths) {
+    const absPath = path.resolve(p);
+    if (!fs.existsSync(absPath)) {
+      console.warn(`Warning: Path does not exist: ${p}`);
+      continue;
+    }
+
+    const stat = fs.statSync(absPath);
+    if (stat.isDirectory()) {
+      const dirFiles = readDirectoryFiles(absPath);
+      // readDirectoryFiles already uses readFileAsFileWithRelativePath
+      // which carries the absolute path info in its closure, but we don't have it here.
+      // However, readDirectoryFiles returns Files with webkitRelativePath.
+      // Let's just trust readDirectoryFiles for now or deduplicate by webkitRelativePath.
+      for (const f of dirFiles) {
+        const relPath = (f as any).webkitRelativePath || f.name;
+        const fullRelPath = path.join(absPath, relPath);
+        addFile(f, fullRelPath);
+      }
+    } else if (p.toLowerCase().endsWith(".zip")) {
+      const buffer = readFileToBuffer(absPath);
+      const zipFiles = readZipFiles(buffer);
+      for (const f of zipFiles) {
+        // For ZIP files, the "path" is internal to the ZIP.
+        // We use the ZIP path + internal path to deduplicate.
+        const internalPath = (f as any).webkitRelativePath || f.name;
+        addFile(f, `${absPath}:${internalPath}`);
+      }
+    } else {
+      addFile(readFileAsFile(absPath), absPath);
+    }
+  }
+
+  return files;
+}
+
+/**
+ * Interactive selection from a list of options.
+ */
+export async function askUserToSelect(
+  options: string[],
+  message: string,
+): Promise<number> {
+  console.log(`\n${message}`);
+  options.forEach((opt, i) => {
+    console.log(`  [${i + 1}] ${opt}`);
+  });
+
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
+
+  return new Promise((resolve) => {
+    const ask = () => {
+      rl.question(`\nSelection (1-${options.length}): `, (answer) => {
+        const index = parseInt(answer, 10) - 1;
+        if (index >= 0 && index < options.length) {
+          rl.close();
+          resolve(index);
+        } else {
+          console.log(
+            `Invalid selection. Please enter a number between 1 and ${options.length}.`,
+          );
+          ask();
+        }
+      });
+    };
+    ask();
+  });
 }
