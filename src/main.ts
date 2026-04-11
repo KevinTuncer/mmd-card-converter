@@ -27,22 +27,26 @@ function applyDocumentLocale(locale: AppLocale): void {
   document.documentElement.lang = locale;
 }
 
+let viewHandle: ReturnType<typeof mountConverterView>;
+
 function render(locale: AppLocale, theme: AppTheme): void {
   currentLocale = locale;
   currentTheme = theme;
   setCurrentLocale(locale);
   applyDocumentLocale(locale);
   applyDocumentTheme(theme);
-  mountConverterView(appRoot, {
+  viewHandle = mountConverterView(appRoot, {
     locale,
     theme,
     onLocaleChange(nextLocale) {
       storeLocale(nextLocale);
-      render(nextLocale, theme);
+      render(nextLocale, currentTheme);
     },
     onThemeToggle(nextTheme) {
       storeTheme(nextTheme);
-      render(locale, nextTheme);
+      applyDocumentTheme(nextTheme);
+      currentTheme = nextTheme;
+      viewHandle.updateTheme(nextTheme);
     },
   });
 }
@@ -53,7 +57,8 @@ let currentTheme = getInitialTheme();
 watchSystemTheme((nextTheme) => {
   if (getStoredTheme() !== null) return;
   currentTheme = nextTheme;
-  render(currentLocale, currentTheme);
+  applyDocumentTheme(nextTheme);
+  viewHandle?.updateTheme(nextTheme);
 });
 
 render(currentLocale, currentTheme);

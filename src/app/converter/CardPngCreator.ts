@@ -717,7 +717,7 @@ function pickDefaultPmx(files: readonly File[]): File | null {
 
 function getFilePath(file: File): string {
   return (
-    (file as File & { webkitRelativePath?: string }).webkitRelativePath ??
+    (file as File & { webkitRelativePath?: string }).webkitRelativePath ||
     file.name
   );
 }

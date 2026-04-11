@@ -1,6 +1,7 @@
-import { PmxObject } from "babylon-mmd";
+import { PmxObject, PmxReader } from "babylon-mmd";
 import { type AppTheme } from "@/app/theme";
 import { convertBpmxToPmx } from "@/app/converter/BpmxToPmxConverter";
+import { parseBpmx } from "@/app/converter/BpmxReaderAdapter";
 import {
   convertBvmdFileToVmd,
   convertMotionFileToBvmd,
@@ -561,6 +562,8 @@ interface ConverterViewText {
   voiceCloneDurationError: string;
   voiceCloneFileMissing: string;
   voiceCloneLocalePlaceholder: string;
+  webmAudioTitle: string;
+  webmAudioSelectFile: string;
 }
 
 function getConverterViewText(locale: AppLocale): ConverterViewText {
@@ -720,6 +723,8 @@ function getConverterViewText(locale: AppLocale): ConverterViewText {
     voiceCloneDurationError: "Duration must be 3–20 seconds",
     voiceCloneFileMissing: "File not found",
     voiceCloneLocalePlaceholder: "Select locale…",
+    webmAudioTitle: "WebM Audio",
+    webmAudioSelectFile: "Select WebM file…",
   };
 
   const de: ConverterViewText = {
@@ -881,6 +886,8 @@ function getConverterViewText(locale: AppLocale): ConverterViewText {
     voiceCloneDurationError: "Dauer muss zwischen 3 und 20 Sekunden liegen",
     voiceCloneFileMissing: "Datei nicht gefunden",
     voiceCloneLocalePlaceholder: "Locale auswählen…",
+    webmAudioTitle: "WebM-Audio",
+    webmAudioSelectFile: "WebM-Datei auswählen…",
   };
 
   const ja: ConverterViewText = {
@@ -1045,6 +1052,8 @@ function getConverterViewText(locale: AppLocale): ConverterViewText {
     voiceCloneDurationError: "再生時間は3～20秒にしてください",
     voiceCloneFileMissing: "ファイルが見つかりません",
     voiceCloneLocalePlaceholder: "ロケールを選択…",
+    webmAudioTitle: "WebMオーディオ",
+    webmAudioSelectFile: "WebMファイルを選択…",
   };
 
   const zhCN: ConverterViewText = {
@@ -1200,6 +1209,8 @@ function getConverterViewText(locale: AppLocale): ConverterViewText {
     voiceCloneDurationError: "时长必须在3到20秒之间",
     voiceCloneFileMissing: "文件未找到",
     voiceCloneLocalePlaceholder: "选择区域…",
+    webmAudioTitle: "WebM音频",
+    webmAudioSelectFile: "选择WebM文件…",
   };
 
   const zhTW: ConverterViewText = {
@@ -1355,6 +1366,8 @@ function getConverterViewText(locale: AppLocale): ConverterViewText {
     voiceCloneDurationError: "時長必須在3到20秒之間",
     voiceCloneFileMissing: "檔案未找到",
     voiceCloneLocalePlaceholder: "選擇地區…",
+    webmAudioTitle: "WebM音訊",
+    webmAudioSelectFile: "選擇WebM檔案…",
   };
 
   const map: Partial<Record<AppLocale, ConverterViewText>> = {
@@ -1367,17 +1380,24 @@ function getConverterViewText(locale: AppLocale): ConverterViewText {
   return map[locale] ?? en;
 }
 
+export interface ConverterViewHandle {
+  updateTheme: (nextTheme: AppTheme) => void;
+}
+
 export function mountConverterView(
   container: HTMLElement,
   options: MountConverterViewOptions,
-): void {
+): ConverterViewHandle {
   const errorStrings = getErrorStrings(options.locale);
   const viewStrings = getViewStrings(options.locale);
   const text = getConverterViewText(options.locale);
-  const nextTheme = options.theme === "dark" ? "light" : "dark";
+  let activeTheme: AppTheme = options.theme;
+  const initialToggleTheme = activeTheme === "dark" ? "light" : "dark";
   const themeToggleLabel =
-    nextTheme === "dark" ? viewStrings.themeToDark : viewStrings.themeToLight;
-  const themeToggleEmoji = nextTheme === "dark" ? "🌙" : "☀️";
+    initialToggleTheme === "dark"
+      ? viewStrings.themeToDark
+      : viewStrings.themeToLight;
+  const themeToggleEmoji = initialToggleTheme === "dark" ? "🌙" : "☀️";
   const statusReady = viewStrings.statusReady;
   const statusErrorPrefix = viewStrings.statusErrorPrefix;
   const EMPTY_INPUT_STATUS = viewStrings.statusEmptyInput;
@@ -1615,6 +1635,11 @@ export function mountConverterView(
           </div>
         </div>
 
+        <div class="card-webm-audio-block">
+          <h3 class="card-subsection-title">${text.webmAudioTitle}</h3>
+          <div id="cardcreate-webm-audio-select" class="card-webm-audio-select-wrap"></div>
+        </div>
+
         <details class="card-metadata-expander">
           <summary>${text.metadataEditSummary}</summary>
           <div class="card-metadata-grid">
@@ -1791,7 +1816,8 @@ export function mountConverterView(
     options.onLocaleChange(nextLocale);
   });
   themeToggleBtn.addEventListener("click", () => {
-    options.onThemeToggle(nextTheme);
+    const toggleTo = activeTheme === "dark" ? "light" : "dark";
+    options.onThemeToggle(toggleTo);
   });
 
   function getActiveTab(): string {
@@ -1899,6 +1925,7 @@ export function mountConverterView(
 
   bpmxFileInput.addEventListener("change", () => {
     const file = bpmxFileInput.files?.[0];
+    bpmxFileInput.value = "";
     if (file) setStagedBpmxFile(file);
   });
 
@@ -2469,6 +2496,7 @@ export function mountConverterView(
   motionFileBtn.addEventListener("click", () => motionFileInput.click());
   motionFileInput.addEventListener("change", () => {
     const file = motionFileInput.files?.[0];
+    motionFileInput.value = "";
     if (file) setStagedMotionFile(file);
   });
 
@@ -2564,6 +2592,7 @@ export function mountConverterView(
   );
   bvmdMotionFileInput.addEventListener("change", () => {
     const file = bvmdMotionFileInput.files?.[0];
+    bvmdMotionFileInput.value = "";
     if (file) setStagedBvmdMotionFile(file);
   });
 
@@ -2657,6 +2686,7 @@ export function mountConverterView(
   audioFileBtn.addEventListener("click", () => audioFileInput.click());
   audioFileInput.addEventListener("change", () => {
     const file = audioFileInput.files?.[0];
+    audioFileInput.value = "";
     if (file) setStagedAudioFile(file);
   });
 
@@ -2825,15 +2855,21 @@ export function mountConverterView(
   const cardCreateVoiceAddBtn = container.querySelector<HTMLButtonElement>(
     "#cardcreate-voice-add",
   )!;
+  const cardCreateWebmAudioSelect = container.querySelector<HTMLDivElement>(
+    "#cardcreate-webm-audio-select",
+  )!;
 
   let stagedCardCreateFiles: File[] = [];
   let selectedCardCreateBaseImage: File | null = null;
   let selectedCardCreateModelFile: File | null = null;
+  let selectedCardCreateWebmFilePath: string | null = null;
   let cardCreatePreviewUrl: string | null = null;
   let defaultCardCreateBaseImageBuffer: ArrayBuffer | null = null;
   let cardCreatePreferDefaultBaseImage = false;
   let cardCreateLastSourceLabel: string | null = null;
   let cardCreateMetadataRefreshToken = 0;
+  let cardCreateMorphNames: string[] = [];
+
   let activeVoiceAudio: {
     audio: HTMLAudioElement;
     objectUrl: string;
@@ -2872,7 +2908,7 @@ export function mountConverterView(
 
   function getCardCreateFileKey(file: File): string {
     return (
-      (file as File & { webkitRelativePath?: string }).webkitRelativePath ??
+      (file as File & { webkitRelativePath?: string }).webkitRelativePath ||
       file.name
     ).replace(/\\/g, "/");
   }
@@ -2951,6 +2987,33 @@ export function mountConverterView(
     selectedCardCreateModelFile = pickDefaultCardCreateModel(
       stagedCardCreateFiles,
     );
+  }
+
+  async function readMorphNamesFromModelFile(file: File): Promise<string[]> {
+    try {
+      const buffer = await file.arrayBuffer();
+      const kind = getCardCreatorInputKind(file);
+      if (kind === "bpmx") {
+        const bpmx = await parseBpmx(buffer);
+        return bpmx.morphs.map((m: { name: string }) => m.name);
+      } else if (kind === "pmx") {
+        const pmx = await PmxReader.ParseAsync(buffer);
+        return pmx.morphs.map((m: { name: string }) => m.name);
+      }
+    } catch {
+      // ignore parse errors – fall back to empty list
+    }
+    return [];
+  }
+
+  async function loadMorphNamesFromModel(): Promise<void> {
+    if (selectedCardCreateModelFile) {
+      cardCreateMorphNames = await readMorphNamesFromModelFile(
+        selectedCardCreateModelFile,
+      );
+    } else {
+      cardCreateMorphNames = [];
+    }
   }
 
   function syncCardCreateLossySelection(
@@ -3043,8 +3106,10 @@ export function mountConverterView(
         return "BVMD";
       case "motion-source":
         return text.motionSourceRole;
-      case "webm":
-        return "WebM";
+      case "webm": {
+        const webmPath = getCardCreateFileKey(file).replace(/\\/g, "/");
+        return webmPath === selectedCardCreateWebmFilePath ? "WEBM ♪" : "WEBM";
+      }
       case "audio-source":
         return text.audioSourceRole;
       case "audio-url":
@@ -3227,13 +3292,37 @@ export function mountConverterView(
         cardCreateFBtnDrafts[index].action = "morph";
       });
 
-      const morphInput = document.createElement("input");
-      morphInput.type = "number";
-      morphInput.step = "any";
-      morphInput.placeholder = text.fastButtonMorphPlaceholder;
-      morphInput.value = draft.morph;
-      morphInput.addEventListener("input", () => {
-        cardCreateFBtnDrafts[index].morph = morphInput.value;
+      const morphSelect = document.createElement("select");
+      if (cardCreateMorphNames.length === 0) {
+        const opt = document.createElement("option");
+        opt.value = draft.morph || "0";
+        opt.textContent = draft.morph || "—";
+        opt.selected = true;
+        morphSelect.appendChild(opt);
+      } else {
+        for (let i = 0; i < cardCreateMorphNames.length; i++) {
+          const opt = document.createElement("option");
+          const val = String(i);
+          opt.value = val;
+          opt.textContent = `${i}: ${cardCreateMorphNames[i]}`;
+          if (val === draft.morph) opt.selected = true;
+          morphSelect.appendChild(opt);
+        }
+        if (
+          draft.morph &&
+          !morphSelect.querySelector<HTMLOptionElement>(
+            `option[value="${CSS.escape(draft.morph)}"]`,
+          )
+        ) {
+          const opt = document.createElement("option");
+          opt.value = draft.morph;
+          opt.textContent = draft.morph;
+          opt.selected = true;
+          morphSelect.insertBefore(opt, morphSelect.firstChild);
+        }
+      }
+      morphSelect.addEventListener("change", () => {
+        cardCreateFBtnDrafts[index].morph = morphSelect.value;
       });
 
       const removeBtn = document.createElement("button");
@@ -3253,9 +3342,42 @@ export function mountConverterView(
         syncCardCreateMetadataEditorsDisabledState(false);
       });
 
-      row.append(nameInput, actionSelect, morphInput, removeBtn);
+      row.append(nameInput, actionSelect, morphSelect, removeBtn);
       cardCreateFBtnList.appendChild(row);
     });
+  }
+
+  function buildMorphIndexOptions(
+    currentDraftIndex: string,
+  ): { value: string; label: string; selected: boolean }[] {
+    const options: { value: string; label: string; selected: boolean }[] = [];
+    if (cardCreateMorphNames.length === 0) {
+      options.push({
+        value: currentDraftIndex || "0",
+        label: currentDraftIndex || "—",
+        selected: true,
+      });
+      return options;
+    }
+    for (let i = 0; i < cardCreateMorphNames.length; i++) {
+      const val = String(i);
+      options.push({
+        value: val,
+        label: `${i}: ${cardCreateMorphNames[i]}`,
+        selected: val === currentDraftIndex,
+      });
+    }
+    if (
+      currentDraftIndex &&
+      !options.some((o) => o.value === currentDraftIndex)
+    ) {
+      options.push({
+        value: currentDraftIndex,
+        label: currentDraftIndex,
+        selected: true,
+      });
+    }
+    return options;
   }
 
   function renderCardCreateMorphRows(): void {
@@ -3264,21 +3386,26 @@ export function mountConverterView(
       const row = document.createElement("div");
       row.className = "card-morph-row";
 
-      const indexInput = document.createElement("input");
-      indexInput.type = "number";
-      indexInput.step = "any";
-      indexInput.placeholder = text.morphDescIndexLabel;
-      indexInput.value = draft.index;
-      indexInput.addEventListener("input", () => {
-        cardCreateMoAiDraft.morphs[index].index = indexInput.value;
-      });
-
-      const nameInput = document.createElement("input");
-      nameInput.type = "text";
-      nameInput.placeholder = text.morphDescNameLabel;
-      nameInput.value = draft.name;
-      nameInput.addEventListener("input", () => {
-        cardCreateMoAiDraft.morphs[index].name = nameInput.value;
+      const indexSelect = document.createElement("select");
+      for (const opt of buildMorphIndexOptions(draft.index)) {
+        const o = document.createElement("option");
+        o.value = opt.value;
+        o.textContent = opt.label;
+        o.selected = opt.selected;
+        indexSelect.appendChild(o);
+      }
+      indexSelect.addEventListener("change", () => {
+        const newIndex = indexSelect.value;
+        cardCreateMoAiDraft.morphs[index].index = newIndex;
+        const nameIdx = parseInt(newIndex, 10);
+        if (
+          !Number.isNaN(nameIdx) &&
+          nameIdx >= 0 &&
+          nameIdx < cardCreateMorphNames.length
+        ) {
+          cardCreateMoAiDraft.morphs[index].name =
+            cardCreateMorphNames[nameIdx];
+        }
       });
 
       const descInput = document.createElement("input");
@@ -3303,7 +3430,12 @@ export function mountConverterView(
         syncCardCreateMetadataEditorsDisabledState(false);
       });
 
-      row.append(indexInput, nameInput, descInput, removeBtn);
+      // --- Details row (second line): description input + remove ---
+      const details = document.createElement("div");
+      details.className = "card-morph-details";
+
+      details.append(descInput, removeBtn);
+      row.append(indexSelect, details);
       cardCreateMorphList.appendChild(row);
     });
   }
@@ -3388,6 +3520,23 @@ export function mountConverterView(
     );
   }
 
+  /**
+   * Collects the actual File objects for all voice clone sample entries that have
+   * a fileName selected in the UI editor, in the same order as the draft entries.
+   * These files will be passed to createCardPngFromFiles as voiceCloneSampleFiles.
+   */
+  function collectVoiceCloneSampleFiles(): File[] {
+    const files: File[] = [];
+    for (const draft of cardCreateMoAiDraft.voiceSamples) {
+      if (!draft.fileName) continue;
+      const file = findVoiceCloneFileForDraft(draft);
+      if (file) {
+        files.push(file);
+      }
+    }
+    return files;
+  }
+
   function getUnassignedVoiceCloneFiles(excludeIndex: number): File[] {
     const assigned = new Set<string>();
     cardCreateMoAiDraft.voiceSamples.forEach((draft, i) => {
@@ -3396,13 +3545,36 @@ export function mountConverterView(
       }
     });
     return stagedCardCreateFiles.filter((file) => {
-      if (getCardCreatorInputKind(file) !== "voice-clone-sample") return false;
+      const kind = getCardCreatorInputKind(file);
+      if (kind !== "voice-clone-sample" && kind !== "webm") return false;
       const key = getCardCreateFileKey(file);
       const path = key.replace(/\\/g, "/");
       const baseName = path.split("/").pop() ?? path;
       // Check if this file's name is already assigned to another row
       return !assigned.has(baseName) && !assigned.has(path);
     });
+  }
+
+  function showToastNotification(message: string): void {
+    const existing = document.querySelector(".card-toast-notification");
+    if (existing) existing.remove();
+
+    const toast = document.createElement("div");
+    toast.className = "card-toast-notification";
+    toast.textContent = message;
+    document.body.appendChild(toast);
+
+    // Trigger enter animation
+    requestAnimationFrame(() => toast.classList.add("card-toast-visible"));
+
+    setTimeout(() => {
+      toast.classList.remove("card-toast-visible");
+      toast.addEventListener("transitionend", () => toast.remove(), {
+        once: true,
+      });
+      // Fallback removal in case transitionend doesn't fire
+      setTimeout(() => toast.remove(), 400);
+    }, 3000);
   }
 
   function stopActiveVoiceAudio(): void {
@@ -3416,7 +3588,7 @@ export function mountConverterView(
 
   function closeAllVoiceDropdowns(): void {
     document
-      .querySelectorAll(".card-voice-dropdown, .card-voice-locale-dropdown")
+      .querySelectorAll(".card-voice-locale-dropdown")
       .forEach((el) => el.remove());
   }
 
@@ -3430,91 +3602,112 @@ export function mountConverterView(
       const row = document.createElement("div");
       row.className = "card-voice-row";
 
-      // --- File selection button (replaces text input) ---
+      // --- File selection select ---
       const matchedFile = findVoiceCloneFileForDraft(draft);
       const isMissing = draft.fileName !== "" && !matchedFile;
 
-      const fileBtn = document.createElement("button");
-      fileBtn.type = "button";
-      fileBtn.className = "card-voice-file-btn";
+      const fileSelect = document.createElement("select");
       if (isMissing) {
-        fileBtn.classList.add("card-voice-file-btn-missing");
-        fileBtn.title = text.voiceCloneFileMissing;
+        fileSelect.classList.add("card-voice-file-select-missing");
       }
-      fileBtn.textContent = draft.fileName || text.voiceCloneSelectFile;
 
-      fileBtn.addEventListener("click", (e) => {
-        e.stopPropagation();
-        // Close any other open dropdowns
-        closeAllVoiceDropdowns();
+      // Placeholder option
+      const placeholderOpt = document.createElement("option");
+      placeholderOpt.value = "";
+      placeholderOpt.textContent = text.voiceCloneSelectFile;
+      fileSelect.appendChild(placeholderOpt);
 
-        const availableFiles = getUnassignedVoiceCloneFiles(index);
-        if (availableFiles.length === 0) return;
+      // Populate with available files + currently selected file
+      const availableFiles = getUnassignedVoiceCloneFiles(index);
+      const filePaths = new Set<string>();
+      for (const file of availableFiles) {
+        const key = getCardCreateFileKey(file);
+        const path = key.replace(/\\/g, "/");
+        filePaths.add(path);
+      }
+      // Include currently selected file even if assigned
+      if (matchedFile) {
+        const key = getCardCreateFileKey(matchedFile);
+        const path = key.replace(/\\/g, "/");
+        filePaths.add(path);
+      }
 
-        // Create dropdown and append to body
-        const dropdown = document.createElement("div");
-        dropdown.className = "card-voice-dropdown";
+      const sortedPaths = [...filePaths].sort();
+      for (const path of sortedPaths) {
+        const opt = document.createElement("option");
+        opt.value = path;
+        opt.textContent = path;
+        if (
+          draft.fileName &&
+          (path === draft.fileName ||
+            path.split("/").pop() === draft.fileName ||
+            path === `metadata.voiceSamples/${draft.fileName}`)
+        ) {
+          opt.selected = true;
+        }
+        fileSelect.appendChild(opt);
+      }
 
-        for (const file of availableFiles) {
-          const key = getCardCreateFileKey(file);
-          const path = key.replace(/\\/g, "/");
-          const baseName = path.split("/").pop() ?? path;
+      // If the current value is missing from options, add it at the top
+      if (
+        draft.fileName &&
+        !sortedPaths.some(
+          (p) =>
+            p === draft.fileName ||
+            p.split("/").pop() === draft.fileName ||
+            p === `metadata.voiceSamples/${draft.fileName}`,
+        )
+      ) {
+        const opt = document.createElement("option");
+        opt.value = draft.fileName;
+        opt.textContent = draft.fileName;
+        opt.selected = true;
+        fileSelect.insertBefore(opt, fileSelect.firstChild);
+      }
 
-          const item = document.createElement("button");
-          item.type = "button";
-          item.className = "card-voice-dropdown-item";
-          item.textContent = baseName;
-          item.title = path;
-
-          item.addEventListener("click", async (ev) => {
-            ev.stopPropagation();
-            // Validate duration
-            const objectUrl = URL.createObjectURL(file);
-            try {
-              const duration = await getAudioDuration(objectUrl);
-              if (duration < 3 || duration > 20) {
-                // Block selection with error
-                fileBtn.classList.add("card-voice-duration-error");
-                fileBtn.textContent = baseName;
-                fileBtn.title = text.voiceCloneDurationError;
-                cardCreateMoAiDraft.voiceSamples[index].fileName = baseName;
-                // Remove error styling after a moment
-                setTimeout(() => {
-                  fileBtn.classList.remove("card-voice-duration-error");
-                  fileBtn.title = isMissing ? text.voiceCloneFileMissing : "";
-                }, 3000);
-                dropdown.remove();
-                return;
-              }
-            } catch {
-              // If we can't determine duration, allow it
-            } finally {
-              URL.revokeObjectURL(objectUrl);
-            }
-
-            cardCreateMoAiDraft.voiceSamples[index].fileName = baseName;
-            dropdown.remove();
-            renderCardCreateVoiceRows();
-          });
-
-          dropdown.appendChild(item);
+      fileSelect.addEventListener("change", async () => {
+        const selectedPath = fileSelect.value;
+        if (!selectedPath) {
+          cardCreateMoAiDraft.voiceSamples[index].fileName = "";
+          renderCardCreateVoiceRows();
+          return;
         }
 
-        // Position dropdown below the button using fixed positioning
-        document.body.appendChild(dropdown);
-        const btnRect = fileBtn.getBoundingClientRect();
-        dropdown.style.left = `${btnRect.left}px`;
-        dropdown.style.top = `${btnRect.bottom}px`;
-        dropdown.style.minWidth = `${btnRect.width}px`;
+        // Find the actual file object
+        const file = stagedCardCreateFiles.find((f) => {
+          const key = getCardCreateFileKey(f);
+          const p = key.replace(/\\/g, "/");
+          return p === selectedPath;
+        });
 
-        // Close dropdown when clicking outside
-        const closeHandler = (ev: MouseEvent) => {
-          if (!dropdown.contains(ev.target as Node)) {
-            dropdown.remove();
-            document.removeEventListener("click", closeHandler);
+        if (file) {
+          // Validate duration
+          const objectUrl = URL.createObjectURL(file);
+          try {
+            const duration = await getAudioDuration(objectUrl);
+            if (duration < 3 || duration > 20) {
+              // Revert selection and show toast notification
+              const previousValue = draft.fileName;
+              showToastNotification(
+                `${text.voiceCloneDurationError} (${duration.toFixed(1)}s)`,
+              );
+              // Revert select to previous value
+              if (previousValue) {
+                fileSelect.value = previousValue;
+              } else {
+                fileSelect.value = "";
+              }
+              return;
+            }
+          } catch {
+            // If we can't determine duration, allow it
+          } finally {
+            URL.revokeObjectURL(objectUrl);
           }
-        };
-        setTimeout(() => document.addEventListener("click", closeHandler), 0);
+        }
+
+        cardCreateMoAiDraft.voiceSamples[index].fileName = selectedPath;
+        renderCardCreateVoiceRows();
       });
 
       // --- Details row (second line): sampleName, locale, play, remove ---
@@ -3754,7 +3947,7 @@ export function mountConverterView(
       });
 
       details.append(sampleNameInput, localeBtn, removeBtn);
-      row.append(fileBtn, playBtn, details);
+      row.append(fileSelect, playBtn, details);
       cardCreateVoiceList.appendChild(row);
     });
   }
@@ -3790,6 +3983,103 @@ export function mountConverterView(
       cardCreateMoAiFields,
       nextBusy || !hasModelInput || !cardCreateMoAiEditInput.checked,
     );
+  }
+
+  function getAvailableWebmAudioFiles(): File[] {
+    return stagedCardCreateFiles.filter(
+      (file) => getCardCreatorInputKind(file) === "webm",
+    );
+  }
+
+  function findWebmAudioFileByPath(path: string): File | null {
+    return (
+      stagedCardCreateFiles.find((file) => {
+        const key = getCardCreateFileKey(file);
+        const p = key.replace(/\\/g, "/");
+        return p === path;
+      }) ?? null
+    );
+  }
+
+  function renderWebmAudioSelect(): void {
+    cardCreateWebmAudioSelect.innerHTML = "";
+
+    const webmFiles = getAvailableWebmAudioFiles();
+
+    // If the selected file no longer exists, clear it
+    if (selectedCardCreateWebmFilePath) {
+      const stillExists = webmFiles.some((file) => {
+        const key = getCardCreateFileKey(file);
+        return key.replace(/\\/g, "/") === selectedCardCreateWebmFilePath;
+      });
+      if (!stillExists) {
+        selectedCardCreateWebmFilePath = null;
+      }
+    }
+
+    const select = document.createElement("select");
+    select.className = "card-webm-audio-dropdown";
+    select.disabled = cardCreateBusy;
+
+    // Placeholder option
+    const placeholderOpt = document.createElement("option");
+    placeholderOpt.value = "";
+    placeholderOpt.textContent = text.webmAudioSelectFile;
+    select.appendChild(placeholderOpt);
+
+    // Sort webm files by path
+    const sortedPaths = webmFiles
+      .map((file) => {
+        const key = getCardCreateFileKey(file);
+        return key.replace(/\\/g, "/");
+      })
+      .sort();
+
+    for (const path of sortedPaths) {
+      const opt = document.createElement("option");
+      opt.value = path;
+      opt.textContent = path;
+      if (path === selectedCardCreateWebmFilePath) {
+        opt.selected = true;
+      }
+      select.appendChild(opt);
+    }
+
+    select.addEventListener("change", () => {
+      selectedCardCreateWebmFilePath = select.value || null;
+    });
+
+    if (sortedPaths.length === 0) {
+      select.disabled = true;
+    }
+
+    cardCreateWebmAudioSelect.appendChild(select);
+  }
+
+  /**
+   * If no WebM audio is selected yet and a model file (pmx/bpmx) is selected,
+   * try to auto-select a WebM file that shares the same base name as the model.
+   */
+  function tryAutoSelectWebmAudio(): void {
+    if (selectedCardCreateWebmFilePath) return;
+    if (!selectedCardCreateModelFile) return;
+
+    const modelKey = getCardCreateFileKey(selectedCardCreateModelFile);
+    const modelBaseName = stripExt(modelKey.split("/").pop() ?? modelKey);
+
+    const webmFiles = getAvailableWebmAudioFiles();
+    const match = webmFiles.find((file) => {
+      const webmKey = getCardCreateFileKey(file);
+      const webmBaseName = stripExt(webmKey.split("/").pop() ?? webmKey);
+      return webmBaseName === modelBaseName;
+    });
+
+    if (match) {
+      selectedCardCreateWebmFilePath = getCardCreateFileKey(match).replace(
+        /\\/g,
+        "/",
+      );
+    }
   }
 
   function syncCardCreateBuildAvailability(nextBusy: boolean): void {
@@ -3904,6 +4194,7 @@ export function mountConverterView(
     cardCreateMoAiNameInput.value = cardCreateMoAiDraft.name;
     cardCreateMoAiGenderInput.value = cardCreateMoAiDraft.gender;
     cardCreateMoAiInfoInput.value = cardCreateMoAiDraft.info;
+    await loadMorphNamesFromModel();
     renderCardCreateFastButtonRows();
     renderCardCreateMorphRows();
     renderCardCreateVoiceRows();
@@ -3962,8 +4253,12 @@ export function mountConverterView(
     cardCreateUInfDraft = createEmptyUInfDraft();
     cardCreateFBtnDrafts = [createEmptyFastButtonDraft()];
     cardCreateMoAiDraft = createEmptyMoAiDraft();
+    cardCreateMorphNames = [];
     renderCardCreateMorphRows();
+    renderCardCreateFastButtonRows();
     renderCardCreateVoiceRows();
+    selectedCardCreateWebmFilePath = null;
+    renderWebmAudioSelect();
     cardCreateMetadataSourceKeys.uInf = null;
     cardCreateMetadataSourceKeys.fBtn = null;
     cardCreateMetadataSourceKeys.moAi = null;
@@ -4070,13 +4365,18 @@ export function mountConverterView(
         radio.value = fileKey;
         radio.checked = file === selectedCardCreateModelFile;
         radio.disabled = cardCreateBusy;
-        radio.addEventListener("change", () => {
+        radio.addEventListener("change", async () => {
           if (cardCreateBusy || !radio.checked) return;
           selectedCardCreateModelFile = file;
           clearCardCreateActualResultFiles();
           syncCardCreateCompressionUi();
           updateCardCreateLoadedState(true);
+          tryAutoSelectWebmAudio();
           renderCardCreateFileList();
+          renderWebmAudioSelect();
+          await loadMorphNamesFromModel();
+          renderCardCreateMorphRows();
+          renderCardCreateFastButtonRows();
         });
 
         li.append(radio, pathSpan, roleTag, meta);
@@ -4149,12 +4449,18 @@ export function mountConverterView(
         if (selectedCardCreateModelFile === file) {
           selectedCardCreateModelFile = null;
         }
+        const removedPath = getCardCreateFileKey(file).replace(/\\/g, "/");
+        if (removedPath === selectedCardCreateWebmFilePath) {
+          selectedCardCreateWebmFilePath = null;
+        }
         syncCardCreateModelSelection();
         syncCardCreateBaseImage();
         syncCardCreateLossySelection(previousFiles);
         clearCardCreateActualResultFiles();
         syncCardCreateCompressionUi();
+        tryAutoSelectWebmAudio();
         renderCardCreateFileList();
+        renderWebmAudioSelect();
         void refreshCardCreateMetadataEditors();
         syncCardCreateBuildAvailability(false);
         updateCardCreateLoadedState(true);
@@ -4187,6 +4493,8 @@ export function mountConverterView(
     syncCardCreateLossySelection(previousFiles);
     clearCardCreateActualResultFiles();
     renderCardCreateFileList();
+    tryAutoSelectWebmAudio();
+    renderWebmAudioSelect();
     void refreshCardCreateMetadataEditors();
     syncCardCreateBuildAvailability(false);
     syncCardCreateCompressionUi();
@@ -4203,6 +4511,24 @@ export function mountConverterView(
     } catch (err) {
       cardCreateStatus.textContent = `${statusErrorPrefix}: ${err instanceof Error ? err.message : String(err)}`;
     }
+  }
+
+  /**
+   * Takes a list of files and expands any ZIP archives in it by extracting
+   * their contents via {@link readZipFiles}. Non-ZIP files are passed through
+   * unchanged. Returns a flat array ready for {@link mergeCardCreateFiles}.
+   */
+  async function expandZipFiles(files: readonly File[]): Promise<File[]> {
+    const result: File[] = [];
+    for (const file of files) {
+      if (getFileExt(file.name) === "zip") {
+        const zipContents = readZipFiles(await file.arrayBuffer());
+        result.push(...zipContents);
+      } else {
+        result.push(file);
+      }
+    }
+    return result;
   }
 
   cardCreateFolderBtn.addEventListener("click", () => {
@@ -4225,6 +4551,7 @@ export function mountConverterView(
   cardCreateFolderInput.addEventListener("change", () => {
     if (cardCreateBusy) return;
     const files = Array.from(cardCreateFolderInput.files ?? []);
+    cardCreateFolderInput.value = "";
     if (files.length === 0) return;
     mergeCardCreateFiles(files, text.sourceFolder);
   });
@@ -4232,20 +4559,27 @@ export function mountConverterView(
   cardCreateZipInput.addEventListener("change", async () => {
     if (cardCreateBusy) return;
     const file = cardCreateZipInput.files?.[0];
+    cardCreateZipInput.value = "";
     if (!file) return;
     await loadCardCreateZipFile(file, text.sourceZip);
   });
 
-  cardCreateFilesInput.addEventListener("change", () => {
+  cardCreateFilesInput.addEventListener("change", async () => {
     if (cardCreateBusy) return;
     const files = Array.from(cardCreateFilesInput.files ?? []);
+    cardCreateFilesInput.value = "";
     if (files.length === 0) return;
-    mergeCardCreateFiles(files, text.sourceFiles);
+    try {
+      mergeCardCreateFiles(await expandZipFiles(files), text.sourceFiles);
+    } catch (err) {
+      cardCreateStatus.textContent = `${statusErrorPrefix}: ${err instanceof Error ? err.message : String(err)}`;
+    }
   });
 
   cardCreateImageInput.addEventListener("change", () => {
     if (cardCreateBusy) return;
     const file = cardCreateImageInput.files?.[0];
+    cardCreateImageInput.value = "";
     if (!file) return;
     mergeCardCreateFiles([file], text.sourceBaseImage);
     cardCreatePreferDefaultBaseImage = false;
@@ -4404,16 +4738,15 @@ export function mountConverterView(
     }
 
     const droppedFiles = Array.from(transfer.files ?? []);
-    if (
-      droppedFiles.length === 1 &&
-      getFileExt(droppedFiles[0].name) === "zip"
-    ) {
-      await loadCardCreateZipFile(droppedFiles[0], text.sourceZipDrop);
-      return;
-    }
-
     if (droppedFiles.length > 0) {
-      mergeCardCreateFiles(droppedFiles, text.sourceFilesDrop);
+      try {
+        mergeCardCreateFiles(
+          await expandZipFiles(droppedFiles),
+          text.sourceFilesDrop,
+        );
+      } catch (err) {
+        cardCreateStatus.textContent = `${statusErrorPrefix}: ${err instanceof Error ? err.message : String(err)}`;
+      }
     }
   });
 
@@ -4422,7 +4755,35 @@ export function mountConverterView(
     setCardCreateBusy(true);
     cardCreateStatus.textContent = text.createCardInProgress;
     try {
-      const filesForBuild = getCardCreateBuildFiles();
+      const voiceCloneSampleFiles = collectVoiceCloneSampleFiles();
+      let filesForBuild = getCardCreateBuildFiles();
+      // Remove voice clone sample files from regular build files so they are
+      // not classified as regular webm/audio and only go into the vcAu chunk.
+      if (voiceCloneSampleFiles.length > 0) {
+        const voiceCloneSet = new Set(voiceCloneSampleFiles);
+        filesForBuild = filesForBuild.filter((f) => !voiceCloneSet.has(f));
+      }
+      // WebM audio: only include the explicitly selected file. If none is
+      // selected, remove all webm-kind files so no webM chunk is embedded.
+      if (selectedCardCreateWebmFilePath) {
+        const selectedWebmFile = findWebmAudioFileByPath(
+          selectedCardCreateWebmFilePath,
+        );
+        if (selectedWebmFile) {
+          filesForBuild = filesForBuild.filter(
+            (f) =>
+              getCardCreatorInputKind(f) !== "webm" || f === selectedWebmFile,
+          );
+        } else {
+          filesForBuild = filesForBuild.filter(
+            (f) => getCardCreatorInputKind(f) !== "webm",
+          );
+        }
+      } else {
+        filesForBuild = filesForBuild.filter(
+          (f) => getCardCreatorInputKind(f) !== "webm",
+        );
+      }
       const defaultBaseImageBuffer = selectedCardCreateBaseImage
         ? undefined
         : await getDefaultCardCreateBaseImageBuffer();
@@ -4431,6 +4792,8 @@ export function mountConverterView(
         defaultBaseImageBuffer,
         preferDefaultBaseImage: cardCreatePreferDefaultBaseImage,
         metadataOverrides: collectCardCreateMetadataOverrides(),
+        voiceCloneSampleFiles:
+          voiceCloneSampleFiles.length > 0 ? voiceCloneSampleFiles : undefined,
         compressionMode: cardCreateCompressMode.value as
           | "lossless"
           | "lossy"
@@ -4476,6 +4839,8 @@ export function mountConverterView(
   syncCardCreateCompressionUi();
   updateCardCreatePreview();
   renderCardCreateFileList();
+  tryAutoSelectWebmAudio();
+  renderWebmAudioSelect();
   void refreshCardCreateMetadataEditors();
   syncCardCreateBuildAvailability(false);
 
@@ -4557,6 +4922,7 @@ export function mountConverterView(
   );
   cardExtractFileInput.addEventListener("change", () => {
     const file = cardExtractFileInput.files?.[0];
+    cardExtractFileInput.value = "";
     if (file) setStagedCardExtractFile(file);
   });
   cardExtractConvertLegacyInput.addEventListener("change", () => {
@@ -4626,4 +4992,19 @@ export function mountConverterView(
 
   syncCardExtractLegacyOptions();
   syncCardExtractAvailability();
+
+  // ── Theme update (without DOM rebuild) ────────────────────────────────────
+  function updateTheme(nextTheme: AppTheme): void {
+    activeTheme = nextTheme;
+    const toggleTo = nextTheme === "dark" ? "light" : "dark";
+    const label =
+      toggleTo === "dark" ? viewStrings.themeToDark : viewStrings.themeToLight;
+    const emoji = toggleTo === "dark" ? "🌙" : "☀️";
+    themeToggleBtn.textContent = emoji;
+    themeToggleBtn.setAttribute("aria-label", label);
+    themeToggleBtn.setAttribute("title", label);
+    themeToggleBtn.setAttribute("aria-pressed", String(nextTheme === "dark"));
+  }
+
+  return { updateTheme };
 }
