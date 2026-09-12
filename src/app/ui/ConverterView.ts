@@ -546,6 +546,7 @@ interface ConverterViewText {
   metadataInvalidJsonListTemplate: string;
   metadataDuplicateRowTitle: string;
   metadataInvalidRowTitle: string;
+  metadataRemappedRowTemplate: string;
   fastButtonNamePlaceholder: string;
   fastButtonMorphPlaceholder: string;
   fastButtonRemove: string;
@@ -711,6 +712,8 @@ function getConverterViewText(locale: AppLocale): ConverterViewText {
       "Duplicate: refers to the same morph as another entry. When creating the card, the most recently added entry wins.",
     metadataInvalidRowTitle:
       "Invalid: this morph does not exist in the selected model. It will not be embedded into the card.",
+    metadataRemappedRowTemplate:
+      "Remapped: this entry's morph name was found at index {to}; {to} will be used instead of {from}.",
     fastButtonNamePlaceholder: "Name",
     fastButtonMorphPlaceholder: "Morph",
     fastButtonRemove: "Remove fast button",
@@ -879,6 +882,8 @@ function getConverterViewText(locale: AppLocale): ConverterViewText {
       "Duplikat: verweist auf denselben Morph wie ein anderer Eintrag. Beim Erstellen der Karte gewinnt der zuletzt hinzugefügte Eintrag.",
     metadataInvalidRowTitle:
       "Ungültig: Dieser Morph existiert im ausgewählten Modell nicht. Er wird nicht in die Karte eingebettet.",
+    metadataRemappedRowTemplate:
+      "Umgemappt: Der Morph-Name dieses Eintrags wurde bei Index {to} gefunden; {to} wird statt {from} verwendet.",
     fastButtonNamePlaceholder: "Name",
     fastButtonMorphPlaceholder: "Morph",
     fastButtonRemove: "Fast Button entfernen",
@@ -1049,6 +1054,8 @@ function getConverterViewText(locale: AppLocale): ConverterViewText {
       "重複: 他のエントリと同じモーフを参照しています。カード作成時は最後に追加されたエントリが優先されます。",
     metadataInvalidRowTitle:
       "無効: このモーフは選択されたモデルに存在しません。カードには埋め込まれません。",
+    metadataRemappedRowTemplate:
+      "再マッピング: このエントリのモーフ名がインデックス {to} で見つかったため、{from} の代わりに {to} を使用します。",
     fastButtonNamePlaceholder: "名前",
     fastButtonMorphPlaceholder: "Morph",
     fastButtonRemove: "Fast Button を削除",
@@ -1211,6 +1218,8 @@ function getConverterViewText(locale: AppLocale): ConverterViewText {
     metadataDuplicateRowTitle:
       "重复：与其他条目指向同一个形态。创建卡片时，以最后添加的条目为准。",
     metadataInvalidRowTitle: "无效：所选模型中不存在此形态，不会嵌入卡片。",
+    metadataRemappedRowTemplate:
+      "已重新映射：此条目的形态名称在索引 {to} 处找到，将使用 {to} 而非 {from}。",
     fastButtonNamePlaceholder: "名称",
     fastButtonMorphPlaceholder: "Morph",
     fastButtonRemove: "移除 Fast Button",
@@ -1372,6 +1381,8 @@ function getConverterViewText(locale: AppLocale): ConverterViewText {
     metadataDuplicateRowTitle:
       "重複：與其他條目指向同一個形態。建立卡片時，以最後新增的條目為準。",
     metadataInvalidRowTitle: "無效：所選模型中不存在此形態，不會嵌入卡片。",
+    metadataRemappedRowTemplate:
+      "已重新映射：此條目的形態名稱在索引 {to} 找到，將使用 {to} 而非 {from}。",
     fastButtonNamePlaceholder: "名稱",
     fastButtonMorphPlaceholder: "Morph",
     fastButtonRemove: "移除 Fast Button",
@@ -3377,14 +3388,24 @@ export function mountConverterView(
   function applyCardMetadataRowState(
     row: HTMLElement,
     state: CardMetadataEntryState,
+    remapTitle: string | null = null,
   ): void {
+    row.classList.toggle(
+      "card-row-remapped",
+      state.remappedIndex !== undefined,
+    );
     row.classList.toggle("card-row-duplicate", state.duplicate);
     row.classList.toggle("card-row-invalid", state.invalid);
-    if (!state.duplicate && !state.invalid) {
+    if (
+      !state.duplicate &&
+      !state.invalid &&
+      state.remappedIndex === undefined
+    ) {
       row.removeAttribute("title");
       return;
     }
     const titles: string[] = [];
+    if (remapTitle !== null) titles.push(remapTitle);
     if (state.duplicate) titles.push(text.metadataDuplicateRowTitle);
     if (state.invalid) titles.push(text.metadataInvalidRowTitle);
     row.title = titles.join(" · ");
@@ -3538,12 +3559,26 @@ export function mountConverterView(
       (draft) => draft.name,
     );
     cardCreateMoAiDraft.morphs.forEach((draft, index) => {
+      const state = rowStates[index];
+      const effectiveIndex =
+        state.remappedIndex !== undefined
+          ? String(state.remappedIndex)
+          : draft.index;
       const row = document.createElement("div");
       row.className = "card-morph-row";
-      applyCardMetadataRowState(row, rowStates[index]);
+      applyCardMetadataRowState(
+        row,
+        state,
+        state.remappedIndex !== undefined
+          ? formatTemplate(text.metadataRemappedRowTemplate, {
+              from: draft.index,
+              to: state.remappedIndex,
+            })
+          : null,
+      );
 
       const indexSelect = document.createElement("select");
-      for (const opt of buildMorphIndexOptions(draft.index)) {
+      for (const opt of buildMorphIndexOptions(effectiveIndex)) {
         const o = document.createElement("option");
         o.value = opt.value;
         o.textContent = opt.label;
@@ -4430,6 +4465,10 @@ export function mountConverterView(
           cardCreateMorphNames,
           (draft) => draft.index,
           (draft) => draft.name,
+          (draft, remappedIndex) => ({
+            ...draft,
+            index: String(remappedIndex),
+          }),
         ),
       });
     }

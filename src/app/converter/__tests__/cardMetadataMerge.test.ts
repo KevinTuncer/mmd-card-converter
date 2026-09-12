@@ -32,6 +32,19 @@ function finalize(
   );
 }
 
+function finalizeWithRematch(
+  entries: readonly TestEntry[],
+  morphNames: readonly string[],
+) {
+  return finalizeCardMetadataEntries(
+    entries,
+    morphNames,
+    (entry) => entry.ref,
+    (entry) => entry.name,
+    (entry, remappedIndex) => ({ ...entry, ref: String(remappedIndex) }),
+  );
+}
+
 function filterable(
   entries: readonly TestEntry[],
   morphNames: readonly string[],
@@ -235,5 +248,83 @@ describe("hasCardMetadataFilterableEntries", () => {
         ["a", "b"],
       ),
     ).toBe(false);
+  });
+
+  it("is true for rematch-only entries", () => {
+    expect(filterable([{ ref: "0", name: "b" }], ["a", "b"])).toBe(true);
+  });
+});
+
+describe("name rematch (blue)", () => {
+  it("rematches entries whose name exists at another index", () => {
+    const result = states([{ ref: "0", name: "angry" }], ["smile", "angry"]);
+    expect(result).toEqual([
+      { duplicate: false, invalid: false, remappedIndex: 1 },
+    ]);
+  });
+
+  it("rematches out-of-range indexes when the name exists", () => {
+    const result = states([{ ref: "999", name: "smile" }], ["smile", "x"]);
+    expect(result[0].remappedIndex).toBe(0);
+    expect(result[0].invalid).toBe(false);
+  });
+
+  it("rematches junk refs when the name exists", () => {
+    const result = states([{ ref: "abc", name: "x" }], ["smile", "x"]);
+    expect(result[0].remappedIndex).toBe(1);
+    expect(result[0].invalid).toBe(false);
+  });
+
+  it("stays red when no morph with that name exists", () => {
+    const result = states([{ ref: "0", name: "nope" }], ["smile", "angry"]);
+    expect(result[0].invalid).toBe(true);
+    expect(result[0].remappedIndex).toBeUndefined();
+  });
+
+  it("does not rematch without a model or without a name", () => {
+    expect(
+      states([{ ref: "0", name: "angry" }], [])[0].remappedIndex,
+    ).toBeUndefined();
+    expect(
+      states([{ ref: "0", name: "" }], ["smile"])[0].remappedIndex,
+    ).toBeUndefined();
+  });
+
+  it("groups duplicates by the rematch target", () => {
+    const result = states(
+      [
+        { ref: "0", name: "angry", sourceSeq: 1 },
+        { ref: "1", name: "angry", sourceSeq: 2 },
+      ],
+      ["smile", "angry"],
+    );
+    expect(result.every((state) => state.duplicate)).toBe(true);
+    expect(result[0].remappedIndex).toBe(1);
+    expect(result[1].remappedIndex).toBeUndefined();
+  });
+
+  it("embeds the remapped index via applyRematch", () => {
+    const result = finalizeWithRematch(
+      [
+        { ref: "0", name: "angry", sourceSeq: 1 },
+        { ref: "5", name: "smile", sourceSeq: 1 },
+      ],
+      ["smile", "angry"],
+    );
+    expect(result).toEqual([
+      { ref: "1", name: "angry", sourceSeq: 1 },
+      { ref: "0", name: "smile", sourceSeq: 1 },
+    ]);
+  });
+
+  it("dedups remapped entries on the target index (last added wins)", () => {
+    const result = finalizeWithRematch(
+      [
+        { ref: "9", name: "angry", sourceSeq: 1 },
+        { ref: "1", name: "angry", sourceSeq: 2 },
+      ],
+      ["smile", "angry"],
+    );
+    expect(result).toEqual([{ ref: "1", name: "angry", sourceSeq: 2 }]);
   });
 });

@@ -9,12 +9,19 @@
  * most recently added entry wins. When the selected model's morph list is
  * known, entries whose index does not exist in the model — or (moAi only)
  * whose stored name does not match the model's morph name at that index —
- * are marked invalid (highlighted red) and are dropped entirely.
+ * are marked invalid (highlighted red) and are dropped entirely. moAi
+ * entries whose name MISMATCHES their index but matches a morph at another
+ * index are rematched to that index (highlighted blue).
  */
 
 export interface CardMetadataEntryState {
   duplicate: boolean;
   invalid: boolean;
+  /**
+   * Morph index the entry will be remapped to (the model has a morph with
+   * this entry's name at that index, but not at the referenced one).
+   */
+  remappedIndex?: number;
 }
 
 /**
@@ -29,15 +36,20 @@ function parseMorphRef(morphRef: string): number | null {
 }
 
 /**
- * Computes per-entry duplicate/invalid state.
+ * Computes per-entry duplicate/invalid/rematch state.
  *
+ * - rematch (moAi only, with a loaded model): the entry's non-empty name
+ *   does not match the model's morph name at the referenced index, but a
+ *   morph with that name exists at another index → `remappedIndex` points
+ *   there; the entry is valid and will be embedded with that index.
  * - duplicate: more than one entry references the same numeric morph index
- *   (only possible while the ref is non-empty and numeric).
+ *   — AFTER rematch resolution (two entries remapped onto the same target
+ *   are duplicates of each other).
  * - invalid: only evaluated when `morphNames` is non-empty (i.e. a model is
  *   selected): the ref is non-empty but junk/out-of-range, or (when
- *   `getMorphName` is provided) the entry's non-empty name does not match
- *   the model's morph name at the referenced index. Empty refs stay neutral
- *   (they are filtered out by the build anyway).
+ *   `getMorphName` is provided) the entry's non-empty name matches neither
+ *   the referenced morph nor ANY morph in the model. Empty refs stay
+ *   neutral (they are filtered out by the build anyway).
  */
 export function computeCardMetadataEntryStates<T>(
   entries: readonly T[],
@@ -45,22 +57,58 @@ export function computeCardMetadataEntryStates<T>(
   getMorphRef: (entry: T) => string,
   getMorphName?: (entry: T) => string | undefined,
 ): CardMetadataEntryState[] {
-  const counts = new Map<number, number>();
+  const canValidate = morphNames.length > 0;
+
+  // Pass 1: parse refs and resolve name-based rematches.
   const refs: Array<number | null> = [];
+  const remappedIndexes: Array<number | undefined> = [];
   for (const entry of entries) {
     const ref = parseMorphRef(getMorphRef(entry));
     refs.push(ref);
-    if (ref !== null) {
-      counts.set(ref, (counts.get(ref) ?? 0) + 1);
+    let remappedIndex: number | undefined;
+    if (canValidate && getMorphName) {
+      const name = getMorphName(entry);
+      const trimmedName = name?.trim() ?? "";
+      if (trimmedName !== "") {
+        const nameMatchesRef =
+          ref !== null &&
+          Number.isInteger(ref) &&
+          ref >= 0 &&
+          ref < morphNames.length &&
+          morphNames[ref] === trimmedName;
+        if (!nameMatchesRef) {
+          const matchIndex = morphNames.indexOf(trimmedName);
+          if (matchIndex >= 0) {
+            remappedIndex = matchIndex; // name wins over the index
+          }
+        }
+      }
     }
+    remappedIndexes.push(remappedIndex);
   }
 
-  const canValidate = morphNames.length > 0;
+  // Pass 2: group duplicates by the EFFECTIVE ref (rematch target wins over
+  // the originally referenced index).
+  const counts = new Map<number, number>();
+  const effectiveRefs: Array<number | null> = [];
+  entries.forEach((_entry, index) => {
+    const effective =
+      remappedIndexes[index] !== undefined
+        ? remappedIndexes[index]
+        : refs[index];
+    effectiveRefs.push(effective);
+    if (effective !== null) {
+      counts.set(effective, (counts.get(effective) ?? 0) + 1);
+    }
+  });
+
   return entries.map((entry, index) => {
     const ref = refs[index];
-    const duplicate = ref !== null && (counts.get(ref) ?? 0) > 1;
+    const remappedIndex = remappedIndexes[index];
+    const effective = effectiveRefs[index];
+    const duplicate = effective !== null && (counts.get(effective) ?? 0) > 1;
     let invalid = false;
-    if (canValidate) {
+    if (canValidate && remappedIndex === undefined) {
       const raw = getMorphRef(entry).trim();
       if (raw !== "") {
         if (ref === null) {
@@ -78,18 +126,20 @@ export function computeCardMetadataEntryStates<T>(
             name.trim() !== "" &&
             name.trim() !== morphNames[ref]
           ) {
-            invalid = true; // name mismatch with the model
+            invalid = true; // name matches no morph in the model
           }
         }
       }
     }
-    return { duplicate, invalid };
+    return remappedIndex === undefined
+      ? { duplicate, invalid }
+      : { duplicate, invalid: false, remappedIndex };
   });
 }
 
 /**
- * True when at least one entry would be removed or replaced when building
- * the card (duplicates or invalid entries).
+ * True when at least one entry would be removed, replaced or re-indexed when
+ * building the card (duplicates, invalid entries or name-based rematches).
  */
 export function hasCardMetadataFilterableEntries<T>(
   entries: readonly T[],
@@ -102,7 +152,10 @@ export function hasCardMetadataFilterableEntries<T>(
     morphNames,
     getMorphRef,
     getMorphName,
-  ).some((state) => state.duplicate || state.invalid);
+  ).some(
+    (state) =>
+      state.duplicate || state.invalid || state.remappedIndex !== undefined,
+  );
 }
 
 function isOlderThan(
@@ -116,10 +169,13 @@ function isOlderThan(
 
 /**
  * Finalizes entries for embedding: drops invalid entries (when the model's
- * morph list is known) and de-duplicates entries that reference the same
- * morph index, keeping the most recently added entry ("last added wins":
- * highest `sourceSeq`; entries without `sourceSeq` count as manually added
- * and therefore as newest; equal seq keeps the later array position).
+ * morph list is known), de-duplicates entries that reference the same
+ * EFFECTIVE morph index (rematch target wins over the original ref),
+ * keeping the most recently added entry ("last added wins": highest
+ * `sourceSeq`; entries without `sourceSeq` count as manually added and
+ * therefore as newest; equal seq keeps the later array position), and
+ * applies name-based rematches via `applyRematch` (copy with the new index).
+ * `applyRematch` should be passed whenever `getMorphName` is provided.
  * The original relative order of surviving entries is preserved.
  */
 export function finalizeCardMetadataEntries<T extends { sourceSeq?: number }>(
@@ -127,6 +183,7 @@ export function finalizeCardMetadataEntries<T extends { sourceSeq?: number }>(
   morphNames: readonly string[],
   getMorphRef: (entry: T) => string,
   getMorphName?: (entry: T) => string | undefined,
+  applyRematch?: (entry: T, remappedIndex: number) => T,
 ): T[] {
   const states = computeCardMetadataEntryStates(
     entries,
@@ -134,21 +191,38 @@ export function finalizeCardMetadataEntries<T extends { sourceSeq?: number }>(
     getMorphRef,
     getMorphName,
   );
-  const kept = entries.filter((_entry, index) => !states[index].invalid);
+  const effectiveRef = (index: number): number | null =>
+    states[index].remappedIndex ?? parseMorphRef(getMorphRef(entries[index]));
 
-  const winnerIndex = new Map<number, number>();
-  kept.forEach((entry, keptIndex) => {
-    const ref = parseMorphRef(getMorphRef(entry));
+  const keptIndexes: number[] = [];
+  entries.forEach((_entry, index) => {
+    if (!states[index].invalid) keptIndexes.push(index);
+  });
+
+  const winnerKeptIndex = new Map<number, number>();
+  keptIndexes.forEach((originalIndex, keptIndex) => {
+    const ref = effectiveRef(originalIndex);
     if (ref === null) return; // empty/junk refs are not de-duplicated
-    const current = winnerIndex.get(ref);
-    if (current === undefined || !isOlderThan(entry, kept[current])) {
-      winnerIndex.set(ref, keptIndex);
+    const current = winnerKeptIndex.get(ref);
+    if (
+      current === undefined ||
+      !isOlderThan(entries[originalIndex], entries[keptIndexes[current]])
+    ) {
+      winnerKeptIndex.set(ref, keptIndex);
     }
   });
 
-  return kept.filter((_entry, keptIndex) => {
-    const ref = parseMorphRef(getMorphRef(kept[keptIndex]));
-    if (ref === null) return true;
-    return winnerIndex.get(ref) === keptIndex;
-  });
+  return keptIndexes
+    .filter((originalIndex, keptIndex) => {
+      const ref = effectiveRef(originalIndex);
+      if (ref === null) return true;
+      return winnerKeptIndex.get(ref) === keptIndex;
+    })
+    .map((originalIndex) => {
+      const remappedIndex = states[originalIndex].remappedIndex;
+      if (remappedIndex !== undefined && applyRematch !== undefined) {
+        return applyRematch(entries[originalIndex], remappedIndex);
+      }
+      return entries[originalIndex];
+    });
 }

@@ -30,6 +30,8 @@
   --warning-strong: #ffc499;
   --warning-row-bg: rgba(224, 158, 44, 0.14);
   --warning-row-border: rgba(196, 128, 28, 0.45);
+  --info-row-bg: rgba(66, 133, 244, 0.12);
+  --info-row-border: rgba(66, 133, 244, 0.42);
   --tag-muted-bg: rgba(255, 255, 255, 0.1);
   --surface-soft: rgba(255, 255, 255, 0.72);
   --surface-muted: rgba(255, 255, 255, 0.58);
@@ -79,6 +81,8 @@
   --warning-strong: #ffc79b;
   --warning-row-bg: rgba(255, 196, 120, 0.12);
   --warning-row-border: rgba(255, 196, 120, 0.38);
+  --info-row-bg: rgba(120, 170, 255, 0.12);
+  --info-row-border: rgba(120, 170, 255, 0.4);
   --tag-muted-bg: rgba(255, 255, 255, 0.12);
   --surface-soft: rgba(255, 255, 255, 0.06);
   --surface-muted: rgba(255, 255, 255, 0.08);
@@ -923,9 +927,18 @@ button:disabled {
   color: var(--danger-text);
 }
 
-/* Metadata editor rows referencing the same morph (duplicate → yellow) or a
-   morph missing from the selected model (invalid → red). Red wins when both
-   apply (rule order below). */
+/* Metadata editor rows: remapped to another morph index by name match
+   (blue), referencing the same morph as another entry (duplicate → yellow)
+   or referencing a morph missing from the selected model (invalid → red).
+   Rule order: red wins over yellow wins over blue. */
+.card-fast-button-row.card-row-remapped,
+.card-morph-row.card-row-remapped {
+  background: var(--info-row-bg);
+  border: 1px solid var(--info-row-border);
+  border-radius: 8px;
+  padding: 0.5rem;
+}
+
 .card-fast-button-row.card-row-duplicate,
 .card-morph-row.card-row-duplicate {
   background: var(--warning-row-bg);
