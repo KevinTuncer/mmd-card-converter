@@ -733,6 +733,9 @@ button:disabled {
   min-width: 2.2rem;
   width: 2.2rem;
   height: 2.2rem;
+  /* Global button { min-height: 44px } would stretch the square into an
+     oval — min-height wins over height, so reset it for a true circle. */
+  min-height: 0;
   padding: 0;
   display: inline-flex;
   align-items: center;
@@ -843,9 +846,45 @@ button:disabled {
 
 .card-fast-button-row {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.3rem 0.45rem;
+  align-items: center;
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  padding: 0.5rem;
+  margin-bottom: 0.45rem;
+  background: var(--surface-subtle);
+}
+
+.card-fast-button-name-line {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   gap: 0.45rem;
   align-items: center;
+}
+
+.card-fast-button-main {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.45rem;
+  align-items: center;
+}
+
+.card-fast-button-details {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.card-fast-button-details .card-field-label {
+  white-space: nowrap;
+}
+
+/* Sized for 4 characters (e.g. "1.00") plus the spinner arrows. */
+.card-fast-button-details .card-fast-button-default {
+  width: 7ch;
+  flex-shrink: 0;
 }
 
 .card-fast-button-name {
@@ -855,6 +894,26 @@ button:disabled {
 .card-fast-button-row input,
 .card-fast-button-row select {
   min-width: 0;
+}
+
+.card-fast-button-visible {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  min-width: 0;
+  font-size: 0.8rem;
+  color: var(--text-soft);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.card-fast-button-visible[hidden] {
+  display: none;
+}
+
+.card-fast-button-invisible .card-fast-button-name {
+  opacity: 0.55;
+  font-style: italic;
 }
 
 .card-subsection-title {
@@ -896,6 +955,9 @@ button:disabled {
   min-width: 2.2rem;
   width: 2.2rem;
   height: 2.2rem;
+  /* Global button { min-height: 44px } would stretch the square into an
+     oval — min-height wins over height, so reset it for a true circle. */
+  min-height: 0;
   padding: 0;
   display: inline-flex;
   align-items: center;
@@ -1194,10 +1256,6 @@ button:disabled {
   }
 
   .card-metadata-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .card-fast-button-row {
     grid-template-columns: 1fr;
   }
 

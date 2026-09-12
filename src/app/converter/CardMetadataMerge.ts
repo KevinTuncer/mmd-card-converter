@@ -226,3 +226,130 @@ export function finalizeCardMetadataEntries<T extends { sourceSeq?: number }>(
       return entries[originalIndex];
     });
 }
+
+/**
+ * A single `fbTn` (legacy `fBtn`) fast button entry in its editable draft
+ * form. The chunk payload is a JSON array of
+ * `{ name, action: "morph", morph, default?, visible? }` objects; `name`
+ * is purely informational (entries map to morphs by index).
+ */
+export interface FastButtonDraft {
+  name: string;
+  action: "morph";
+  /** Morph index as editable text (kept verbatim for the UI select). */
+  morph: string;
+  /**
+   * Default morph weight as editable text ("" = unset). Only values that
+   * parse to a finite number > 0 are embedded as `default`.
+   */
+  default: string;
+  /**
+   * false = invisible entry that only carries `default` and creates NO
+   * fast button (chunk field `visible: false`). Legacy entries without a
+   * `visible` field are favorites (true) — `visible: true` is implicit and
+   * never written.
+   */
+  visible: boolean;
+  /**
+   * Original parsed chunk entry. Carried along per row so unknown fields
+   * and the original field order survive edits and rebuilds.
+   */
+  raw?: Record<string, unknown>;
+  sourceSeq?: number;
+}
+
+/** Embeddable `fbTn` entry (known fields plus preserved unknown fields). */
+export interface FastButtonEntry {
+  name: string;
+  action: "morph";
+  morph: number;
+  default?: number;
+  visible?: false;
+  [key: string]: unknown;
+}
+
+export function createEmptyFastButtonDraft(): FastButtonDraft {
+  return {
+    name: "",
+    action: "morph",
+    morph: "0",
+    default: "",
+    visible: true,
+  };
+}
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+/**
+ * Parses a raw `fbTn`/`fBtn` JSON array into editor drafts. Unknown fields
+ * are preserved per row via `raw`; entries without a `visible` field count
+ * as favorites (legacy behavior).
+ */
+export function parseFastButtonRows(value: unknown): FastButtonDraft[] {
+  if (!Array.isArray(value)) return [];
+  return value.map((entry) => {
+    const data = isPlainObject(entry) ? entry : {};
+    const defaultWeight = data.default;
+    let defaultText = "";
+    if (typeof defaultWeight === "number" && Number.isFinite(defaultWeight)) {
+      defaultText = String(defaultWeight);
+    } else if (
+      typeof defaultWeight === "string" &&
+      defaultWeight.trim() !== ""
+    ) {
+      defaultText = defaultWeight;
+    }
+    return {
+      name: String(data.name ?? ""),
+      action: "morph" as const,
+      morph: String(data.morph ?? "0"),
+      default: defaultText,
+      visible: data.visible !== false,
+      raw: isPlainObject(entry) ? entry : undefined,
+    };
+  });
+}
+
+/**
+ * Rebuilds embeddable `fbTn` entries from editor drafts. Each entry starts
+ * from its draft's `raw` object (when present) so unknown fields and the
+ * original field order survive, then the edited core fields are applied.
+ * `default` is only emitted for finite values > 0; `visible` is only
+ * emitted as explicit `false` (true is implicit). Rows with an empty name
+ * and a non-numeric morph ref are dropped (existing behavior).
+ */
+export function buildFastButtonEntries(
+  drafts: readonly FastButtonDraft[],
+): FastButtonEntry[] {
+  const entries: FastButtonEntry[] = [];
+  for (const draft of drafts) {
+    const name = draft.name.trim();
+    const morph = Number(draft.morph);
+    if (name.length === 0 && Number.isNaN(morph)) continue;
+
+    const entry: FastButtonEntry = {
+      ...(draft.raw ?? {}),
+      name,
+      action: "morph",
+      morph,
+    };
+
+    const defaultWeight = Number(draft.default);
+    if (Number.isFinite(defaultWeight) && defaultWeight > 0) {
+      entry.default = defaultWeight;
+    } else {
+      delete entry.default;
+    }
+
+    if (!draft.visible) {
+      entry.visible = false;
+    } else {
+      delete entry.visible;
+    }
+
+    entries.push(entry);
+  }
+  return entries;
+}

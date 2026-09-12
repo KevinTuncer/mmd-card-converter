@@ -1,8 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildFastButtonEntries,
   computeCardMetadataEntryStates,
+  createEmptyFastButtonDraft,
   finalizeCardMetadataEntries,
   hasCardMetadataFilterableEntries,
+  parseFastButtonRows,
+  type FastButtonDraft,
 } from "@/app/converter/CardMetadataMerge";
 
 interface TestEntry {
@@ -326,5 +330,151 @@ describe("name rematch (blue)", () => {
       ["smile", "angry"],
     );
     expect(result).toEqual([{ ref: "1", name: "angry", sourceSeq: 2 }]);
+  });
+});
+
+describe("parseFastButtonRows / buildFastButtonEntries (fbTn payload)", () => {
+  it("parses default weights, visible flags and unknown fields", () => {
+    const drafts = parseFastButtonRows([
+      { name: "Smile", action: "morph", morph: 2 },
+      {
+        name: "Default Only",
+        action: "morph",
+        morph: 3,
+        default: 0.5,
+        visible: false,
+      },
+      { name: "Extra", action: "morph", morph: 4, custom: "keep" },
+      { name: "String Default", action: "morph", morph: 5, default: "0.25" },
+    ]);
+
+    expect(drafts[0]).toEqual({
+      name: "Smile",
+      action: "morph",
+      morph: "2",
+      default: "",
+      visible: true,
+      raw: { name: "Smile", action: "morph", morph: 2 },
+    });
+    expect(drafts[1].default).toBe("0.5");
+    expect(drafts[1].visible).toBe(false);
+    expect(drafts[2].raw).toEqual({
+      name: "Extra",
+      action: "morph",
+      morph: 4,
+      custom: "keep",
+    });
+    expect(drafts[3].default).toBe("0.25");
+  });
+
+  it("returns an empty array for non-array payloads", () => {
+    expect(parseFastButtonRows(null)).toEqual([]);
+    expect(parseFastButtonRows({ name: "x" })).toEqual([]);
+  });
+
+  it("builds entries preserving unknown fields and original field order", () => {
+    const [draft] = parseFastButtonRows([
+      { name: "Smile", action: "morph", morph: 2, custom: "keep" },
+    ]);
+    const [entry] = buildFastButtonEntries([
+      { ...draft, default: "0.5", visible: false },
+    ]);
+
+    expect(entry).toEqual({
+      name: "Smile",
+      action: "morph",
+      morph: 2,
+      custom: "keep",
+      default: 0.5,
+      visible: false,
+    });
+    expect(Object.keys(entry)).toEqual([
+      "name",
+      "action",
+      "morph",
+      "custom",
+      "default",
+      "visible",
+    ]);
+  });
+
+  it("emits default only for finite values > 0 and visible only as false", () => {
+    const buildOne = (defaultText: string, visible: boolean) =>
+      buildFastButtonEntries([
+        {
+          ...createEmptyFastButtonDraft(),
+          name: "A",
+          morph: "1",
+          default: defaultText,
+          visible,
+        },
+      ])[0];
+
+    expect(buildOne("0.5", true)).toEqual({
+      name: "A",
+      action: "morph",
+      morph: 1,
+      default: 0.5,
+    });
+    for (const invalid of ["0", "", "abc", "-1"]) {
+      expect(buildOne(invalid, true)).not.toHaveProperty("default");
+    }
+    expect(buildOne("0.5", false).visible).toBe(false);
+    expect(buildOne("0.5", true)).not.toHaveProperty("visible");
+  });
+
+  it("removes visible:true and cleared defaults from raw entries", () => {
+    const [draft] = parseFastButtonRows([
+      {
+        name: "Legacy",
+        action: "morph",
+        morph: 1,
+        default: 0.75,
+        visible: true,
+      },
+    ]);
+    const [entry] = buildFastButtonEntries([{ ...draft, default: "" }]);
+
+    expect(entry).toEqual({ name: "Legacy", action: "morph", morph: 1 });
+  });
+
+  it("drops rows with an empty name and a non-numeric morph ref", () => {
+    const entries = buildFastButtonEntries([
+      { ...createEmptyFastButtonDraft(), name: "", morph: "abc" },
+      { ...createEmptyFastButtonDraft(), name: "Keep", morph: "3" },
+    ]);
+    expect(entries).toEqual([{ name: "Keep", action: "morph", morph: 3 }]);
+  });
+
+  it("keeps default/visible/raw of the dedup winner (last added wins)", () => {
+    const drafts: FastButtonDraft[] = [
+      {
+        name: "A",
+        action: "morph",
+        morph: "1",
+        default: "",
+        visible: true,
+        raw: { name: "A", action: "morph", morph: 1 },
+        sourceSeq: 1,
+      },
+      {
+        name: "A2",
+        action: "morph",
+        morph: "1",
+        default: "0.75",
+        visible: false,
+        raw: { name: "A2", action: "morph", morph: 1 },
+        sourceSeq: 2,
+      },
+    ];
+    const finalized = finalizeCardMetadataEntries(
+      drafts,
+      [],
+      (draft) => draft.morph,
+    );
+    expect(finalized).toHaveLength(1);
+    expect(buildFastButtonEntries(finalized)).toEqual([
+      { name: "A2", action: "morph", morph: 1, default: 0.75, visible: false },
+    ]);
   });
 });

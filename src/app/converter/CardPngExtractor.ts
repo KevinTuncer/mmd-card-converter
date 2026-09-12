@@ -73,6 +73,24 @@ const SUPPORTED_CARD_CHUNK_TYPE_SET = new Set<string>([
   ...RENAMED_CARD_CHUNK_TYPES,
 ]);
 
+/**
+ * Canonical (legacy) chunk name → the renamed chunk spelling the current
+ * card format writes (e.g. fBtn → fbTn). Reading prefers chunks stored
+ * under the new name, exactly like the ero.dance app does.
+ */
+const CANONICAL_TO_NEW_CHUNK_NAME: Record<CardPngChunkType, string> = {
+  bPMX: "bpMx",
+  bPMV: "bpMv",
+  bVMD: "bvMd",
+  webM: "weBm",
+  aURL: "auRl",
+  eroV: "erOv",
+  uInf: "uiNf",
+  fBtn: "fbTn",
+  moAi: "moAi",
+  vcAu: "vcAu",
+};
+
 export interface CardPngExportFile {
   fileName: string;
   mime: string;
@@ -102,6 +120,8 @@ export interface CardPngExtractionOptions {
 
 interface ParsedChunk {
   type: CardPngChunkType;
+  /** Original chunk name as stored in the PNG (legacy or renamed). */
+  rawName: string;
   data: Uint8Array;
 }
 
@@ -163,6 +183,7 @@ function parseCardPng(bytes: Uint8Array): {
     if (isSupportedCardChunkType(type)) {
       cardChunks.push({
         type: normalizeCardChunkType(type),
+        rawName: type,
         data: copyUint8Array(data),
       });
     } else {
@@ -264,32 +285,49 @@ function getEffectiveChunks(
   cardChunks: readonly ParsedChunk[],
   warnings: ConverterWarning[],
 ): ParsedChunk[] {
-  const latestByType = new Map<CardPngChunkType, ParsedChunk>();
+  const effectiveByType = new Map<CardPngChunkType, ParsedChunk>();
   const duplicateCounts = new Map<CardPngChunkType, number>();
 
   for (const chunk of cardChunks) {
-    latestByType.set(chunk.type, chunk);
     duplicateCounts.set(chunk.type, (duplicateCounts.get(chunk.type) ?? 0) + 1);
+    const current = effectiveByType.get(chunk.type);
+    if (current === undefined) {
+      effectiveByType.set(chunk.type, chunk);
+      continue;
+    }
+    // Chunks stored under the NEW name (e.g. fbTn) beat legacy spellings
+    // (fBtn); among equally-named chunks the last one wins.
+    const newName = CANONICAL_TO_NEW_CHUNK_NAME[chunk.type];
+    const chunkIsNew = chunk.rawName === newName;
+    const currentIsNew = current.rawName === newName;
+    if (chunkIsNew || !currentIsNew) {
+      effectiveByType.set(chunk.type, chunk);
+    }
   }
 
   for (const chunkType of CARD_CHUNK_TYPES) {
     const count = duplicateCounts.get(chunkType) ?? 0;
-    if (count > 1) {
-      warnings.push({
-        level: "info",
-        message: `${chunkType} war ${count} mal vorhanden. Exportiert wurde der letzte Eintrag.`,
-      });
-    }
+    if (count <= 1) continue;
+    const effective = effectiveByType.get(chunkType);
+    const newName = CANONICAL_TO_NEW_CHUNK_NAME[chunkType];
+    const hasLegacySpelling = cardChunks.some(
+      (chunk) => chunk.type === chunkType && chunk.rawName !== newName,
+    );
+    const preferredNewSpelling =
+      effective !== undefined &&
+      hasLegacySpelling &&
+      effective.rawName === newName;
+    warnings.push({
+      level: "info",
+      message: preferredNewSpelling
+        ? `${chunkType} war ${count} mal vorhanden (alte und neue Chunk-Namen). Bevorzugt wurde der letzte ${newName}-Eintrag.`
+        : `${chunkType} war ${count} mal vorhanden. Exportiert wurde der letzte Eintrag.`,
+    });
   }
 
-  return cardChunks.filter((chunk, index) => {
-    const effectiveChunk = latestByType.get(chunk.type);
-    if (!effectiveChunk) {
-      return false;
-    }
-    const lastIndex = cardChunks.lastIndexOf(effectiveChunk);
-    return index === lastIndex;
-  });
+  return cardChunks.filter(
+    (chunk) => effectiveByType.get(chunk.type) === chunk,
+  );
 }
 
 async function mapChunkToFiles(

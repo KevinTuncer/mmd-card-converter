@@ -429,6 +429,54 @@ describe("extractCardPngToZip", () => {
       decodeUtf8(entries["metadata.voiceSamples/voice_sample_0.webm"]),
     ).toBe("fallback-audio");
   });
+
+  it("prefers the fbTn chunk over a later legacy fBtn chunk", async () => {
+    const pngBytes = createCardPng([
+      {
+        type: "fbTn",
+        data: new TextEncoder().encode(
+          JSON.stringify([
+            {
+              name: "New Smile",
+              action: "morph",
+              morph: 2,
+              default: 0.5,
+              visible: false,
+            },
+          ]),
+        ),
+      },
+      {
+        type: "fBtn",
+        data: new TextEncoder().encode(
+          JSON.stringify([{ name: "Legacy Smile", action: "morph", morph: 1 }]),
+        ),
+      },
+    ]);
+
+    const result = await extractCardPngToZip(
+      new File([toArrayBuffer(pngBytes)], "mixed-names.png", {
+        type: "image/png",
+      }),
+    );
+    const entries = unzipSync(new Uint8Array(result.zipBuffer));
+
+    expect(result.report.foundChunkTypes).toEqual(["fBtn", "fBtn"]);
+    expect(JSON.parse(decodeUtf8(entries["metadata.fBtn.json"]))).toEqual([
+      {
+        name: "New Smile",
+        action: "morph",
+        morph: 2,
+        default: 0.5,
+        visible: false,
+      },
+    ]);
+    expect(
+      result.report.warnings.some((warning) =>
+        warning.message.includes("Bevorzugt wurde der letzte fbTn-Eintrag"),
+      ),
+    ).toBe(true);
+  });
 });
 
 function createCardPng(

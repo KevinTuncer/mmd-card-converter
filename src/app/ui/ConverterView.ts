@@ -25,10 +25,14 @@ import {
   pickPreferredCardBaseImage,
 } from "@/app/converter/CardPngCreator";
 import {
+  buildFastButtonEntries,
   computeCardMetadataEntryStates,
   type CardMetadataEntryState,
+  createEmptyFastButtonDraft,
+  type FastButtonDraft,
   finalizeCardMetadataEntries,
   hasCardMetadataFilterableEntries,
+  parseFastButtonRows,
 } from "@/app/converter/CardMetadataMerge";
 import { extractCardPngToZip } from "@/app/converter/CardPngExtractor";
 import {
@@ -145,13 +149,6 @@ interface CardCreateUInfDraft {
   info: string;
 }
 
-interface CardCreateFastButtonDraft {
-  name: string;
-  action: "morph";
-  morph: string;
-  sourceSeq?: number;
-}
-
 interface MorphDescDraft {
   index: string;
   name: string;
@@ -197,10 +194,6 @@ function createEmptyUInfDraft(): CardCreateUInfDraft {
   return { auth: "", ch: "", info: "" };
 }
 
-function createEmptyFastButtonDraft(): CardCreateFastButtonDraft {
-  return { name: "", action: "morph", morph: "0" };
-}
-
 function createEmptyMoAiDraft(): CardCreateMoAiDraft {
   return { name: "", gender: "", info: "", morphs: [], voiceSamples: [] };
 }
@@ -230,18 +223,6 @@ function parseUInfDraft(value: unknown): CardCreateUInfDraft {
     ch: normalizeStringArray(data.ch),
     info: String(data.info ?? ""),
   };
-}
-
-function parseFastButtonRows(value: unknown): CardCreateFastButtonDraft[] {
-  if (!Array.isArray(value)) return [];
-  return value.map((entry) => {
-    const data = (entry ?? {}) as Record<string, unknown>;
-    return {
-      name: String(data.name ?? ""),
-      action: "morph" as const,
-      morph: String(data.morph ?? "0"),
-    };
-  });
 }
 
 function parseMoAiDraft(value: unknown): CardCreateMoAiDraft {
@@ -289,18 +270,6 @@ function buildUInfOverride(draft: CardCreateUInfDraft): {
       .filter((entry) => entry.length > 0),
     info: draft.info,
   };
-}
-
-function buildFastButtonOverride(
-  drafts: readonly CardCreateFastButtonDraft[],
-): { name: string; action: "morph"; morph: number }[] {
-  return drafts
-    .map((draft) => ({
-      name: draft.name.trim(),
-      action: "morph" as const,
-      morph: Number(draft.morph),
-    }))
-    .filter((draft) => draft.name.length > 0 || !Number.isNaN(draft.morph));
 }
 
 function buildMoAiOverride(draft: CardCreateMoAiDraft): {
@@ -550,6 +519,10 @@ interface ConverterViewText {
   fastButtonNamePlaceholder: string;
   fastButtonMorphPlaceholder: string;
   fastButtonRemove: string;
+  fastButtonDefaultLabel: string;
+  fastButtonDefaultTitle: string;
+  fastButtonHideLabel: string;
+  fastButtonHideTitle: string;
   baseImageLabel: string;
   defaultImageAlreadyActive: string;
   defaultImageActivated: string;
@@ -717,6 +690,12 @@ function getConverterViewText(locale: AppLocale): ConverterViewText {
     fastButtonNamePlaceholder: "Name",
     fastButtonMorphPlaceholder: "Morph",
     fastButtonRemove: "Remove fast button",
+    fastButtonDefaultLabel: "Default value",
+    fastButtonDefaultTitle:
+      "Default morph weight (> 0) applied when the card is loaded. Empty = no default.",
+    fastButtonHideLabel: "Hide",
+    fastButtonHideTitle:
+      "Checked = invisible entry: only carries the default weight and creates no fast button.",
     baseImageLabel: "Base image: {path}",
     defaultImageAlreadyActive: "The default image is already active.",
     defaultImageActivated: "Base image removed. eroLogo.png will be used.",
@@ -887,6 +866,12 @@ function getConverterViewText(locale: AppLocale): ConverterViewText {
     fastButtonNamePlaceholder: "Name",
     fastButtonMorphPlaceholder: "Morph",
     fastButtonRemove: "Fast Button entfernen",
+    fastButtonDefaultLabel: "Default-Wert",
+    fastButtonDefaultTitle:
+      "Standard-Morphgewicht (> 0), das beim Laden der Karte angewendet wird. Leer = kein Default.",
+    fastButtonHideLabel: "Verbergen",
+    fastButtonHideTitle:
+      "Aktiviert = unsichtbarer Eintrag: trägt nur den Default-Wert und erzeugt keinen Fast-Button.",
     baseImageLabel: "Basisbild: {path}",
     defaultImageAlreadyActive: "Es ist bereits das Defaultbild aktiv.",
     defaultImageActivated: "Basisbild entfernt. Es wird eroLogo.png verwendet.",
@@ -1059,6 +1044,12 @@ function getConverterViewText(locale: AppLocale): ConverterViewText {
     fastButtonNamePlaceholder: "名前",
     fastButtonMorphPlaceholder: "Morph",
     fastButtonRemove: "Fast Button を削除",
+    fastButtonDefaultLabel: "初期値",
+    fastButtonDefaultTitle:
+      "カードの読み込み時に適用される既定のモーフ値（> 0）。空欄 = 既定値なし。",
+    fastButtonHideLabel: "非表示",
+    fastButtonHideTitle:
+      "チェック = 非表示エントリ：既定値のみ保持し、Fast Button は作成されません。",
     baseImageLabel: "ベース画像: {path}",
     defaultImageAlreadyActive: "すでにデフォルト画像が有効です。",
     defaultImageActivated:
@@ -1223,6 +1214,11 @@ function getConverterViewText(locale: AppLocale): ConverterViewText {
     fastButtonNamePlaceholder: "名称",
     fastButtonMorphPlaceholder: "Morph",
     fastButtonRemove: "移除 Fast Button",
+    fastButtonDefaultLabel: "默认值",
+    fastButtonDefaultTitle:
+      "加载卡片时应用的默认形态权重（> 0）。留空 = 无默认值。",
+    fastButtonHideLabel: "隐藏",
+    fastButtonHideTitle: "勾选 = 隐形条目：仅携带默认值，不生成 Fast Button。",
     baseImageLabel: "基础图像: {path}",
     defaultImageAlreadyActive: "默认图像已经处于启用状态。",
     defaultImageActivated: "已移除基础图像。将使用 eroLogo.png。",
@@ -1386,6 +1382,11 @@ function getConverterViewText(locale: AppLocale): ConverterViewText {
     fastButtonNamePlaceholder: "名稱",
     fastButtonMorphPlaceholder: "Morph",
     fastButtonRemove: "移除 Fast Button",
+    fastButtonDefaultLabel: "預設值",
+    fastButtonDefaultTitle:
+      "載入卡片時套用的預設形態權重（> 0）。留空 = 無預設值。",
+    fastButtonHideLabel: "隱藏",
+    fastButtonHideTitle: "勾取 = 隱形條目：僅攜帶預設值，不產生 Fast Button。",
     baseImageLabel: "基底圖片: {path}",
     defaultImageAlreadyActive: "預設圖片已經啟用。",
     defaultImageActivated: "已移除基底圖片。將使用 eroLogo.png。",
@@ -2947,9 +2948,7 @@ export function mountConverterView(
   let cardCreateCompressToAvifSet: Set<File> = new Set();
   let cardCreateActualResultFiles: Map<string, File> | null = null;
   let cardCreateUInfDraft = createEmptyUInfDraft();
-  let cardCreateFBtnDrafts: CardCreateFastButtonDraft[] = [
-    createEmptyFastButtonDraft(),
-  ];
+  let cardCreateFBtnDrafts: FastButtonDraft[] = [createEmptyFastButtonDraft()];
   let cardCreateMoAiDraft = createEmptyMoAiDraft();
   const cardCreateMetadataSourceKeys: Record<
     CardCreateMetadataKey,
@@ -3442,6 +3441,9 @@ export function mountConverterView(
       const row = document.createElement("div");
       row.className = "card-fast-button-row";
       applyCardMetadataRowState(row, rowStates[index]);
+      if (!draft.visible) {
+        row.classList.add("card-fast-button-invisible");
+      }
 
       const nameInput = document.createElement("input");
       nameInput.className = "card-fast-button-name";
@@ -3495,6 +3497,70 @@ export function mountConverterView(
         cardCreateFBtnDrafts[index].morph = morphSelect.value;
       });
 
+      const defaultLabel = document.createElement("span");
+      defaultLabel.className = "card-field-label";
+      defaultLabel.textContent = text.fastButtonDefaultLabel;
+
+      const defaultInput = document.createElement("input");
+      defaultInput.className = "card-fast-button-default";
+      defaultInput.type = "number";
+      defaultInput.min = "0";
+      defaultInput.max = "1";
+      defaultInput.step = "0.01";
+      defaultInput.title = text.fastButtonDefaultTitle;
+      defaultInput.ariaLabel = text.fastButtonDefaultTitle;
+      defaultInput.value = draft.default;
+
+      const hideLabel = document.createElement("label");
+      hideLabel.className = "card-fast-button-visible";
+      const hideInput = document.createElement("input");
+      hideInput.type = "checkbox";
+      hideInput.ariaLabel = text.fastButtonHideLabel;
+      hideInput.title = text.fastButtonHideTitle;
+      hideInput.addEventListener("change", () => {
+        cardCreateFBtnDrafts[index].visible = !hideInput.checked;
+        row.classList.toggle("card-fast-button-invisible", hideInput.checked);
+      });
+      const hideText = document.createElement("span");
+      hideText.textContent = text.fastButtonHideLabel;
+      hideLabel.append(hideInput, hideText);
+
+      // The hide checkbox only exists for entries with a default weight > 0
+      // (invisible entries are pure default carriers); without a usable
+      // default the entry is always a visible fast button.
+      const syncHideControl = (): void => {
+        const hasDefault = Number(cardCreateFBtnDrafts[index].default) > 0;
+        hideLabel.hidden = !hasDefault;
+        if (!hasDefault) {
+          cardCreateFBtnDrafts[index].visible = true;
+          hideInput.checked = false;
+          row.classList.remove("card-fast-button-invisible");
+        }
+      };
+
+      defaultInput.addEventListener("input", () => {
+        cardCreateFBtnDrafts[index].default = defaultInput.value;
+        syncHideControl();
+      });
+      // On blur: empty/junk → no default; otherwise clamp into [0, 1] and
+      // floor to two decimal places (fp-safe).
+      defaultInput.addEventListener("blur", () => {
+        const raw = defaultInput.value.trim();
+        const parsed = Number(raw);
+        if (raw === "" || Number.isNaN(parsed)) {
+          cardCreateFBtnDrafts[index].default = "";
+        } else {
+          const clamped = Math.min(1, Math.max(0, parsed));
+          const floored = Math.floor(Number((clamped * 100).toFixed(6))) / 100;
+          cardCreateFBtnDrafts[index].default = floored.toFixed(2);
+        }
+        defaultInput.value = cardCreateFBtnDrafts[index].default;
+        syncHideControl();
+      });
+
+      syncHideControl();
+      hideInput.checked = !cardCreateFBtnDrafts[index].visible;
+
       const removeBtn = document.createElement("button");
       removeBtn.type = "button";
       removeBtn.className = "card-remove-btn";
@@ -3512,7 +3578,22 @@ export function mountConverterView(
         syncCardCreateMetadataEditorsDisabledState(false);
       });
 
-      row.append(nameInput, actionSelect, morphSelect, removeBtn);
+      // --- Line 1: morph name + remove (right-aligned) ---
+      const nameLine = document.createElement("div");
+      nameLine.className = "card-fast-button-name-line";
+      nameLine.append(nameInput, removeBtn);
+
+      // --- Line 2: action category and morph select ---
+      const main = document.createElement("div");
+      main.className = "card-fast-button-main";
+      main.append(actionSelect, morphSelect);
+
+      // --- Line 3: default weight and hide flag ---
+      const details = document.createElement("div");
+      details.className = "card-fast-button-details";
+      details.append(defaultLabel, defaultInput, hideLabel);
+
+      row.append(nameLine, main, details);
       cardCreateFBtnList.appendChild(row);
     });
   }
@@ -4330,7 +4411,7 @@ export function mountConverterView(
         .map((file) => getCardCreateFileDisplayKey(file))
         .join(" | ");
       if (cardCreateMetadataSourceKeys.fBtn !== fBtnCompositeKey) {
-        const mergedRows: CardCreateFastButtonDraft[] = [];
+        const mergedRows: FastButtonDraft[] = [];
         const invalidLabels: string[] = [];
         for (const file of fBtnFiles) {
           try {
@@ -4438,7 +4519,7 @@ export function mountConverterView(
           (draft) => draft.morph,
         ));
     if (cardCreateFBtnEditInput.checked || fBtnAutoMerge) {
-      overrides.fBtn = buildFastButtonOverride(
+      overrides.fBtn = buildFastButtonEntries(
         finalizeCardMetadataEntries(
           cardCreateFBtnDrafts,
           cardCreateMorphNames,

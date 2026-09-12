@@ -423,6 +423,83 @@ describe("createCardPngFromFiles", () => {
     expect(moAi.voiceSamples[0].fileName).toBe("voice_sample_intro.webm");
     expect(moAi.voiceSamples[1].sampleName).toBe("Greeting");
   });
+
+  it("embeds fbTn fast buttons with default, visible:false and unknown fields", async () => {
+    const files = [
+      new File([toArrayBuffer(BASE_PNG)], "ero.dance.png", {
+        type: "image/png",
+      }),
+      new File([loadBuffer("public/example/TestModel.bpmx")], "dance.bpmx"),
+    ];
+
+    const result = await createCardPngFromFiles(files, {
+      metadataOverrides: {
+        fBtn: [
+          {
+            name: "Blink",
+            action: "morph",
+            morph: 3,
+            default: 0.5,
+            visible: false,
+            custom: "keep",
+          },
+        ],
+      },
+    });
+
+    expect(listChunkTypes(new Uint8Array(result.pngBuffer))).toContain("fbTn");
+    const extracted = await extractCardPngToZip(
+      new File([result.pngBuffer], result.report.outputFileName, {
+        type: "image/png",
+      }),
+    );
+    const entries = unzipSync(new Uint8Array(extracted.zipBuffer));
+    expect(decodeUtf8(entries["metadata.fBtn.json"])).toBe(
+      '[{"name":"Blink","action":"morph","morph":3,"default":0.5,"visible":false,"custom":"keep"}]',
+    );
+  });
+
+  it("round-trips staged fBtn metadata with default and visible:false unedited", async () => {
+    const files = [
+      new File([toArrayBuffer(BASE_PNG)], "ero.dance.png", {
+        type: "image/png",
+      }),
+      new File([loadBuffer("public/example/TestModel.bpmx")], "dance.bpmx"),
+      new File(
+        [
+          new TextEncoder().encode(
+            JSON.stringify([
+              { name: "Fav", action: "morph", morph: 1, default: 1 },
+              {
+                name: "Hidden",
+                action: "morph",
+                morph: 2,
+                default: 0.25,
+                visible: false,
+              },
+            ]),
+          ),
+        ],
+        "metadata.fBtn.json",
+        { type: "application/json" },
+      ),
+    ];
+
+    const result = await createCardPngFromFiles(files);
+    const chunkTypes = listChunkTypes(new Uint8Array(result.pngBuffer));
+    expect(chunkTypes).toContain("fbTn");
+    expect(chunkTypes).not.toContain("fBtn");
+
+    const extracted = await extractCardPngToZip(
+      new File([result.pngBuffer], result.report.outputFileName, {
+        type: "image/png",
+      }),
+    );
+    const entries = unzipSync(new Uint8Array(extracted.zipBuffer));
+    expect(decodeUtf8(entries["metadata.fBtn.json"])).toBe(
+      '[{"name":"Fav","action":"morph","morph":1,"default":1},{"name":"Hidden","action":"morph","morph":2,"default":0.25,"visible":false}]',
+    );
+  });
 });
 
 function listChunkTypes(bytes: Uint8Array): string[] {
