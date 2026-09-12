@@ -304,6 +304,55 @@ describe("createCardPngFromFiles", () => {
     );
   });
 
+  it("merges duplicate fBtn files via override instead of warning first-wins", async () => {
+    const fBtnFile = (path: string, payload: unknown) => {
+      const file = new File(
+        [new TextEncoder().encode(JSON.stringify(payload))],
+        path.split("/").pop() as string,
+        { type: "application/json" },
+      );
+      (file as File & { webkitRelativePath?: string }).webkitRelativePath =
+        path;
+      return file;
+    };
+    const files = [
+      new File([toArrayBuffer(BASE_PNG)], "ero.dance.png", {
+        type: "image/png",
+      }),
+      new File([loadBuffer("public/example/TestModel.bpmx")], "dance.bpmx"),
+      fBtnFile("metadata.fBtn.json", [
+        { name: "A", action: "morph", morph: 1 },
+      ]),
+      fBtnFile("alt/metadata.fBtn.json", [
+        { name: "B", action: "morph", morph: 2 },
+      ]),
+    ];
+
+    const merged = await createCardPngFromFiles(files, {
+      metadataOverrides: {
+        fBtn: [{ name: "Merged", action: "morph", morph: 2 }],
+      },
+    });
+    const mergedMessages = merged.report.warnings.map((w) => w.message);
+    expect(
+      mergedMessages.some(
+        (message) =>
+          message.includes("2 metadata.fBtn.json-Dateien gefunden") &&
+          message.includes("zusammengeführt"),
+      ),
+    ).toBe(true);
+    expect(mergedMessages).not.toContain(
+      "Mehrere metadata.fBtn.json-Dateien gefunden. Es wird die erste verwendet.",
+    );
+
+    const firstWins = await createCardPngFromFiles(files, {});
+    expect(firstWins.report.warnings).toContainEqual({
+      level: "warn",
+      message:
+        "Mehrere metadata.fBtn.json-Dateien gefunden. Es wird die erste verwendet.",
+    });
+  });
+
   it("roundtrips vcAu voice clone samples with moAi metadata", async () => {
     const voiceSample1 = new TextEncoder().encode("voice-clip-1");
     const voiceSample2 = new TextEncoder().encode("voice-clip-2-longer");

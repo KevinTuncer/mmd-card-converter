@@ -28,6 +28,8 @@
   --success: #6ef5c4;
   --success-strong: #a8ffdb;
   --warning-strong: #ffc499;
+  --warning-row-bg: rgba(224, 158, 44, 0.14);
+  --warning-row-border: rgba(196, 128, 28, 0.45);
   --tag-muted-bg: rgba(255, 255, 255, 0.1);
   --surface-soft: rgba(255, 255, 255, 0.72);
   --surface-muted: rgba(255, 255, 255, 0.58);
@@ -75,6 +77,8 @@
   --success: #74f0c4;
   --success-strong: #b4ffdf;
   --warning-strong: #ffc79b;
+  --warning-row-bg: rgba(255, 196, 120, 0.12);
+  --warning-row-border: rgba(255, 196, 120, 0.38);
   --tag-muted-bg: rgba(255, 255, 255, 0.12);
   --surface-soft: rgba(255, 255, 255, 0.06);
   --surface-muted: rgba(255, 255, 255, 0.08);
@@ -917,6 +921,25 @@ button:disabled {
 .card-voice-file-select-missing {
   border-color: var(--danger-border) !important;
   color: var(--danger-text);
+}
+
+/* Metadata editor rows referencing the same morph (duplicate → yellow) or a
+   morph missing from the selected model (invalid → red). Red wins when both
+   apply (rule order below). */
+.card-fast-button-row.card-row-duplicate,
+.card-morph-row.card-row-duplicate {
+  background: var(--warning-row-bg);
+  border: 1px solid var(--warning-row-border);
+  border-radius: 8px;
+  padding: 0.5rem;
+}
+
+.card-fast-button-row.card-row-invalid,
+.card-morph-row.card-row-invalid {
+  background: var(--danger-bg);
+  border: 1px solid var(--danger-border-strong);
+  border-radius: 8px;
+  padding: 0.5rem;
 }
 
 .card-toast-notification {

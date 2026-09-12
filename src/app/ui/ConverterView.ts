@@ -24,6 +24,12 @@ import {
   getCardCreatorInputKind,
   pickPreferredCardBaseImage,
 } from "@/app/converter/CardPngCreator";
+import {
+  computeCardMetadataEntryStates,
+  type CardMetadataEntryState,
+  finalizeCardMetadataEntries,
+  hasCardMetadataFilterableEntries,
+} from "@/app/converter/CardMetadataMerge";
 import { extractCardPngToZip } from "@/app/converter/CardPngExtractor";
 import {
   LOCALE_LABELS,
@@ -143,12 +149,14 @@ interface CardCreateFastButtonDraft {
   name: string;
   action: "morph";
   morph: string;
+  sourceSeq?: number;
 }
 
 interface MorphDescDraft {
   index: string;
   name: string;
   desc: string;
+  sourceSeq?: number;
 }
 
 interface VoiceCloneSampleDraft {
@@ -224,9 +232,9 @@ function parseUInfDraft(value: unknown): CardCreateUInfDraft {
   };
 }
 
-function parseFastButtonDrafts(value: unknown): CardCreateFastButtonDraft[] {
-  if (!Array.isArray(value)) return [createEmptyFastButtonDraft()];
-  const rows = value.map((entry) => {
+function parseFastButtonRows(value: unknown): CardCreateFastButtonDraft[] {
+  if (!Array.isArray(value)) return [];
+  return value.map((entry) => {
     const data = (entry ?? {}) as Record<string, unknown>;
     return {
       name: String(data.name ?? ""),
@@ -234,7 +242,6 @@ function parseFastButtonDrafts(value: unknown): CardCreateFastButtonDraft[] {
       morph: String(data.morph ?? "0"),
     };
   });
-  return rows.length > 0 ? rows : [createEmptyFastButtonDraft()];
 }
 
 function parseMoAiDraft(value: unknown): CardCreateMoAiDraft {
@@ -536,6 +543,9 @@ interface ConverterViewText {
   metadataEditableWhenModelLoaded: string;
   metadataSourceTemplate: string;
   metadataInvalidJsonTemplate: string;
+  metadataInvalidJsonListTemplate: string;
+  metadataDuplicateRowTitle: string;
+  metadataInvalidRowTitle: string;
   fastButtonNamePlaceholder: string;
   fastButtonMorphPlaceholder: string;
   fastButtonRemove: string;
@@ -696,6 +706,11 @@ function getConverterViewText(locale: AppLocale): ConverterViewText {
       "Editing becomes available once PMX or BPMX has been loaded.",
     metadataSourceTemplate: "Source: {path}",
     metadataInvalidJsonTemplate: "Source: {path} (invalid JSON)",
+    metadataInvalidJsonListTemplate: "Invalid JSON: {paths}",
+    metadataDuplicateRowTitle:
+      "Duplicate: refers to the same morph as another entry. When creating the card, the most recently added entry wins.",
+    metadataInvalidRowTitle:
+      "Invalid: this morph does not exist in the selected model. It will not be embedded into the card.",
     fastButtonNamePlaceholder: "Name",
     fastButtonMorphPlaceholder: "Morph",
     fastButtonRemove: "Remove fast button",
@@ -859,6 +874,11 @@ function getConverterViewText(locale: AppLocale): ConverterViewText {
       "Bearbeitung verfügbar, sobald PMX oder BPMX geladen ist.",
     metadataSourceTemplate: "Quelle: {path}",
     metadataInvalidJsonTemplate: "Quelle: {path} (ungültiges JSON)",
+    metadataInvalidJsonListTemplate: "Ungültiges JSON: {paths}",
+    metadataDuplicateRowTitle:
+      "Duplikat: verweist auf denselben Morph wie ein anderer Eintrag. Beim Erstellen der Karte gewinnt der zuletzt hinzugefügte Eintrag.",
+    metadataInvalidRowTitle:
+      "Ungültig: Dieser Morph existiert im ausgewählten Modell nicht. Er wird nicht in die Karte eingebettet.",
     fastButtonNamePlaceholder: "Name",
     fastButtonMorphPlaceholder: "Morph",
     fastButtonRemove: "Fast Button entfernen",
@@ -1024,6 +1044,11 @@ function getConverterViewText(locale: AppLocale): ConverterViewText {
       "PMX または BPMX を読み込むと編集できるようになります。",
     metadataSourceTemplate: "ソース: {path}",
     metadataInvalidJsonTemplate: "ソース: {path}（無効な JSON）",
+    metadataInvalidJsonListTemplate: "無効な JSON: {paths}",
+    metadataDuplicateRowTitle:
+      "重複: 他のエントリと同じモーフを参照しています。カード作成時は最後に追加されたエントリが優先されます。",
+    metadataInvalidRowTitle:
+      "無効: このモーフは選択されたモデルに存在しません。カードには埋め込まれません。",
     fastButtonNamePlaceholder: "名前",
     fastButtonMorphPlaceholder: "Morph",
     fastButtonRemove: "Fast Button を削除",
@@ -1182,6 +1207,10 @@ function getConverterViewText(locale: AppLocale): ConverterViewText {
     metadataEditableWhenModelLoaded: "加载 PMX 或 BPMX 后即可编辑。",
     metadataSourceTemplate: "来源: {path}",
     metadataInvalidJsonTemplate: "来源: {path}（JSON 无效）",
+    metadataInvalidJsonListTemplate: "无效 JSON: {paths}",
+    metadataDuplicateRowTitle:
+      "重复：与其他条目指向同一个形态。创建卡片时，以最后添加的条目为准。",
+    metadataInvalidRowTitle: "无效：所选模型中不存在此形态，不会嵌入卡片。",
     fastButtonNamePlaceholder: "名称",
     fastButtonMorphPlaceholder: "Morph",
     fastButtonRemove: "移除 Fast Button",
@@ -1339,6 +1368,10 @@ function getConverterViewText(locale: AppLocale): ConverterViewText {
     metadataEditableWhenModelLoaded: "載入 PMX 或 BPMX 後即可編輯。",
     metadataSourceTemplate: "來源: {path}",
     metadataInvalidJsonTemplate: "來源: {path}（無效的 JSON）",
+    metadataInvalidJsonListTemplate: "無效 JSON: {paths}",
+    metadataDuplicateRowTitle:
+      "重複：與其他條目指向同一個形態。建立卡片時，以最後新增的條目為準。",
+    metadataInvalidRowTitle: "無效：所選模型中不存在此形態，不會嵌入卡片。",
     fastButtonNamePlaceholder: "名稱",
     fastButtonMorphPlaceholder: "Morph",
     fastButtonRemove: "移除 Fast Button",
@@ -2915,6 +2948,14 @@ export function mountConverterView(
     fBtn: null,
     moAi: null,
   };
+  // Staging order of card-create files (per file key). Used to number
+  // duplicated metadata files ("metadata.moAi.json (2)") and to resolve
+  // duplicate morph entries with "last added wins".
+  const cardCreateFileSeqByKey = new Map<string, number>();
+  let cardCreateFileSeqCounter = 0;
+  // Clean display path for files whose staging key had to be made unique
+  // (dropped fBtn/moAi duplicates of an already staged file).
+  const cardCreateDisplayKeyOverrides = new WeakMap<File, string>();
 
   async function getDefaultCardCreateBaseImageBuffer(): Promise<ArrayBuffer> {
     if (defaultCardCreateBaseImageBuffer) {
@@ -3271,6 +3312,84 @@ export function mountConverterView(
     );
   }
 
+  function getCardCreateFileSeq(file: File): number {
+    return cardCreateFileSeqByKey.get(getCardCreateFileKey(file)) ?? 0;
+  }
+
+  /** All staged files of a metadata kind, ordered by add sequence. */
+  function getCardCreateMetadataFiles(key: CardCreateMetadataKey): File[] {
+    const kind = CARD_CREATE_METADATA_KIND_MAP[key];
+    return stagedCardCreateFiles
+      .filter((file) => getCardCreatorInputKind(file) === kind)
+      .sort(
+        (left, right) =>
+          getCardCreateFileSeq(left) - getCardCreateFileSeq(right),
+      );
+  }
+
+  /**
+   * Display key for the file list: duplicated fBtn/moAi metadata files get
+   * an occurrence counter in parentheses, numbered by add order.
+   */
+  function getCardCreateFileDisplayKey(file: File): string {
+    const fileKey = getCardCreateFileKey(file);
+    const displayKey = cardCreateDisplayKeyOverrides.get(file) ?? fileKey;
+    const kind = getCardCreatorInputKind(file);
+    if (kind !== "metadata-fBtn" && kind !== "metadata-moAi") {
+      return displayKey;
+    }
+    const group = stagedCardCreateFiles
+      .filter((candidate) => getCardCreatorInputKind(candidate) === kind)
+      .sort(
+        (left, right) =>
+          getCardCreateFileSeq(left) - getCardCreateFileSeq(right),
+      );
+    if (group.length < 2) return displayKey;
+    return `${displayKey} (${group.indexOf(file) + 1})`;
+  }
+
+  function buildCardCreateMetadataSourceText(
+    files: readonly File[],
+    invalidLabels: readonly string[],
+  ): string {
+    const invalidSet = new Set(invalidLabels);
+    const validLabels = files
+      .map((file) => getCardCreateFileDisplayKey(file))
+      .filter((label) => !invalidSet.has(label));
+    const parts: string[] = [];
+    if (validLabels.length > 0) {
+      parts.push(
+        formatTemplate(text.metadataSourceTemplate, {
+          path: validLabels.join(", "),
+        }),
+      );
+    }
+    if (invalidLabels.length > 0) {
+      parts.push(
+        formatTemplate(text.metadataInvalidJsonListTemplate, {
+          paths: invalidLabels.join(", "),
+        }),
+      );
+    }
+    return parts.join(" · ");
+  }
+
+  function applyCardMetadataRowState(
+    row: HTMLElement,
+    state: CardMetadataEntryState,
+  ): void {
+    row.classList.toggle("card-row-duplicate", state.duplicate);
+    row.classList.toggle("card-row-invalid", state.invalid);
+    if (!state.duplicate && !state.invalid) {
+      row.removeAttribute("title");
+      return;
+    }
+    const titles: string[] = [];
+    if (state.duplicate) titles.push(text.metadataDuplicateRowTitle);
+    if (state.invalid) titles.push(text.metadataInvalidRowTitle);
+    row.title = titles.join(" · ");
+  }
+
   function setCardCreateMetadataFieldsDisabled(
     containerElement: HTMLElement,
     disabled: boolean,
@@ -3293,9 +3412,15 @@ export function mountConverterView(
 
   function renderCardCreateFastButtonRows(): void {
     cardCreateFBtnList.innerHTML = "";
+    const rowStates = computeCardMetadataEntryStates(
+      cardCreateFBtnDrafts,
+      cardCreateMorphNames,
+      (draft) => draft.morph,
+    );
     cardCreateFBtnDrafts.forEach((draft, index) => {
       const row = document.createElement("div");
       row.className = "card-fast-button-row";
+      applyCardMetadataRowState(row, rowStates[index]);
 
       const nameInput = document.createElement("input");
       nameInput.className = "card-fast-button-name";
@@ -3406,9 +3531,16 @@ export function mountConverterView(
 
   function renderCardCreateMorphRows(): void {
     cardCreateMorphList.innerHTML = "";
+    const rowStates = computeCardMetadataEntryStates(
+      cardCreateMoAiDraft.morphs,
+      cardCreateMorphNames,
+      (draft) => draft.index,
+      (draft) => draft.name,
+    );
     cardCreateMoAiDraft.morphs.forEach((draft, index) => {
       const row = document.createElement("div");
       row.className = "card-morph-row";
+      applyCardMetadataRowState(row, rowStates[index]);
 
       const indexSelect = document.createElement("select");
       for (const opt of buildMorphIndexOptions(draft.index)) {
@@ -4148,8 +4280,8 @@ export function mountConverterView(
       cardCreateMetadataSourceKeys.uInf = getCardCreateFileKey(uInfFile);
     }
 
-    const fBtnFile = getCardCreateMetadataFile("fBtn");
-    if (!fBtnFile) {
+    const fBtnFiles = getCardCreateMetadataFiles("fBtn");
+    if (fBtnFiles.length === 0) {
       cardCreateMetadataSourceKeys.fBtn = null;
       cardCreateFBtnSource.textContent = hasCardCreateModelInput(
         stagedCardCreateFiles,
@@ -4158,31 +4290,35 @@ export function mountConverterView(
             file: "metadata.fBtn.json",
           })
         : text.metadataEditableWhenModelLoaded;
-    } else if (
-      cardCreateMetadataSourceKeys.fBtn !== getCardCreateFileKey(fBtnFile)
-    ) {
-      try {
-        cardCreateFBtnDrafts = parseFastButtonDrafts(
-          await readJsonFile(fBtnFile),
-        );
+    } else {
+      const fBtnCompositeKey = fBtnFiles
+        .map((file) => getCardCreateFileDisplayKey(file))
+        .join(" | ");
+      if (cardCreateMetadataSourceKeys.fBtn !== fBtnCompositeKey) {
+        const mergedRows: CardCreateFastButtonDraft[] = [];
+        const invalidLabels: string[] = [];
+        for (const file of fBtnFiles) {
+          try {
+            const rows = parseFastButtonRows(await readJsonFile(file));
+            const sourceSeq = getCardCreateFileSeq(file);
+            mergedRows.push(...rows.map((row) => ({ ...row, sourceSeq })));
+          } catch {
+            invalidLabels.push(getCardCreateFileDisplayKey(file));
+          }
+        }
         if (refreshToken !== cardCreateMetadataRefreshToken) return;
-        cardCreateFBtnSource.textContent = formatTemplate(
-          text.metadataSourceTemplate,
-          { path: getCardCreateFileKey(fBtnFile) },
+        cardCreateFBtnDrafts =
+          mergedRows.length > 0 ? mergedRows : [createEmptyFastButtonDraft()];
+        cardCreateFBtnSource.textContent = buildCardCreateMetadataSourceText(
+          fBtnFiles,
+          invalidLabels,
         );
-      } catch {
-        if (refreshToken !== cardCreateMetadataRefreshToken) return;
-        cardCreateFBtnDrafts = [createEmptyFastButtonDraft()];
-        cardCreateFBtnSource.textContent = formatTemplate(
-          text.metadataInvalidJsonTemplate,
-          { path: getCardCreateFileKey(fBtnFile) },
-        );
+        cardCreateMetadataSourceKeys.fBtn = fBtnCompositeKey;
       }
-      cardCreateMetadataSourceKeys.fBtn = getCardCreateFileKey(fBtnFile);
     }
 
-    const moAiFile = getCardCreateMetadataFile("moAi");
-    if (!moAiFile) {
+    const moAiFiles = getCardCreateMetadataFiles("moAi");
+    if (moAiFiles.length === 0) {
       cardCreateMetadataSourceKeys.moAi = null;
       cardCreateMoAiSource.textContent = hasCardCreateModelInput(
         stagedCardCreateFiles,
@@ -4191,25 +4327,46 @@ export function mountConverterView(
             file: "metadata.moAi.json",
           })
         : text.metadataEditableWhenModelLoaded;
-    } else if (
-      cardCreateMetadataSourceKeys.moAi !== getCardCreateFileKey(moAiFile)
-    ) {
-      try {
-        cardCreateMoAiDraft = parseMoAiDraft(await readJsonFile(moAiFile));
+    } else {
+      const moAiCompositeKey = moAiFiles
+        .map((file) => getCardCreateFileDisplayKey(file))
+        .join(" | ");
+      if (cardCreateMetadataSourceKeys.moAi !== moAiCompositeKey) {
+        const mergedMorphs: MorphDescDraft[] = [];
+        const mergedVoiceSamples: VoiceCloneSampleDraft[] = [];
+        let scalarDraft: {
+          name: string;
+          gender: string;
+          info: string;
+        } | null = null;
+        const invalidLabels: string[] = [];
+        for (const file of moAiFiles) {
+          try {
+            const draft = parseMoAiDraft(await readJsonFile(file));
+            const sourceSeq = getCardCreateFileSeq(file);
+            mergedMorphs.push(
+              ...draft.morphs.map((morph) => ({ ...morph, sourceSeq })),
+            );
+            mergedVoiceSamples.push(...draft.voiceSamples);
+            scalarDraft = draft; // files are in add order → last valid wins
+          } catch {
+            invalidLabels.push(getCardCreateFileDisplayKey(file));
+          }
+        }
         if (refreshToken !== cardCreateMetadataRefreshToken) return;
-        cardCreateMoAiSource.textContent = formatTemplate(
-          text.metadataSourceTemplate,
-          { path: getCardCreateFileKey(moAiFile) },
+        cardCreateMoAiDraft = {
+          name: scalarDraft?.name ?? "",
+          gender: scalarDraft?.gender ?? "",
+          info: scalarDraft?.info ?? "",
+          morphs: mergedMorphs,
+          voiceSamples: mergedVoiceSamples,
+        };
+        cardCreateMoAiSource.textContent = buildCardCreateMetadataSourceText(
+          moAiFiles,
+          invalidLabels,
         );
-      } catch {
-        if (refreshToken !== cardCreateMetadataRefreshToken) return;
-        cardCreateMoAiDraft = createEmptyMoAiDraft();
-        cardCreateMoAiSource.textContent = formatTemplate(
-          text.metadataInvalidJsonTemplate,
-          { path: getCardCreateFileKey(moAiFile) },
-        );
+        cardCreateMetadataSourceKeys.moAi = moAiCompositeKey;
       }
-      cardCreateMetadataSourceKeys.moAi = getCardCreateFileKey(moAiFile);
     }
 
     cardCreateUInfAuthInput.value = cardCreateUInfDraft.auth;
@@ -4232,11 +4389,49 @@ export function mountConverterView(
     if (cardCreateUInfEditInput.checked) {
       overrides.uInf = buildUInfOverride(cardCreateUInfDraft);
     }
-    if (cardCreateFBtnEditInput.checked) {
-      overrides.fBtn = buildFastButtonOverride(cardCreateFBtnDrafts);
+
+    // fBtn/moAi: duplicated metadata files are merged automatically. The
+    // merged, de-duplicated ("last added wins") and validated result
+    // replaces the staged files — even when the edit checkbox is not ticked.
+    const fBtnFiles = getCardCreateMetadataFiles("fBtn");
+    const fBtnAutoMerge =
+      fBtnFiles.length > 1 ||
+      (fBtnFiles.length === 1 &&
+        hasCardMetadataFilterableEntries(
+          cardCreateFBtnDrafts,
+          cardCreateMorphNames,
+          (draft) => draft.morph,
+        ));
+    if (cardCreateFBtnEditInput.checked || fBtnAutoMerge) {
+      overrides.fBtn = buildFastButtonOverride(
+        finalizeCardMetadataEntries(
+          cardCreateFBtnDrafts,
+          cardCreateMorphNames,
+          (draft) => draft.morph,
+        ),
+      );
     }
-    if (cardCreateMoAiEditInput.checked) {
-      overrides.moAi = buildMoAiOverride(cardCreateMoAiDraft);
+
+    const moAiFiles = getCardCreateMetadataFiles("moAi");
+    const moAiAutoMerge =
+      moAiFiles.length > 1 ||
+      (moAiFiles.length === 1 &&
+        hasCardMetadataFilterableEntries(
+          cardCreateMoAiDraft.morphs,
+          cardCreateMorphNames,
+          (draft) => draft.index,
+          (draft) => draft.name,
+        ));
+    if (cardCreateMoAiEditInput.checked || moAiAutoMerge) {
+      overrides.moAi = buildMoAiOverride({
+        ...cardCreateMoAiDraft,
+        morphs: finalizeCardMetadataEntries(
+          cardCreateMoAiDraft.morphs,
+          cardCreateMorphNames,
+          (draft) => draft.index,
+          (draft) => draft.name,
+        ),
+      });
     }
     return overrides;
   }
@@ -4267,6 +4462,8 @@ export function mountConverterView(
 
   function resetCardCreateInputs(): void {
     stagedCardCreateFiles = [];
+    cardCreateFileSeqByKey.clear();
+    cardCreateFileSeqCounter = 0;
     selectedCardCreateBaseImage = null;
     selectedCardCreateModelFile = null;
     cardCreatePreferDefaultBaseImage = false;
@@ -4372,7 +4569,7 @@ export function mountConverterView(
 
       const pathSpan = document.createElement("span");
       pathSpan.className = "file-path";
-      pathSpan.textContent = fileKey;
+      pathSpan.textContent = getCardCreateFileDisplayKey(file);
 
       const roleTag = document.createElement("span");
       roleTag.className = "card-role-tag";
@@ -4467,6 +4664,7 @@ export function mountConverterView(
         stagedCardCreateFiles = stagedCardCreateFiles.filter(
           (candidate) => candidate !== file,
         );
+        cardCreateFileSeqByKey.delete(getCardCreateFileKey(file));
         if (selectedCardCreateBaseImage === file) {
           selectedCardCreateBaseImage = null;
         }
@@ -4505,7 +4703,43 @@ export function mountConverterView(
       merged.set(getCardCreateFileKey(file), file);
     }
     for (const file of incomingFiles) {
+      const key = getCardCreateFileKey(file);
+      const kind = getCardCreatorInputKind(file);
+      const existing = merged.get(key);
+      if (
+        existing !== undefined &&
+        existing !== file &&
+        (kind === "metadata-fBtn" || kind === "metadata-moAi")
+      ) {
+        // Dropped fBtn/moAi file whose key is already staged (e.g. the same
+        // file name inside a loaded ZIP): stage it as an ADDITIONAL entry
+        // with a unique pseudo-folder key instead of replacing the existing
+        // one. The prefix keeps the base name (and with it the file
+        // classification) intact; the file list still shows the original
+        // path plus the duplicate counter.
+        const baseName = key.split("/").pop() ?? key;
+        let suffix = 2;
+        while (merged.has(`duplicate-${suffix}/${baseName}`)) suffix++;
+        // webkitRelativePath is getter-only on File instances; shadow it
+        // with defineProperty (same technique as readZipFiles).
+        Object.defineProperty(file, "webkitRelativePath", {
+          value: `duplicate-${suffix}/${baseName}`,
+          configurable: true,
+        });
+        cardCreateDisplayKeyOverrides.set(file, key);
+      }
       merged.set(getCardCreateFileKey(file), file);
+    }
+
+    const mergedKeys = new Set(merged.keys());
+    for (const key of Array.from(cardCreateFileSeqByKey.keys())) {
+      if (!mergedKeys.has(key)) cardCreateFileSeqByKey.delete(key);
+    }
+    for (const file of incomingFiles) {
+      cardCreateFileSeqByKey.set(
+        getCardCreateFileKey(file),
+        ++cardCreateFileSeqCounter,
+      );
     }
 
     stagedCardCreateFiles = Array.from(merged.values()).sort((left, right) =>

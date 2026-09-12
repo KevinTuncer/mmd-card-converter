@@ -116,6 +116,8 @@ interface ClassifiedCardInputs {
   metadataUInfFile: File | null;
   metadataFBtnFile: File | null;
   metadataMoAiFile: File | null;
+  metadataFBtnCount: number;
+  metadataMoAiCount: number;
   voiceCloneSampleFiles: File[];
   baseImageCandidates: File[];
 }
@@ -127,6 +129,12 @@ interface CardChunkPayload {
 
 type MetadataChunkType = "uInf" | "fBtn" | "moAi";
 
+const METADATA_FILE_NAMES: Record<MetadataChunkType, string> = {
+  uInf: "metadata.uInf.json",
+  fBtn: "metadata.fBtn.json",
+  moAi: "metadata.moAi.json",
+};
+
 interface CardChunkBuildResult {
   chunkPayloads: CardChunkPayload[];
   convertedFiles: string[];
@@ -135,6 +143,7 @@ interface CardChunkBuildResult {
 
 interface ChosenFile<T extends File | null> {
   file: T;
+  count: number;
   warnings: ConverterWarning[];
 }
 
@@ -217,6 +226,20 @@ function classifyCardInputs(
   const baseImageCandidates = files.filter(
     (file) => getCardCreatorInputKind(file) === "base-image",
   );
+  // Duplicate fBtn/moAi files do not warn here: when the caller provides a
+  // merged override they are combined (info message emitted later in
+  // buildCardChunkPayloads); without an override the first-wins warning is
+  // emitted there as well.
+  const metadataFBtn = chooseSingleFile(
+    files.filter((file) => getCardCreatorInputKind(file) === "metadata-fBtn"),
+    null,
+    warnings,
+  );
+  const metadataMoAi = chooseSingleFile(
+    files.filter((file) => getCardCreatorInputKind(file) === "metadata-moAi"),
+    null,
+    warnings,
+  );
 
   return {
     bpmxFile: chooseSingleFile(
@@ -265,16 +288,10 @@ function classifyCardInputs(
       "Mehrere metadata.uInf.json-Dateien gefunden. Es wird die erste verwendet.",
       warnings,
     ).file,
-    metadataFBtnFile: chooseSingleFile(
-      files.filter((file) => getCardCreatorInputKind(file) === "metadata-fBtn"),
-      "Mehrere metadata.fBtn.json-Dateien gefunden. Es wird die erste verwendet.",
-      warnings,
-    ).file,
-    metadataMoAiFile: chooseSingleFile(
-      files.filter((file) => getCardCreatorInputKind(file) === "metadata-moAi"),
-      "Mehrere metadata.moAi.json-Dateien gefunden. Es wird die erste verwendet.",
-      warnings,
-    ).file,
+    metadataFBtnFile: metadataFBtn.file,
+    metadataMoAiFile: metadataMoAi.file,
+    metadataFBtnCount: metadataFBtn.count,
+    metadataMoAiCount: metadataMoAi.count,
     voiceCloneSampleFiles: files.filter(
       (file) => getCardCreatorInputKind(file) === "voice-clone-sample",
     ),
@@ -284,13 +301,13 @@ function classifyCardInputs(
 
 function chooseSingleFile<T extends File>(
   files: readonly T[],
-  warningMessage: string,
+  warningMessage: string | null,
   warnings: ConverterWarning[],
 ): ChosenFile<T | null> {
-  if (files.length > 1) {
+  if (warningMessage !== null && files.length > 1) {
     warnings.push({ level: "warn", message: warningMessage });
   }
-  return { file: files[0] ?? null, warnings };
+  return { file: files[0] ?? null, count: files.length, warnings };
 }
 
 async function resolveBaseImage(
@@ -473,18 +490,44 @@ async function buildCardChunkPayloads(
   });
 
   for (const metadata of [
-    ["uInf", classified.metadataUInfFile],
-    ["fBtn", classified.metadataFBtnFile],
-    ["moAi", classified.metadataMoAiFile],
+    {
+      chunkType: "uInf",
+      file: classified.metadataUInfFile,
+      fileCount: 1,
+    },
+    {
+      chunkType: "fBtn",
+      file: classified.metadataFBtnFile,
+      fileCount: classified.metadataFBtnCount,
+    },
+    {
+      chunkType: "moAi",
+      file: classified.metadataMoAiFile,
+      fileCount: classified.metadataMoAiCount,
+    },
   ] as const) {
-    const [chunkType, file] = metadata;
+    const { chunkType, file, fileCount } = metadata;
     const override = options.metadataOverrides?.[chunkType];
     if (!file && override === undefined) continue;
+
+    if (fileCount > 1) {
+      warnings.push(
+        override !== undefined
+          ? {
+              level: "info",
+              message: `${fileCount} ${METADATA_FILE_NAMES[chunkType]}-Dateien gefunden. Sie werden zusammengeführt; bei Duplikaten gewinnt der zuletzt hinzugefügte Eintrag und ungültige Morph-Referenzen werden verworfen.`,
+            }
+          : {
+              level: "warn",
+              message: `Mehrere ${METADATA_FILE_NAMES[chunkType]}-Dateien gefunden. Es wird die erste verwendet.`,
+            },
+      );
+    }
 
     let bytes: Uint8Array;
     if (override !== undefined) {
       bytes = encodeCanonicalJson(override);
-      if (file) {
+      if (file && fileCount === 1) {
         warnings.push({
           level: "info",
           message: `${getFilePath(file)} wurde durch editierte ${chunkType}-Metadaten überschrieben.`,
