@@ -32,3 +32,24 @@ export function buildOutputZip(
     zipped.byteOffset + zipped.byteLength,
   ) as ArrayBuffer;
 }
+
+export interface ZipEntry {
+  fileName: string;
+  data: ArrayBuffer;
+}
+
+/**
+ * Assembles a flat ZIP archive from named buffers (store level 0, mirroring
+ * buildOutputZip).
+ */
+export function buildZipFromFiles(files: readonly ZipEntry[]): ArrayBuffer {
+  const entries: Zippable = {};
+  for (const file of files) {
+    entries[file.fileName] = [new Uint8Array(file.data), { level: 0 }];
+  }
+  const zipped = zipSync(entries);
+  return zipped.buffer.slice(
+    zipped.byteOffset,
+    zipped.byteOffset + zipped.byteLength,
+  ) as ArrayBuffer;
+}

@@ -8,7 +8,7 @@ export default defineConfig({
     outDir: "../dist",
     emptyOutDir: true,
     rollupOptions: {
-      input: normalizePath(resolve(__dirname, "src/index.html")),
+      input: normalizePath(resolve(import.meta.dirname, "src/index.html")),
       output: {
         entryFileNames: "index-[hash].js",
         chunkFileNames: "chunks/[name]-[hash].js",
@@ -19,7 +19,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      "@": normalizePath(resolve(__dirname, "src")),
+      "@": normalizePath(resolve(import.meta.dirname, "src")),
     },
   },
   optimizeDeps: {

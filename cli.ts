@@ -38,6 +38,7 @@ import {
 import {
   convertMotionFileToBvmd,
   convertBvmdFileToVmd,
+  convertBvmdFileToLegacyVmdFiles,
 } from "./src/app/converter/MmdMotionConverter";
 import {
   convertAudioFileToWebm,
@@ -88,6 +89,11 @@ Command Options:
     --compression <mode>     Texture compression: raw (default), lossless, lossy
     --force-avif             Force real AVIF output via @jsquash/avif (default: off)
 
+  bvmd-to-vmd:
+    --split-camera           Write model and camera animation as separate VMD
+                             files (<name>.vmd + <name>_camera.vmd); place the
+                             flag after the input path and -o value
+
   card-extract:
     --convert-legacy         Convert embedded BPMX/BVMD to legacy PMX/VMD (default: off)
     --encoding <enc>         PMX encoding for legacy conversion: utf8 (default), utf16le, shiftjis
@@ -103,6 +109,7 @@ Examples:
   bun run cli.ts pmx-to-bpmx model.pmx -o output.bpmx
   bun run cli.ts motion-to-bvmd dance.vmd
   bun run cli.ts bvmd-to-vmd dance.bvmd
+  bun run cli.ts bvmd-to-vmd dance.bvmd --split-camera -o out.vmd
   bun run cli.ts audio-to-webm song.wav
   bun run cli.ts card-extract ero.dance.png
   bun run cli.ts card-create model.bpmx motion.bvmd --base-image cover.png
@@ -287,6 +294,38 @@ async function cmdMotionToBvmd(args: ParsedArgs): Promise<void> {
   }
 }
 
+async function writeSplitCameraVmds(
+  args: ParsedArgs,
+  inputPath: string,
+  file: File,
+): Promise<void> {
+  console.log("Converting BVMD → legacy VMD files (model + camera) ...");
+  const result = await convertBvmdFileToLegacyVmdFiles(file);
+
+  const outputPath = resolveOutputPath(inputPath, ".vmd", args.options);
+  console.log(`Writing ${outputPath} ...`);
+  writeFile(outputPath, result.modelVmd.buffer);
+  console.log(
+    `✓ Written ${outputPath} (${formatSize(result.modelVmd.buffer.byteLength)})`,
+  );
+
+  if (result.cameraVmd) {
+    const cameraPath = `${outputPath.replace(/\.vmd$/i, "")}_camera.vmd`;
+    console.log(`Writing ${cameraPath} ...`);
+    writeFile(cameraPath, result.cameraVmd.buffer);
+    console.log(
+      `✓ Written ${cameraPath} (${formatSize(result.cameraVmd.buffer.byteLength)})`,
+    );
+  } else {
+    console.log("  No camera frames found — camera VMD skipped.");
+  }
+
+  if (args.flags.has("verbose")) {
+    console.log("\nMotion Summary:");
+    console.log(JSON.stringify(result.summary, null, 2));
+  }
+}
+
 async function cmdBvmdToVmd(args: ParsedArgs): Promise<void> {
   const inputPath = args.positional[0];
   if (!inputPath) {
@@ -298,6 +337,12 @@ async function cmdBvmdToVmd(args: ParsedArgs): Promise<void> {
   console.log(`Reading ${inputPath} ...`);
   const file = readFileAsFile(inputPath);
   console.log(`  Input: ${formatSize(file.size)}`);
+
+  if (args.flags.has("split-camera")) {
+    await writeSplitCameraVmds(args, inputPath, file);
+    return;
+  }
+
   console.log("Converting BVMD → VMD ...");
   const result = await convertBvmdFileToVmd(file);
 

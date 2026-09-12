@@ -214,6 +214,7 @@ async function startVite(
         process.stderr.write(text);
       }
       // Strip ANSI escape codes (Vite wraps port in bold)
+      // eslint-disable-next-line no-control-regex -- intentionally matches ANSI escape sequences
       const clean = output.replace(/\x1B\[[0-9;]*[a-zA-Z]/g, "");
       const match = clean.match(/(?:localhost|127\.0\.0\.1):(\d+)/);
       if (match) {

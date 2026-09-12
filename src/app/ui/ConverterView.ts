@@ -3,12 +3,13 @@ import { type AppTheme } from "@/app/theme";
 import { convertBpmxToPmx } from "@/app/converter/BpmxToPmxConverter";
 import { parseBpmx } from "@/app/converter/BpmxReaderAdapter";
 import {
-  convertBvmdFileToVmd,
+  convertBvmdFileToLegacyVmdFiles,
   convertMotionFileToBvmd,
   type MotionSummary,
 } from "@/app/converter/MmdMotionConverter";
 import { convertPmxToBpmx } from "@/app/converter/PmxToBpmxConverter";
 import { readZip, readZipFiles } from "@/app/converter/ZipReader";
+import { buildZipFromFiles } from "@/app/converter/ZipBuilder";
 import {
   compressImagesToAvif,
   LOSSY_QUALITY,
@@ -583,7 +584,7 @@ function getConverterViewText(locale: AppLocale): ConverterViewText {
     motionSummaryTitle: "Motion summary",
     bvmdTitle: "Convert BVMD to VMD",
     bvmdHint:
-      "Loads a .bvmd file and exports a compatible .vmd file for further editing or roundtrip tests.",
+      "Loads a .bvmd file and exports it as legacy .vmd files: the model animation plus a separate camera VMD when camera frames are present.",
     bvmdDropLabel: "Drop BVMD file here, or",
     audioTitle: "Convert WAV or MP3 to WebM audio",
     audioHint:
@@ -743,7 +744,7 @@ function getConverterViewText(locale: AppLocale): ConverterViewText {
     motionSummaryTitle: "Motion-Übersicht",
     bvmdTitle: "BVMD zu VMD konvertieren",
     bvmdHint:
-      "Lädt eine .bvmd-Datei und exportiert eine kompatible .vmd-Datei zur weiteren Bearbeitung oder für Roundtrip-Tests.",
+      "Lädt eine .bvmd-Datei und exportiert sie als Legacy-.vmd-Dateien: die Figuren-Animation plus eine separate Kamera-VMD, wenn Kameraframes vorhanden sind.",
     bvmdDropLabel: "BVMD-Datei hier ablegen oder",
     audioTitle: "WAV oder MP3 zu WebM-Audio konvertieren",
     audioHint:
@@ -906,7 +907,7 @@ function getConverterViewText(locale: AppLocale): ConverterViewText {
     motionSummaryTitle: "モーション概要",
     bvmdTitle: "BVMD を VMD に変換",
     bvmdHint:
-      ".bvmd ファイルを読み込み、編集やラウンドトリップ検証用の互換 .vmd を出力します。",
+      ".bvmd ファイルを読み込み、レガシー .vmd ファイルとして出力します。モデルアニメーションに加え、カメラフレームがある場合はカメラ用 VMD も出力します。",
     bvmdDropLabel: "ここに BVMD ファイルをドロップするか、",
     audioTitle: "WAV または MP3 を WebM 音声に変換",
     audioHint:
@@ -1072,7 +1073,7 @@ function getConverterViewText(locale: AppLocale): ConverterViewText {
     motionSummaryTitle: "动作概览",
     bvmdTitle: "将 BVMD 转换为 VMD",
     bvmdHint:
-      "加载 .bvmd 文件，并导出兼容的 .vmd 文件，用于继续编辑或往返测试。",
+      "加载 .bvmd 文件并导出为旧版 .vmd 文件：模型动画，若包含摄像机帧还会额外导出单独的摄像机 VMD。",
     bvmdDropLabel: "将 BVMD 文件拖到这里，或",
     audioTitle: "将 WAV 或 MP3 转换为 WebM 音频",
     audioHint:
@@ -1229,7 +1230,7 @@ function getConverterViewText(locale: AppLocale): ConverterViewText {
     motionSummaryTitle: "動作概覽",
     bvmdTitle: "將 BVMD 轉換為 VMD",
     bvmdHint:
-      "載入 .bvmd 檔案，並匯出相容的 .vmd 檔案，以便後續編輯或往返測試。",
+      "載入 .bvmd 檔案並匯出為舊版 .vmd 檔案：模型動畫，若包含攝影機影格還會額外匯出單獨的攝影機 VMD。",
     bvmdDropLabel: "將 BVMD 檔拖曳到這裡，或",
     audioTitle: "將 WAV 或 MP3 轉換為 WebM 音訊",
     audioHint:
@@ -2618,16 +2619,39 @@ export function mountConverterView(
     setBvmdMotionBusy(true);
     bvmdMotionStatus.textContent = viewStrings.statusConverting;
     try {
-      const result = await convertBvmdFileToVmd(stagedBvmdMotionFile);
+      const result =
+        await convertBvmdFileToLegacyVmdFiles(stagedBvmdMotionFile);
       renderMotionSummary(bvmdMotionSummary, result.summary);
-      downloadAs(
-        result.buffer,
-        `${stripExt(stagedBvmdMotionFile.name)}.vmd`,
-        "application/octet-stream",
-      );
-      bvmdMotionStatus.textContent = formatTemplate(text.downloadedStatus, {
-        file: `${stripExt(stagedBvmdMotionFile.name)}.vmd`,
-      });
+      if (result.cameraVmd) {
+        const zipName = `${stripExt(stagedBvmdMotionFile.name)}.legacy-vmd.zip`;
+        downloadAs(
+          buildZipFromFiles([
+            {
+              fileName: result.modelVmd.fileName,
+              data: result.modelVmd.buffer,
+            },
+            {
+              fileName: result.cameraVmd.fileName,
+              data: result.cameraVmd.buffer,
+            },
+          ]),
+          zipName,
+          "application/zip",
+        );
+        bvmdMotionStatus.textContent = formatTemplate(
+          text.downloadedZipFilesStatus,
+          { count: 2 },
+        );
+      } else {
+        downloadAs(
+          result.modelVmd.buffer,
+          result.modelVmd.fileName,
+          "application/octet-stream",
+        );
+        bvmdMotionStatus.textContent = formatTemplate(text.downloadedStatus, {
+          file: result.modelVmd.fileName,
+        });
+      }
     } catch (err) {
       bvmdMotionStatus.textContent = `${statusErrorPrefix}: ${err instanceof Error ? err.message : String(err)}`;
     } finally {

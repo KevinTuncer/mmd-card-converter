@@ -1,9 +1,8 @@
 {
   "compilerOptions": {
     "ignoreDeprecations": "5.0",
-    "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["./src/*"]
     },
     "target": "ES2023",
     "useDefineForClassFields": true,

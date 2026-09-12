@@ -244,7 +244,7 @@ export async function expandInputPaths(paths: string[]): Promise<File[]> {
       // However, readDirectoryFiles returns Files with webkitRelativePath.
       // Let's just trust readDirectoryFiles for now or deduplicate by webkitRelativePath.
       for (const f of dirFiles) {
-        const relPath = (f as any).webkitRelativePath || f.name;
+        const relPath = f.webkitRelativePath || f.name;
         const fullRelPath = path.join(absPath, relPath);
         addFile(f, fullRelPath);
       }
@@ -254,7 +254,7 @@ export async function expandInputPaths(paths: string[]): Promise<File[]> {
       for (const f of zipFiles) {
         // For ZIP files, the "path" is internal to the ZIP.
         // We use the ZIP path + internal path to deduplicate.
-        const internalPath = (f as any).webkitRelativePath || f.name;
+        const internalPath = f.webkitRelativePath || f.name;
         addFile(f, `${absPath}:${internalPath}`);
       }
     } else {

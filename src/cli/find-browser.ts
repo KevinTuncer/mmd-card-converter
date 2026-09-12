@@ -347,10 +347,11 @@ function findSpecificBrowser(name: string): BrowserCandidate | null {
  */
 export function findBrowser(): BrowserCandidate | null {
   // 1. Try system default browser
-  let defaultCandidate: BrowserCandidate | null = null;
-  if (isWindows) defaultCandidate = getDefaultBrowserWindows();
-  else if (isMac) defaultCandidate = getDefaultBrowserMac();
-  else defaultCandidate = getDefaultBrowserLinux();
+  const defaultCandidate = isWindows
+    ? getDefaultBrowserWindows()
+    : isMac
+      ? getDefaultBrowserMac()
+      : getDefaultBrowserLinux();
 
   if (defaultCandidate) return defaultCandidate;
 

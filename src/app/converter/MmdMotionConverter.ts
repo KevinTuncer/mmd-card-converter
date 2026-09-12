@@ -142,3 +142,51 @@ export async function convertBvmdFileToVmd(
     summary: summarizeMotion(animation),
   };
 }
+
+export interface NamedMotionBuffer {
+  fileName: string;
+  buffer: ArrayBuffer;
+}
+
+export interface LegacyVmdFilesResult {
+  modelVmd: NamedMotionBuffer;
+  cameraVmd: NamedMotionBuffer | null;
+  summary: MotionSummary;
+}
+
+/**
+ * Converts a BVMD into legacy MMD files, splitting camera data off into its
+ * own VMD the same way it was separated in original MMD motion packs.
+ * `cameraVmd` is null when the animation contains no camera frames.
+ */
+export async function convertBvmdFileToLegacyVmdFiles(
+  file: File,
+): Promise<LegacyVmdFilesResult> {
+  const { animation, format } = await loadMotionFromBuffer(
+    file.name,
+    await file.arrayBuffer(),
+  );
+  if (format !== "bvmd") {
+    throw new Error("Für diese Konvertierung wird eine BVMD-Datei benötigt.");
+  }
+  const summary = summarizeMotion(animation);
+  const baseName = stripExtension(file.name);
+  const modelBuffer = serializeMmdAnimationToVmd(animation, {
+    modelName: baseName,
+    includeCameraTrack: false,
+  });
+  const cameraBuffer =
+    summary.cameraFrames > 0
+      ? serializeMmdAnimationToVmd(animation, {
+          modelName: baseName,
+          includeModelTracks: false,
+        })
+      : null;
+  return {
+    modelVmd: { fileName: `${baseName}.vmd`, buffer: modelBuffer },
+    cameraVmd: cameraBuffer
+      ? { fileName: `${baseName}_camera.vmd`, buffer: cameraBuffer }
+      : null,
+    summary,
+  };
+}

@@ -172,6 +172,36 @@ describe("CLI bvmd-to-vmd", () => {
     expect(result.exitCode).toBe(1);
     expect(result.stderr).toContain("No input file specified");
   });
+
+  it("splits camera animation into a separate VMD with --split-camera", () => {
+    const outputPath = tmpPath("SplitMotion.vmd");
+    const cameraPath = tmpPath("SplitMotion_camera.vmd");
+    const result = runCli([
+      "bvmd-to-vmd",
+      "public/example/TestMotion.bvmd",
+      "-o",
+      outputPath,
+      "--split-camera",
+    ]);
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toContain("✓");
+    expect(fs.existsSync(outputPath)).toBe(true);
+    expect(fs.existsSync(cameraPath)).toBe(true);
+
+    for (const filePath of [outputPath, cameraPath]) {
+      const header = fs
+        .readFileSync(filePath)
+        .subarray(0, 30)
+        .toString("utf-8");
+      expect(header).toContain("Vocaloid Motion Data");
+    }
+
+    // The camera-only file must be smaller than the model file.
+    expect(fs.statSync(cameraPath).size).toBeLessThan(
+      fs.statSync(outputPath).size,
+    );
+  });
 });
 
 // ── card-extract ─────────────────────────────────────────────────────────────

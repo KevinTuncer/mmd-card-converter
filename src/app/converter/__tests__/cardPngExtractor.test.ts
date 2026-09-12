@@ -309,6 +309,16 @@ describe("extractCardPngToZip", () => {
     expect(decodeAscii(entries["legacy-motion.vmd"].slice(0, 30))).toContain(
       "Vocaloid Motion Data",
     );
+
+    // TestMotion.bvmd contains camera frames, so legacy mode also emits a
+    // camera-only VMD next to the model VMD.
+    expect(Object.keys(entries)).toContain("legacy-motion_camera.vmd");
+    expect(
+      decodeAscii(entries["legacy-motion_camera.vmd"].slice(0, 30)),
+    ).toContain("Vocaloid Motion Data");
+    expect(entries["legacy-motion_camera.vmd"].length).toBeLessThan(
+      entries["legacy-motion.vmd"].length,
+    );
   });
 
   it("keeps BPMV as BPMV even when legacy mode is enabled", async () => {

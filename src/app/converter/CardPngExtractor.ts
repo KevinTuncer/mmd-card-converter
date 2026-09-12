@@ -1,7 +1,8 @@
 import { PmxObject } from "babylon-mmd";
-import { unzipSync, zipSync, type Zippable } from "fflate";
+import { unzipSync } from "fflate";
 import { convertBpmxToPmx } from "@/app/converter/BpmxToPmxConverter";
-import { convertBvmdFileToVmd } from "@/app/converter/MmdMotionConverter";
+import { convertBvmdFileToLegacyVmdFiles } from "@/app/converter/MmdMotionConverter";
+import { buildZipFromFiles } from "@/app/converter/ZipBuilder";
 import { decompressGzip } from "@/app/converter/GzipCodec";
 import type { ConverterWarning } from "@/app/converter/types";
 import { getErrorStrings } from "@/i18n/localization";
@@ -320,7 +321,7 @@ async function mapChunkToFiles(
       ];
     case "bVMD":
       return options.convertToLegacyMmdFiles
-        ? await convertBvmdChunkToLegacyFile(chunk, baseName)
+        ? await convertBvmdChunkToLegacyFiles(chunk, baseName)
         : [
             {
               fileName: `${baseName}.bvmd`,
@@ -404,7 +405,7 @@ async function convertBpmxChunkToLegacyFiles(
   }));
 }
 
-async function convertBvmdChunkToLegacyFile(
+async function convertBvmdChunkToLegacyFiles(
   chunk: ParsedChunk,
   baseName: string,
 ): Promise<CardPngExportFile[]> {
@@ -412,15 +413,24 @@ async function convertBvmdChunkToLegacyFile(
   const bvmdFile = new File([bvmdBuffer], `${baseName}.bvmd`, {
     type: "application/octet-stream",
   });
-  const result = await convertBvmdFileToVmd(bvmdFile);
-  return [
+  const result = await convertBvmdFileToLegacyVmdFiles(bvmdFile);
+  const files: CardPngExportFile[] = [
     {
-      fileName: `${baseName}.vmd`,
+      fileName: result.modelVmd.fileName,
       mime: "application/octet-stream",
-      data: result.buffer,
+      data: result.modelVmd.buffer,
       sourceChunk: chunk.type,
     },
   ];
+  if (result.cameraVmd) {
+    files.push({
+      fileName: result.cameraVmd.fileName,
+      mime: "application/octet-stream",
+      data: result.cameraVmd.buffer,
+      sourceChunk: chunk.type,
+    });
+  }
+  return files;
 }
 
 function buildJsonFile(
@@ -438,12 +448,9 @@ function buildJsonFile(
 }
 
 function buildFilesZip(files: readonly CardPngExportFile[]): ArrayBuffer {
-  const entries: Zippable = {};
-  for (const file of files) {
-    entries[file.fileName] = [new Uint8Array(file.data), { level: 0 }];
-  }
-  const zipped = zipSync(entries);
-  return toArrayBuffer(zipped);
+  return buildZipFromFiles(
+    files.map((file) => ({ fileName: file.fileName, data: file.data })),
+  );
 }
 
 function normalizeLegacyZipEntryName(

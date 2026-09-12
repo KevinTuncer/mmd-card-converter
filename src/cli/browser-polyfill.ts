@@ -8,7 +8,10 @@
  */
 
 import {
-  type GlobalFonts as _GlobalFonts,
+  type Canvas,
+  type Image,
+  ImageData as CanvasImageData,
+  type SKRSContext2D,
   createCanvas,
   loadImage,
 } from "@napi-rs/canvas";
@@ -16,38 +19,9 @@ import {
 // ── ImageData polyfill ───────────────────────────────────────────────────────
 
 if (typeof globalThis.ImageData === "undefined") {
-  // Use @napi-rs/canvas ImageData if available, otherwise create a minimal polyfill
-  try {
-    const { ImageData: CanvasImageData } = require("@napi-rs/canvas");
-    globalThis.ImageData = CanvasImageData;
-  } catch {
-    class ImageDataPolyfill {
-      readonly data: Uint8ClampedArray;
-      readonly width: number;
-      readonly height: number;
-      readonly colorSpace: PredefinedColorSpace = "srgb";
-
-      constructor(width: number, height: number);
-      constructor(data: Uint8ClampedArray, width: number, height?: number);
-      constructor(
-        dataOrWidth: Uint8ClampedArray | number,
-        widthOrHeight?: number,
-        height?: number,
-      ) {
-        if (typeof dataOrWidth === "number") {
-          this.width = dataOrWidth;
-          this.height = widthOrHeight ?? dataOrWidth;
-          this.data = new Uint8ClampedArray(this.width * this.height * 4);
-        } else {
-          this.data = new Uint8ClampedArray(dataOrWidth);
-          this.width = widthOrHeight ?? 0;
-          const computed = this.data.length / (this.width * 4);
-          this.height = height ?? (Number.isFinite(computed) ? computed : 0);
-        }
-      }
-    }
-    globalThis.ImageData = ImageDataPolyfill as typeof globalThis.ImageData;
-  }
+  // @napi-rs/canvas ships a native ImageData implementation
+  globalThis.ImageData =
+    CanvasImageData as unknown as typeof globalThis.ImageData;
 }
 
 // ── Bitmap-like wrapper (simulates ImageBitmap) ──────────────────────────────
@@ -75,50 +49,6 @@ class ImageBitmapWrapper {
 
   close(): void {
     // No-op; @napi-rs/canvas images don't need explicit disposal
-  }
-}
-
-// ── OffscreenCanvas polyfill ─────────────────────────────────────────────────
-
-class OffscreenCanvasPolyfill {
-  readonly width: number;
-  readonly height: number;
-  private _canvas: ReturnType<typeof createCanvas>;
-
-  constructor(width: number, height: number) {
-    this.width = width;
-    this.height = height;
-    this._canvas = createCanvas(width, height);
-  }
-
-  getContext(contextId: "2d"): OffscreenCanvasRenderingContext2D | null {
-    if (contextId !== "2d") return null;
-    const ctx = this._canvas.getContext("2d");
-    if (!ctx) return null;
-    // Wrap the context to match the browser OffscreenCanvas 2D context interface
-    return ctx as unknown as OffscreenCanvasRenderingContext2D;
-  }
-
-  /**
-   * Returns the internal @napi-rs/canvas canvas for direct drawing of
-   * ImageBitmapWrapper sources.
-   */
-  get _nativeCanvas(): ReturnType<typeof createCanvas> {
-    return this._canvas;
-  }
-
-  async convertToBlob(options?: {
-    type?: string;
-    quality?: number;
-  }): Promise<Blob> {
-    const mimeType = options?.type ?? "image/png";
-    const quality = options?.quality;
-    const buffer = this._canvas.toBuffer(mimeType as "image/png");
-    return new Blob([buffer], { type: mimeType });
-  }
-
-  transferToImageBitmap(): never {
-    throw new Error("transferToImageBitmap is not supported in CLI mode");
   }
 }
 
@@ -152,8 +82,6 @@ function createDocumentPolyfill() {
       if (tagName.toLowerCase() === "canvas") {
         const native = createCanvas(300, 150);
         return {
-          width: 300 as number,
-          height: 150 as number,
           getContext(contextId: string) {
             if (contextId !== "2d") return null;
             return native.getContext("2d");
@@ -161,22 +89,32 @@ function createDocumentPolyfill() {
           toBlob(
             callback: (blob: Blob | null) => void,
             mimeType?: string,
-            quality?: number,
+            _quality?: number,
           ): void {
             try {
               const buf = native.toBuffer(
                 (mimeType ?? "image/png") as "image/png",
               );
-              callback(new Blob([buf], { type: mimeType ?? "image/png" }));
+              callback(
+                new Blob([new Uint8Array(buf)], {
+                  type: mimeType ?? "image/png",
+                }),
+              );
             } catch {
               callback(null);
             }
           },
-          set width(val: number) {
+          get width(): number {
+            return 300;
+          },
+          set width(_val: number) {
             // CanvasElement from @napi-rs/canvas doesn't support dynamic resize
             // but for the converters this is only used for creating new canvases
           },
-          set height(val: number) {
+          get height(): number {
+            return 150;
+          },
+          set height(_val: number) {
             // Same as above
           },
         };
@@ -220,7 +158,7 @@ function createDocumentPolyfill() {
 class PatchedOffscreenCanvas {
   readonly width: number;
   readonly height: number;
-  private _canvas: ReturnType<typeof createCanvas>;
+  private _canvas: Canvas;
   private _contextProxy: PatchedCanvasContext | null = null;
 
   constructor(width: number, height: number) {
@@ -245,7 +183,7 @@ class PatchedOffscreenCanvas {
   }): Promise<Blob> {
     const mimeType = options?.type ?? "image/png";
     const buffer = this._canvas.toBuffer(mimeType as "image/png");
-    return new Blob([buffer], { type: mimeType });
+    return new Blob([new Uint8Array(buffer)], { type: mimeType });
   }
 
   transferToImageBitmap(): never {
@@ -258,9 +196,9 @@ class PatchedOffscreenCanvas {
  * ImageBitmapWrapper objects in drawImage() calls.
  */
 class PatchedCanvasContext {
-  private _ctx: ReturnType<ReturnType<typeof createCanvas>["getContext"]>;
+  private _ctx: SKRSContext2D;
 
-  constructor(ctx: ReturnType<ReturnType<typeof createCanvas>["getContext"]>) {
+  constructor(ctx: SKRSContext2D) {
     this._ctx = ctx;
   }
 
@@ -284,10 +222,14 @@ class PatchedCanvasContext {
     if (arguments.length <= 5) {
       // drawImage(source, dx, dy) or drawImage(source, dx, dy, dw, dh)
       if (arguments.length === 3) {
-        this._ctx.drawImage(nativeSource as CanvasImage, dxOrSx, dyOrSy);
+        this._ctx.drawImage(
+          nativeSource as unknown as Image | Canvas,
+          dxOrSx,
+          dyOrSy,
+        );
       } else {
         this._ctx.drawImage(
-          nativeSource as CanvasImage,
+          nativeSource as unknown as Image | Canvas,
           dxOrSx,
           dyOrSy,
           dwOrSw!,
@@ -297,7 +239,7 @@ class PatchedCanvasContext {
     } else {
       // drawImage(source, sx, sy, sw, sh, dx, dy, dw, dh)
       this._ctx.drawImage(
-        nativeSource as CanvasImage,
+        nativeSource as unknown as Image | Canvas,
         dxOrSx,
         dyOrSy,
         dwOrSw!,
@@ -311,7 +253,8 @@ class PatchedCanvasContext {
   }
 
   getImageData(sx: number, sy: number, sw: number, sh: number): ImageData {
-    return this._ctx.getImageData(sx, sy, sw, sh);
+    // @napi-rs/canvas ImageData lacks `colorSpace`; cast to the DOM type
+    return this._ctx.getImageData(sx, sy, sw, sh) as unknown as ImageData;
   }
 
   putImageData(
@@ -323,15 +266,24 @@ class PatchedCanvasContext {
     dirtyWidth?: number,
     dirtyHeight?: number,
   ): void {
-    this._ctx.putImageData(
-      imageData,
-      dx,
-      dy,
-      dirtyX,
-      dirtyY,
-      dirtyWidth,
-      dirtyHeight,
-    );
+    if (
+      dirtyX === undefined ||
+      dirtyY === undefined ||
+      dirtyWidth === undefined ||
+      dirtyHeight === undefined
+    ) {
+      this._ctx.putImageData(imageData, dx, dy);
+    } else {
+      this._ctx.putImageData(
+        imageData,
+        dx,
+        dy,
+        dirtyX,
+        dirtyY,
+        dirtyWidth,
+        dirtyHeight,
+      );
+    }
   }
 
   // Passthrough all other properties to the native context
@@ -363,7 +315,7 @@ class PatchedCanvasContext {
     return this._ctx.globalCompositeOperation;
   }
   set globalCompositeOperation(value: string) {
-    this._ctx.globalCompositeOperation = value;
+    this._ctx.globalCompositeOperation = value as GlobalCompositeOperation;
   }
   get imageSmoothingEnabled() {
     return this._ctx.imageSmoothingEnabled;
@@ -590,7 +542,10 @@ class PatchedCanvasContext {
     return this._ctx.createConicGradient(startAngle, x, y);
   }
   createPattern(image: unknown, repetition: string) {
-    return this._ctx.createPattern(image as CanvasImage, repetition);
+    return this._ctx.createPattern(
+      image as unknown as Image | Canvas,
+      repetition as "repeat" | "repeat-x" | "repeat-y" | "no-repeat" | null,
+    );
   }
   createImageData(sw: number, sh: number) {
     return this._ctx.createImageData(sw, sh);
@@ -730,7 +685,10 @@ if (typeof globalThis.FileReader === "undefined") {
 
         this.readyState = 2;
         // Create a mock event with `target` pointing to `this` so Babylon.js can read `e.target["result"]`
-        const loadEvent = { type: "load", target: this } as ProgressEvent;
+        const loadEvent = {
+          type: "load",
+          target: this,
+        } as unknown as ProgressEvent;
         this.onload?.(loadEvent);
         this.onloadend?.();
       } catch (err) {
@@ -740,7 +698,10 @@ if (typeof globalThis.FileReader === "undefined") {
           err instanceof Error ? err.message : String(err),
           "NotReadableError",
         );
-        this.onerror?.({ type: "error", target: this } as ProgressEvent);
+        this.onerror?.({
+          type: "error",
+          target: this,
+        } as unknown as ProgressEvent);
         this.onloadend?.();
       }
     }
@@ -762,25 +723,32 @@ if (typeof globalThis.XMLHttpRequest === "undefined") {
       responseType = "";
       withCredentials = false;
       timeout = 0;
-      private _method = "";
       private _url = "";
       private _headers: Record<string, string> = {};
-      private _listeners: Record<string, Set<Function>> = {};
+      private _listeners: Record<string, Set<(event?: unknown) => void>> = {};
 
-      addEventListener(type: string, listener: Function): void {
+      addEventListener(
+        type: string,
+        listener: (event?: unknown) => void,
+      ): void {
         if (!this._listeners[type]) {
           this._listeners[type] = new Set();
         }
         this._listeners[type]!.add(listener);
       }
 
-      removeEventListener(type: string, listener: Function): void {
+      removeEventListener(
+        type: string,
+        listener: (event?: unknown) => void,
+      ): void {
         this._listeners[type]?.delete(listener);
       }
 
       private _dispatchEvent(type: string, event?: unknown): void {
         // Call property handlers (e.g., this.onload)
-        const handler = (this as any)[`on${type}`];
+        const handler = (this as unknown as Record<string, unknown>)[
+          `on${type}`
+        ];
         if (typeof handler === "function") {
           handler.call(this, event ?? { type, target: this });
         }
@@ -790,8 +758,7 @@ if (typeof globalThis.XMLHttpRequest === "undefined") {
         });
       }
 
-      open(method: string, url: string): void {
-        this._method = method;
+      open(_method: string, url: string): void {
         this._url = url;
         this.readyState = 1;
       }

@@ -1,0 +1,3180 @@
+diff --git a/node_modules/babylon-mmd/.bun-tag-5d5b019d8a6a3532 b/.bun-tag-5d5b019d8a6a3532
+new file mode 100644
+index 0000000000000000000000000000000000000000..e69de29bb2d1d6434b8b29ae775ad8c2e48c5391
+diff --git a/esm/Loader/Animation/index.js b/esm/Loader/Animation/index.js
+index 7b4e790525cdc3ca49bbdeb5f90ef8977ea4090e..88f42c464549be388d2a1b399a95912eba2af846 100644
+--- a/esm/Loader/Animation/index.js
++++ b/esm/Loader/Animation/index.js
+@@ -1,10 +1,10 @@
+ // Common
+-export * from "./Common/computeHermiteTangent";
++export * from "./Common/computeHermiteTangent.js";
+ // ./
+-export * from "./IMmdAnimation";
+-export * from "./IMmdAnimationTrack";
+-export * from "./mmdAnimation";
+-export * from "./mmdAnimationBase";
+-export * from "./mmdAnimationTrack";
+-export * from "./mmdCameraAnimationContainer";
+-export * from "./mmdModelAnimationContainer";
++export * from "./IMmdAnimation.js";
++export * from "./IMmdAnimationTrack.js";
++export * from "./mmdAnimation.js";
++export * from "./mmdAnimationBase.js";
++export * from "./mmdAnimationTrack.js";
++export * from "./mmdCameraAnimationContainer.js";
++export * from "./mmdModelAnimationContainer.js";
+diff --git a/esm/Loader/Animation/mmdAnimation.js b/esm/Loader/Animation/mmdAnimation.js
+index bba17a3b3afd112e7fc7e188ce0c12752a43a0ed..cab7e34a1dfe0db37bd45d4a500ee7d7a8a9b8a6 100644
+--- a/esm/Loader/Animation/mmdAnimation.js
++++ b/esm/Loader/Animation/mmdAnimation.js
+@@ -1,4 +1,4 @@
+-import { MmdAnimationBase } from "./mmdAnimationBase";
++import { MmdAnimationBase } from "./mmdAnimationBase.js";
+ /**
+  * Represents mmd animation data
+  *
+diff --git a/esm/Loader/Animation/mmdCameraAnimationContainer.js b/esm/Loader/Animation/mmdCameraAnimationContainer.js
+index 9080777900860d1c49858857ae3e8fc604876cfc..a8cb3d0a9d0536172770e241eda79faf564ff6b3 100644
+--- a/esm/Loader/Animation/mmdCameraAnimationContainer.js
++++ b/esm/Loader/Animation/mmdCameraAnimationContainer.js
+@@ -1,10 +1,10 @@
+-import { Animation } from "@babylonjs/core/Animations/animation.pure";
+-import { AnimationGroup } from "@babylonjs/core/Animations/animationGroup.pure";
+-import { AnimationKeyInterpolation } from "@babylonjs/core/Animations/animationKey";
+-import { Vector2, Vector3 } from "@babylonjs/core/Maths/math.vector.pure";
+-import { AnimationKeyInterpolationBezier, BezierAnimation } from "../../Runtime/Animation/bezierAnimation.pure";
+-import { BezierInterpolate } from "../../Runtime/Animation/bezierInterpolate";
+-import { ComputeHermiteTangent } from "./Common/computeHermiteTangent";
++import { Animation } from "@babylonjs/core/Animations/animation.pure.js";
++import { AnimationGroup } from "@babylonjs/core/Animations/animationGroup.pure.js";
++import { AnimationKeyInterpolation } from "@babylonjs/core/Animations/animationKey.js";
++import { Vector2, Vector3 } from "@babylonjs/core/Maths/math.vector.pure.js";
++import { AnimationKeyInterpolationBezier, BezierAnimation } from "../../Runtime/Animation/bezierAnimation.pure.js";
++import { BezierInterpolate } from "../../Runtime/Animation/bezierInterpolate.js";
++import { ComputeHermiteTangent } from "./Common/computeHermiteTangent.js";
+ /**
+  * A container type that stores mmd camera animations using the `Animation` container in babylon.js
+  *
+diff --git a/esm/Loader/Animation/mmdModelAnimationContainer.js b/esm/Loader/Animation/mmdModelAnimationContainer.js
+index 0d7d79bd0b4b57f54660396dfb2a03c71c93193b..019827c769d3ee0ddd49e6f13f7e9c5936bc8614 100644
+--- a/esm/Loader/Animation/mmdModelAnimationContainer.js
++++ b/esm/Loader/Animation/mmdModelAnimationContainer.js
+@@ -1,10 +1,10 @@
+-import { Animation } from "@babylonjs/core/Animations/animation.pure";
+-import { AnimationGroup } from "@babylonjs/core/Animations/animationGroup.pure";
+-import { AnimationKeyInterpolation } from "@babylonjs/core/Animations/animationKey";
+-import { Quaternion, Vector2, Vector3 } from "@babylonjs/core/Maths/math.vector.pure";
+-import { AnimationKeyInterpolationBezier, BezierAnimation } from "../../Runtime/Animation/bezierAnimation.pure";
+-import { BezierInterpolate } from "../../Runtime/Animation/bezierInterpolate";
+-import { ComputeHermiteTangent } from "./Common/computeHermiteTangent";
++import { Animation } from "@babylonjs/core/Animations/animation.pure.js";
++import { AnimationGroup } from "@babylonjs/core/Animations/animationGroup.pure.js";
++import { AnimationKeyInterpolation } from "@babylonjs/core/Animations/animationKey.js";
++import { Quaternion, Vector2, Vector3 } from "@babylonjs/core/Maths/math.vector.pure.js";
++import { AnimationKeyInterpolationBezier, BezierAnimation } from "../../Runtime/Animation/bezierAnimation.pure.js";
++import { BezierInterpolate } from "../../Runtime/Animation/bezierInterpolate.js";
++import { ComputeHermiteTangent } from "./Common/computeHermiteTangent.js";
+ class MorphProxy {
+     _morphController;
+     _morphIndices;
+diff --git a/esm/Loader/Animation/pure.js b/esm/Loader/Animation/pure.js
+index 7b4e790525cdc3ca49bbdeb5f90ef8977ea4090e..88f42c464549be388d2a1b399a95912eba2af846 100644
+--- a/esm/Loader/Animation/pure.js
++++ b/esm/Loader/Animation/pure.js
+@@ -1,10 +1,10 @@
+ // Common
+-export * from "./Common/computeHermiteTangent";
++export * from "./Common/computeHermiteTangent.js";
+ // ./
+-export * from "./IMmdAnimation";
+-export * from "./IMmdAnimationTrack";
+-export * from "./mmdAnimation";
+-export * from "./mmdAnimationBase";
+-export * from "./mmdAnimationTrack";
+-export * from "./mmdCameraAnimationContainer";
+-export * from "./mmdModelAnimationContainer";
++export * from "./IMmdAnimation.js";
++export * from "./IMmdAnimationTrack.js";
++export * from "./mmdAnimation.js";
++export * from "./mmdAnimationBase.js";
++export * from "./mmdAnimationTrack.js";
++export * from "./mmdCameraAnimationContainer.js";
++export * from "./mmdModelAnimationContainer.js";
+diff --git a/esm/Loader/Optimized/Legacy/Parser/bpmxReader.js b/esm/Loader/Optimized/Legacy/Parser/bpmxReader.js
+index 31716a8932f92d0600fbf4bf8a1ee28a1753cb53..488324d00b309b1b20c3a0c807bd9972fc366b5f 100644
+--- a/esm/Loader/Optimized/Legacy/Parser/bpmxReader.js
++++ b/esm/Loader/Optimized/Legacy/Parser/bpmxReader.js
+@@ -1,8 +1,8 @@
+-import { LoadFileError } from "@babylonjs/core/Misc/fileTools.pure";
+-import { ConsoleLogger } from "../../../Parser/ILogger";
+-import { PmxObject } from "../../../Parser/pmxObject";
+-import { BpmxObject } from "../../Parser/bpmxObject";
+-import { MmdDataDeserializer } from "../mmdDataDeserializer";
++import { LoadFileError } from "@babylonjs/core/Misc/fileTools.pure.js";
++import { ConsoleLogger } from "../../../Parser/ILogger.js";
++import { PmxObject } from "../../../Parser/pmxObject.js";
++import { BpmxObject } from "../../Parser/bpmxObject.js";
++import { MmdDataDeserializer } from "../mmdDataDeserializer.js";
+ /**
+  * 2.x legacy BPMX loader
+  *
+diff --git a/esm/Loader/Optimized/Legacy/bpmxLoader.js b/esm/Loader/Optimized/Legacy/bpmxLoader.js
+index bfc72c1dcc8113b4b73890e8d2230dbc76689dd8..e2f05607c94d7d745c6b4cd5cc179d723e912558 100644
+--- a/esm/Loader/Optimized/Legacy/bpmxLoader.js
++++ b/esm/Loader/Optimized/Legacy/bpmxLoader.js
+@@ -1,6 +1,6 @@
+-import { RegisterSceneLoaderPlugin } from "@babylonjs/core/Loading/sceneLoader";
+-import { BpmxLoader as OriginalBpmxLoader } from "../bpmxLoader.pure";
+-import { BpmxReader } from "./Parser/bpmxReader";
++import { RegisterSceneLoaderPlugin } from "@babylonjs/core/Loading/sceneLoader.js";
++import { BpmxLoader as OriginalBpmxLoader } from "../bpmxLoader.pure.js";
++import { BpmxReader } from "./Parser/bpmxReader.js";
+ /**
+  * Legacy BPMX loader 2.x
+  *
+diff --git a/esm/Loader/Optimized/Legacy/bvmdLoader.js b/esm/Loader/Optimized/Legacy/bvmdLoader.js
+index a8c467605bd5207a2c9b1f290ca70a3267b9887b..a7181763de407fde9d722d9bb784d4ec6dad4fe6 100644
+--- a/esm/Loader/Optimized/Legacy/bvmdLoader.js
++++ b/esm/Loader/Optimized/Legacy/bvmdLoader.js
+@@ -1,8 +1,8 @@
+-import { LoadFileError } from "@babylonjs/core/Misc/fileTools.pure";
+-import { Logger } from "@babylonjs/core/Misc/logger";
+-import { MmdAnimation } from "../../Animation/mmdAnimation";
+-import { MmdBoneAnimationTrack, MmdCameraAnimationTrack, MmdMorphAnimationTrack, MmdMovableBoneAnimationTrack, MmdPropertyAnimationTrack } from "../../Animation/mmdAnimationTrack";
+-import { MmdDataDeserializer } from "./mmdDataDeserializer";
++import { LoadFileError } from "@babylonjs/core/Misc/fileTools.pure.js";
++import { Logger } from "@babylonjs/core/Misc/logger.js";
++import { MmdAnimation } from "../../Animation/mmdAnimation.js";
++import { MmdBoneAnimationTrack, MmdCameraAnimationTrack, MmdMorphAnimationTrack, MmdMovableBoneAnimationTrack, MmdPropertyAnimationTrack } from "../../Animation/mmdAnimationTrack.js";
++import { MmdDataDeserializer } from "./mmdDataDeserializer.js";
+ /**
+  * 2.x legacy BVMD loader
+  *
+diff --git a/esm/Loader/Optimized/Parser/bpmxReader.js b/esm/Loader/Optimized/Parser/bpmxReader.js
+index caf2e9e9ab8ec8a4097fe3ebdd6afc30f75a1b65..341bdd0f4c48258cc1f0ed2efa0c1cddd1d128c4 100644
+--- a/esm/Loader/Optimized/Parser/bpmxReader.js
++++ b/esm/Loader/Optimized/Parser/bpmxReader.js
+@@ -1,8 +1,8 @@
+-import { LoadFileError } from "@babylonjs/core/Misc/fileTools.pure";
+-import { PmxObject } from "../../Parser/pmxObject";
+-import { ConsoleLogger } from "../../Parser/ILogger";
+-import { AlignedDataDeserializer } from "../alignedDataDeserializer";
+-import { BpmxObject } from "./bpmxObject";
++import { LoadFileError } from "@babylonjs/core/Misc/fileTools.pure.js";
++import { PmxObject } from "../../Parser/pmxObject.js";
++import { ConsoleLogger } from "../../Parser/ILogger.js";
++import { AlignedDataDeserializer } from "../alignedDataDeserializer.js";
++import { BpmxObject } from "./bpmxObject.js";
+ /**
+  * BpmxReader is a static class that parses BPMX data
+  */
+diff --git a/esm/Loader/Optimized/alignedDataDeserializer.js b/esm/Loader/Optimized/alignedDataDeserializer.js
+index c440bbcad1fbd8460e996bff775c189dbb8eb3c4..5349422a734dbdeeb7eff387050b012ec7513cca 100644
+--- a/esm/Loader/Optimized/alignedDataDeserializer.js
++++ b/esm/Loader/Optimized/alignedDataDeserializer.js
+@@ -1,4 +1,4 @@
+-import { Endianness } from "../Parser/endianness";
++import { Endianness } from "../Parser/endianness.js";
+ /**
+  * Data deserializer only for strictly 4 byte aligned binary data
+  *
+diff --git a/esm/Loader/Optimized/alignedDataSerializer.js b/esm/Loader/Optimized/alignedDataSerializer.js
+index b227b4d0487affa7841dd8a39c0ab240c2d6199f..d638054f2b2da15c68fa97a48c3c9853e2bbafba 100644
+--- a/esm/Loader/Optimized/alignedDataSerializer.js
++++ b/esm/Loader/Optimized/alignedDataSerializer.js
+@@ -1,4 +1,4 @@
+-import { Endianness } from "../Parser/endianness";
++import { Endianness } from "../Parser/endianness.js";
+ /**
+  * Data serializer only for strictly 4 byte aligned binary data
+  *
+diff --git a/esm/Loader/Optimized/bpmxConverter.js b/esm/Loader/Optimized/bpmxConverter.js
+index b5a4651049138f462f096b0e9fda6a20322f3a8a..0fc82c8b4cf0c1107c9f788bff851122a49bd10b 100644
+--- a/esm/Loader/Optimized/bpmxConverter.js
++++ b/esm/Loader/Optimized/bpmxConverter.js
+@@ -1,11 +1,11 @@
+-import { VertexBuffer } from "@babylonjs/core/Buffers/buffer.pure";
+-import { Logger } from "@babylonjs/core/Misc/logger";
+-import { MmdMesh } from "../../Runtime/mmdMesh";
+-import { MmdBufferKind } from "../mmdBufferKind";
+-import { MmdModelMetadata } from "../mmdModelMetadata";
+-import { PmxObject } from "../Parser/pmxObject";
+-import { AlignedDataSerializer } from "./alignedDataSerializer";
+-import { BpmxObject } from "./Parser/bpmxObject";
++import { VertexBuffer } from "@babylonjs/core/Buffers/buffer.pure.js";
++import { Logger } from "@babylonjs/core/Misc/logger.js";
++import { MmdMesh } from "../../Runtime/mmdMesh.js";
++import { MmdBufferKind } from "../mmdBufferKind.js";
++import { MmdModelMetadata } from "../mmdModelMetadata.js";
++import { PmxObject } from "../Parser/pmxObject.js";
++import { AlignedDataSerializer } from "./alignedDataSerializer.js";
++import { BpmxObject } from "./Parser/bpmxObject.js";
+ /**
+  * BPMX converter
+  */
+diff --git a/esm/Loader/Optimized/bpmxLoader.js b/esm/Loader/Optimized/bpmxLoader.js
+index c5c97f51db18b762886ad0f55ef96d1ace41feae..67bbf2e789e32a57c5403080883c77d19d147adf 100644
+--- a/esm/Loader/Optimized/bpmxLoader.js
++++ b/esm/Loader/Optimized/bpmxLoader.js
+@@ -1,3 +1,3 @@
+-import { RegisterBpmxLoader } from "./bpmxLoader.pure";
+-export * from "./bpmxLoader.pure";
++import { RegisterBpmxLoader } from "./bpmxLoader.pure.js";
++export * from "./bpmxLoader.pure.js";
+ RegisterBpmxLoader();
+diff --git a/esm/Loader/Optimized/bpmxLoader.pure.js b/esm/Loader/Optimized/bpmxLoader.pure.js
+index 9680dee57b8bf6532a027c6bfb7bf3d34f37a4cf..3b4f176d23f12286724ca5ffd23752e3edd87795 100644
+--- a/esm/Loader/Optimized/bpmxLoader.pure.js
++++ b/esm/Loader/Optimized/bpmxLoader.pure.js
+@@ -1,21 +1,21 @@
+-import { VertexBuffer } from "@babylonjs/core/Buffers/buffer.pure";
+-import { RegisterSceneLoaderPlugin } from "@babylonjs/core/Loading/sceneLoader";
+-import { MultiMaterial } from "@babylonjs/core/Materials/multiMaterial.pure";
+-import { Geometry } from "@babylonjs/core/Meshes/geometry";
+-import { Mesh } from "@babylonjs/core/Meshes/mesh.pure";
+-import { VertexData } from "@babylonjs/core/Meshes/mesh.vertexData";
+-import { SubMesh } from "@babylonjs/core/Meshes/subMesh.pure";
+-import { Tools } from "@babylonjs/core/Misc/tools.pure";
+-import { MorphTarget } from "@babylonjs/core/Morph/morphTarget";
+-import { MorphTargetManager } from "@babylonjs/core/Morph/morphTargetManager";
+-import { MmdBufferKind } from "../mmdBufferKind";
+-import { MmdModelLoader } from "../mmdModelLoader.pure";
+-import { ObjectUniqueIdProvider } from "../objectUniqueIdProvider";
+-import { PmxObject } from "../Parser/pmxObject";
+-import { SdefMesh } from "../sdefMesh.pure";
+-import { BpmxLoaderMetadata } from "./bpmxLoader.metadata";
+-import { BpmxObject } from "./Parser/bpmxObject";
+-import { BpmxReader } from "./Parser/bpmxReader";
++import { VertexBuffer } from "@babylonjs/core/Buffers/buffer.pure.js";
++import { RegisterSceneLoaderPlugin } from "@babylonjs/core/Loading/sceneLoader.js";
++import { MultiMaterial } from "@babylonjs/core/Materials/multiMaterial.pure.js";
++import { Geometry } from "@babylonjs/core/Meshes/geometry.js";
++import { Mesh } from "@babylonjs/core/Meshes/mesh.pure.js";
++import { VertexData } from "@babylonjs/core/Meshes/mesh.vertexData.js";
++import { SubMesh } from "@babylonjs/core/Meshes/subMesh.pure.js";
++import { Tools } from "@babylonjs/core/Misc/tools.pure.js";
++import { MorphTarget } from "@babylonjs/core/Morph/morphTarget.js";
++import { MorphTargetManager } from "@babylonjs/core/Morph/morphTargetManager.js";
++import { MmdBufferKind } from "../mmdBufferKind.js";
++import { MmdModelLoader } from "../mmdModelLoader.pure.js";
++import { ObjectUniqueIdProvider } from "../objectUniqueIdProvider.js";
++import { PmxObject } from "../Parser/pmxObject.js";
++import { SdefMesh } from "../sdefMesh.pure.js";
++import { BpmxLoaderMetadata } from "./bpmxLoader.metadata.js";
++import { BpmxObject } from "./Parser/bpmxObject.js";
++import { BpmxReader } from "./Parser/bpmxReader.js";
+ /**
+  * BpmxLoader is a loader that loads models in BPMX format
+  *
+diff --git a/esm/Loader/Optimized/bvmdConverter.js b/esm/Loader/Optimized/bvmdConverter.js
+index 903818a4c8a88bce7d66205915b54ac2b39d57be..f6667063823065ab1494e000475860a461bac08a 100644
+--- a/esm/Loader/Optimized/bvmdConverter.js
++++ b/esm/Loader/Optimized/bvmdConverter.js
+@@ -69,7 +69,7 @@
+  * fovs: float32[frameCount] - [..., fov, ...]
+  * fovInterpolations: uint8[frameCount * 4] - [..., x1, x2, y1, y2, ...]
+  */
+-import { AlignedDataSerializer } from "./alignedDataSerializer";
++import { AlignedDataSerializer } from "./alignedDataSerializer.js";
+ /**
+  * BVMD converter
+  */
+diff --git a/esm/Loader/Optimized/bvmdLoader.js b/esm/Loader/Optimized/bvmdLoader.js
+index a06be0c0fdf4972eaf282e9241459993595ce521..29f23ec0196a10b8e7f5fac2bdab11680334e906 100644
+--- a/esm/Loader/Optimized/bvmdLoader.js
++++ b/esm/Loader/Optimized/bvmdLoader.js
+@@ -1,8 +1,8 @@
+-import { LoadFileError } from "@babylonjs/core/Misc/fileTools.pure";
+-import { Logger } from "@babylonjs/core/Misc/logger";
+-import { MmdAnimation } from "../Animation/mmdAnimation";
+-import { MmdBoneAnimationTrack, MmdCameraAnimationTrack, MmdMorphAnimationTrack, MmdMovableBoneAnimationTrack, MmdPropertyAnimationTrack } from "../Animation/mmdAnimationTrack";
+-import { AlignedDataDeserializer } from "./alignedDataDeserializer";
++import { LoadFileError } from "@babylonjs/core/Misc/fileTools.pure.js";
++import { Logger } from "@babylonjs/core/Misc/logger.js";
++import { MmdAnimation } from "../Animation/mmdAnimation.js";
++import { MmdBoneAnimationTrack, MmdCameraAnimationTrack, MmdMorphAnimationTrack, MmdMovableBoneAnimationTrack, MmdPropertyAnimationTrack } from "../Animation/mmdAnimationTrack.js";
++import { AlignedDataDeserializer } from "./alignedDataDeserializer.js";
+ /**
+  * BvmdLoader is a loader that loads MMD animation data in BVMD format
+  *
+diff --git a/esm/Loader/Optimized/index.js b/esm/Loader/Optimized/index.js
+index 1beb6ecda69117ee679dcc54bb404e9e759c3ff2..c3c5b92bc67adbc8c1431abf922cc022aaca0a91 100644
+--- a/esm/Loader/Optimized/index.js
++++ b/esm/Loader/Optimized/index.js
+@@ -1,11 +1,11 @@
+ // Parser
+-export * from "./Parser/bpmxObject";
+-export * from "./Parser/bpmxReader";
++export * from "./Parser/bpmxObject.js";
++export * from "./Parser/bpmxReader.js";
+ // ./
+-export * from "./alignedDataDeserializer";
+-export * from "./alignedDataSerializer";
+-export * from "./bpmxConverter";
+-export * from "./bpmxLoader"; // register scene loader sideeffect
+-export * from "./bpmxLoader.metadata";
+-export * from "./bvmdConverter";
+-export * from "./bvmdLoader";
++export * from "./alignedDataDeserializer.js";
++export * from "./alignedDataSerializer.js";
++export * from "./bpmxConverter.js";
++export * from "./bpmxLoader.js"; // register scene loader sideeffect
++export * from "./bpmxLoader.metadata.js";
++export * from "./bvmdConverter.js";
++export * from "./bvmdLoader.js";
+diff --git a/esm/Loader/Optimized/pure.js b/esm/Loader/Optimized/pure.js
+index 5a51d3c9fe3b52cbde535e5cc6b8523e78c3bd88..c6337bfed206112564ab4729b0967ad52f2ce2c3 100644
+--- a/esm/Loader/Optimized/pure.js
++++ b/esm/Loader/Optimized/pure.js
+@@ -1,11 +1,11 @@
+ // Parser
+-export * from "./Parser/bpmxObject";
+-export * from "./Parser/bpmxReader";
++export * from "./Parser/bpmxObject.js";
++export * from "./Parser/bpmxReader.js";
+ // ./
+-export * from "./alignedDataDeserializer";
+-export * from "./alignedDataSerializer";
+-export * from "./bpmxConverter";
+-export * from "./bpmxLoader.metadata";
+-export * from "./bpmxLoader.pure";
+-export * from "./bvmdConverter";
+-export * from "./bvmdLoader";
++export * from "./alignedDataDeserializer.js";
++export * from "./alignedDataSerializer.js";
++export * from "./bpmxConverter.js";
++export * from "./bpmxLoader.metadata.js";
++export * from "./bpmxLoader.pure.js";
++export * from "./bvmdConverter.js";
++export * from "./bvmdLoader.js";
+diff --git a/esm/Loader/Parser/index.js b/esm/Loader/Parser/index.js
+index db6d425418868ab21c13c166ee4e365a5fc66da3..c63a298c58531f17a60ee32019a0c16c2ec3039e 100644
+--- a/esm/Loader/Parser/index.js
++++ b/esm/Loader/Parser/index.js
+@@ -1,11 +1,11 @@
+-export * from "./endianness";
+-export * from "./ILogger";
+-export * from "./mmdDataDeserializer";
+-export * from "./mmdTypes";
+-export * from "./pmdObject";
+-export * from "./pmdReader";
+-export * from "./pmxObject";
+-export * from "./pmxReader";
+-export * from "./vmdObject";
+-export * from "./vpdObject";
+-export * from "./vpdReader";
++export * from "./endianness.js";
++export * from "./ILogger.js";
++export * from "./mmdDataDeserializer.js";
++export * from "./mmdTypes.js";
++export * from "./pmdObject.js";
++export * from "./pmdReader.js";
++export * from "./pmxObject.js";
++export * from "./pmxReader.js";
++export * from "./vmdObject.js";
++export * from "./vpdObject.js";
++export * from "./vpdReader.js";
+diff --git a/esm/Loader/Parser/mmdDataDeserializer.js b/esm/Loader/Parser/mmdDataDeserializer.js
+index d474b4c1a56a0ceab2493192aeb44454b9110101..3ddcc6ad8988abe2ba6ba36814b5bdc4d518c63b 100644
+--- a/esm/Loader/Parser/mmdDataDeserializer.js
++++ b/esm/Loader/Parser/mmdDataDeserializer.js
+@@ -1,4 +1,4 @@
+-import { Endianness } from "./endianness";
++import { Endianness } from "./endianness.js";
+ /**
+  * DataView wrapper for deserializing MMD data
+  */
+diff --git a/esm/Loader/Parser/pmdReader.js b/esm/Loader/Parser/pmdReader.js
+index 5c4bbed0b369ddadebac2991dc8717bfdbabac9a..e9a4fc4bb67cfb24b08aad4ce297d439b809b6a7 100644
+--- a/esm/Loader/Parser/pmdReader.js
++++ b/esm/Loader/Parser/pmdReader.js
+@@ -1,7 +1,7 @@
+-import { ConsoleLogger } from "./ILogger";
+-import { MmdDataDeserializer } from "./mmdDataDeserializer";
+-import { PmdObject } from "./pmdObject";
+-import { PmxObject } from "./pmxObject";
++import { ConsoleLogger } from "./ILogger.js";
++import { MmdDataDeserializer } from "./mmdDataDeserializer.js";
++import { PmdObject } from "./pmdObject.js";
++import { PmxObject } from "./pmxObject.js";
+ /**
+  * PmdReader is a static class that parses PMD data
+  */
+diff --git a/esm/Loader/Parser/pmxReader.js b/esm/Loader/Parser/pmxReader.js
+index 94c5f38c22df66ce994536e733d27a5849e422eb..1177e2d9b76de68af74f15f57fa9950d7cc2e1c5 100644
+--- a/esm/Loader/Parser/pmxReader.js
++++ b/esm/Loader/Parser/pmxReader.js
+@@ -1,6 +1,6 @@
+-import { ConsoleLogger } from "./ILogger";
+-import { MmdDataDeserializer } from "./mmdDataDeserializer";
+-import { PmxObject } from "./pmxObject";
++import { ConsoleLogger } from "./ILogger.js";
++import { MmdDataDeserializer } from "./mmdDataDeserializer.js";
++import { PmxObject } from "./pmxObject.js";
+ class IndexReader {
+     _vertexIndexSize;
+     _textureIndexSize;
+diff --git a/esm/Loader/Parser/pure.js b/esm/Loader/Parser/pure.js
+index db6d425418868ab21c13c166ee4e365a5fc66da3..c63a298c58531f17a60ee32019a0c16c2ec3039e 100644
+--- a/esm/Loader/Parser/pure.js
++++ b/esm/Loader/Parser/pure.js
+@@ -1,11 +1,11 @@
+-export * from "./endianness";
+-export * from "./ILogger";
+-export * from "./mmdDataDeserializer";
+-export * from "./mmdTypes";
+-export * from "./pmdObject";
+-export * from "./pmdReader";
+-export * from "./pmxObject";
+-export * from "./pmxReader";
+-export * from "./vmdObject";
+-export * from "./vpdObject";
+-export * from "./vpdReader";
++export * from "./endianness.js";
++export * from "./ILogger.js";
++export * from "./mmdDataDeserializer.js";
++export * from "./mmdTypes.js";
++export * from "./pmdObject.js";
++export * from "./pmdReader.js";
++export * from "./pmxObject.js";
++export * from "./pmxReader.js";
++export * from "./vmdObject.js";
++export * from "./vpdObject.js";
++export * from "./vpdReader.js";
+diff --git a/esm/Loader/Parser/vmdObject.js b/esm/Loader/Parser/vmdObject.js
+index 695321b2d952435df8f74bcae4a3f860aa1967dd..69cbd5e8e4c6b30e9e8a28bfb8415cbc0378ff27 100644
+--- a/esm/Loader/Parser/vmdObject.js
++++ b/esm/Loader/Parser/vmdObject.js
+@@ -1,5 +1,5 @@
+-import { ConsoleLogger } from "./ILogger";
+-import { MmdDataDeserializer } from "./mmdDataDeserializer";
++import { ConsoleLogger } from "./ILogger.js";
++import { MmdDataDeserializer } from "./mmdDataDeserializer.js";
+ /**
+  * VMD data
+  *
+diff --git a/esm/Loader/Parser/vpdReader.js b/esm/Loader/Parser/vpdReader.js
+index b4eb803d75bed9f38130319ef356d6dc57269239..d43ef381a51832ceb5fa594fa5e8e15cf54560f5 100644
+--- a/esm/Loader/Parser/vpdReader.js
++++ b/esm/Loader/Parser/vpdReader.js
+@@ -1,4 +1,4 @@
+-import { ConsoleLogger } from "./ILogger";
++import { ConsoleLogger } from "./ILogger.js";
+ /**
+  * VpdReader is a static class that parses VPD data
+  */
+diff --git a/esm/Loader/Shaders/mmdOutline.fragment.js b/esm/Loader/Shaders/mmdOutline.fragment.js
+index 305d3df1718998bedeab993e5cb8fbf877179639..507a5fc44a19d7ed894b6fe2e9aec8a18673fb1f 100644
+--- a/esm/Loader/Shaders/mmdOutline.fragment.js
++++ b/esm/Loader/Shaders/mmdOutline.fragment.js
+@@ -2,7 +2,7 @@ import "@babylonjs/core/Shaders/ShadersInclude/clipPlaneFragmentDeclaration";
+ import "@babylonjs/core/Shaders/ShadersInclude/logDepthDeclaration";
+ import "@babylonjs/core/Shaders/ShadersInclude/clipPlaneFragment";
+ import "@babylonjs/core/Shaders/ShadersInclude/logDepthFragment";
+-import { ShaderStore } from "@babylonjs/core/Engines/shaderStore";
++import { ShaderStore } from "@babylonjs/core/Engines/shaderStore.js";
+ const Name = "mmdOutlinePixelShader";
+ const Shader = /* glsl */ "\n#ifdef LOGARITHMICDEPTH\n#extension GL_EXT_frag_depth : enable\n#endif\nuniform vec4 color;\n#ifdef ALPHATEST\nvarying vec2 vUV;uniform sampler2D diffuseSampler;\n#endif\n#include<clipPlaneFragmentDeclaration>\n#include<logDepthDeclaration>\n#define CUSTOM_FRAGMENT_DEFINITIONS\nvoid main(void) {\n#define CUSTOM_FRAGMENT_MAIN_BEGIN\n#include<clipPlaneFragment>\n#ifdef ALPHATEST\nif (texture2D(diffuseSampler,vUV).a<0.4)\ndiscard;\n#endif\n#include<logDepthFragment>\ngl_FragColor=color;\n#define CUSTOM_FRAGMENT_MAIN_END\n}\n";
+ // Sideeffect
+diff --git a/esm/Loader/Shaders/mmdOutline.vertex.js b/esm/Loader/Shaders/mmdOutline.vertex.js
+index f654cffe3337c42a270b5d0740929e72e8349f02..52988e7bfc3f65608fa278646bfd63fc7cb2e2bc 100644
+--- a/esm/Loader/Shaders/mmdOutline.vertex.js
++++ b/esm/Loader/Shaders/mmdOutline.vertex.js
+@@ -12,7 +12,7 @@ import "@babylonjs/core/Shaders/ShadersInclude/bonesVertex";
+ import "@babylonjs/core/Shaders/ShadersInclude/bakedVertexAnimation";
+ import "@babylonjs/core/Shaders/ShadersInclude/clipPlaneVertex";
+ import "@babylonjs/core/Shaders/ShadersInclude/logDepthVertex";
+-import { ShaderStore } from "@babylonjs/core/Engines/shaderStore";
++import { ShaderStore } from "@babylonjs/core/Engines/shaderStore.js";
+ const Name = "mmdOutlineVertexShader";
+ const Shader = /* glsl */ "\nattribute vec3 position;attribute vec3 normal;\n#include<bonesDeclaration>\n#include<bakedVertexAnimationDeclaration>\n#include<morphTargetsVertexGlobalDeclaration>\n#include<morphTargetsVertexDeclaration>[0..maxSimultaneousMorphTargets]\n#include<clipPlaneVertexDeclaration>\nuniform float offset;\n#include<instancesDeclaration>\nuniform vec2 viewport;uniform mat3 view;uniform mat4 viewProjection;\n#ifdef WORLDPOS_REQUIRED\nuniform mat4 inverseViewProjection;\n#endif\n#ifdef ALPHATEST\nvarying vec2 vUV;uniform mat4 diffuseMatrix;\n#ifdef UV1\nattribute vec2 uv;\n#endif\n#ifdef UV2\nattribute vec2 uv2;\n#endif\n#endif\n#include<logDepthDeclaration>\n#define CUSTOM_VERTEX_DEFINITIONS\nvoid main(void)\n{vec3 positionUpdated=position;vec3 normalUpdated=normal;\n#ifdef UV1\nvec2 uvUpdated=uv;\n#endif\n#ifdef UV2\nvec2 uv2Updated=uv2;\n#endif\n#include<morphTargetsVertexGlobal>\n#include<morphTargetsVertex>[0..maxSimultaneousMorphTargets]\n#include<instancesVertex>\n#include<bonesVertex>\n#include<bakedVertexAnimation>\nvec3 viewNormal=view*(mat3(finalWorld)*normalUpdated);vec4 projectedPosition=viewProjection*finalWorld*vec4(positionUpdated,1.0);vec2 screenNormal=normalize(vec2(viewNormal));projectedPosition.xy+=screenNormal/(viewport*0.25/*0.5 */)*offset*projectedPosition.w;gl_Position=projectedPosition;\n#ifdef WORLDPOS_REQUIRED\nvec4 worldPos=inverseViewProjection*projectedPosition;\n#endif\n#ifdef ALPHATEST\n#ifdef UV1\nvUV=vec2(diffuseMatrix*vec4(uvUpdated,1.0,0.0));\n#endif\n#ifdef UV2\nvUV=vec2(diffuseMatrix*vec4(uv2Updated,1.0,0.0));\n#endif\n#endif\n#include<clipPlaneVertex>\n#include<logDepthVertex>\n}\n";
+ // Sideeffect
+diff --git a/esm/Loader/Shaders/mmdStandard.js b/esm/Loader/Shaders/mmdStandard.js
+index aa3cb696567a6b0efb8d3651a134062b588dbe96..c75660378a9f538a3d96ee636870380ce6d753c2 100644
+--- a/esm/Loader/Shaders/mmdStandard.js
++++ b/esm/Loader/Shaders/mmdStandard.js
+@@ -1,8 +1,8 @@
+-import { ShaderLanguage } from "@babylonjs/core/Materials/shaderLanguage";
+-import { MmdPluginMaterial as MmdPluginMaterialBase } from "../mmdPluginMaterial.pure";
+-import { EscapeRegExp } from "./escapeRegExp";
+-import { SdefDeclaration } from "./sdefDeclaration";
+-import { SdefVertex } from "./sdefVertex";
++import { ShaderLanguage } from "@babylonjs/core/Materials/shaderLanguage.js";
++import { MmdPluginMaterial as MmdPluginMaterialBase } from "../mmdPluginMaterial.pure.js";
++import { EscapeRegExp } from "./escapeRegExp.js";
++import { SdefDeclaration } from "./sdefDeclaration.js";
++import { SdefVertex } from "./sdefVertex.js";
+ export class MmdPluginMaterial extends MmdPluginMaterialBase {
+     /**
+      * Gets a boolean indicating that the plugin is compatible with a given shader language.
+diff --git a/esm/Loader/Shaders/textureAlphaChecker.fragment.js b/esm/Loader/Shaders/textureAlphaChecker.fragment.js
+index 586dbbf1c77e6cc30dce285513cf7c9231b67809..89ece2023dc150cf66b87f085bdff928ac50f44b 100644
+--- a/esm/Loader/Shaders/textureAlphaChecker.fragment.js
++++ b/esm/Loader/Shaders/textureAlphaChecker.fragment.js
+@@ -1,4 +1,4 @@
+-import { ShaderStore } from "@babylonjs/core/Engines/shaderStore";
++import { ShaderStore } from "@babylonjs/core/Engines/shaderStore.js";
+ const Name = "textureAlphaCheckerPixelShader";
+ const Shader = /* glsl */ "\nprecision highp float;uniform sampler2D textureSampler;varying vec2 vUv;void main() {gl_FragColor=vec4(vec3(1.0)-vec3(texture2D(textureSampler,vUv).a),1.0);}\n";
+ // Sideeffect
+diff --git a/esm/Loader/Shaders/textureAlphaChecker.vertex.js b/esm/Loader/Shaders/textureAlphaChecker.vertex.js
+index 4538d64a21a298d7751ef875ab1827f0a2559649..3190c72f345f8b5d53a2f9a5099add71a38a3938 100644
+--- a/esm/Loader/Shaders/textureAlphaChecker.vertex.js
++++ b/esm/Loader/Shaders/textureAlphaChecker.vertex.js
+@@ -1,4 +1,4 @@
+-import { ShaderStore } from "@babylonjs/core/Engines/shaderStore";
++import { ShaderStore } from "@babylonjs/core/Engines/shaderStore.js";
+ const Name = "textureAlphaCheckerVertexShader";
+ const Shader = /* glsl */ "\nprecision highp float;attribute vec2 uv;varying vec2 vUv;void main() {vUv=uv;gl_Position=vec4(mod(uv,1.0)*2.0-1.0,0.0,1.0);}\n";
+ // Sideeffect
+diff --git a/esm/Loader/ShadersWGSL/mmdOutline.fragment.js b/esm/Loader/ShadersWGSL/mmdOutline.fragment.js
+index 9d7701fcd81b77277107878018ef894bbf98cde7..deb2f620d18f7bed0053186ba9a7a6663eb1d58b 100644
+--- a/esm/Loader/ShadersWGSL/mmdOutline.fragment.js
++++ b/esm/Loader/ShadersWGSL/mmdOutline.fragment.js
+@@ -2,7 +2,7 @@ import "@babylonjs/core/ShadersWGSL/ShadersInclude/clipPlaneFragmentDeclaration"
+ import "@babylonjs/core/ShadersWGSL/ShadersInclude/logDepthDeclaration";
+ import "@babylonjs/core/ShadersWGSL/ShadersInclude/clipPlaneFragment";
+ import "@babylonjs/core/ShadersWGSL/ShadersInclude/logDepthFragment";
+-import { ShaderStore } from "@babylonjs/core/Engines/shaderStore";
++import { ShaderStore } from "@babylonjs/core/Engines/shaderStore.js";
+ const Name = "mmdOutlinePixelShader";
+ const Shader = /* wgsl */ "\nuniform color: vec4f;\n#ifdef ALPHATEST\nvarying vUV: vec2f;var diffuseSamplerSampler: sampler;var diffuseSampler: texture_2d<f32>;\n#endif\n#include<clipPlaneFragmentDeclaration>\n#include<logDepthDeclaration>\n#define CUSTOM_FRAGMENT_DEFINITIONS\n@fragment\nfn main(input: FragmentInputs)->FragmentOutputs {\n#define CUSTOM_FRAGMENT_MAIN_BEGIN\n#include<clipPlaneFragment>\n#ifdef ALPHATEST\nif (textureSample(diffuseSampler,diffuseSamplerSampler,fragmentInputs.vUV).a<0.4) {discard;}\n#endif\n#include<logDepthFragment>\nfragmentOutputs.color=uniforms.color;\n#define CUSTOM_FRAGMENT_MAIN_END\n}\n";
+ // Sideeffect
+diff --git a/esm/Loader/ShadersWGSL/mmdOutline.vertex.js b/esm/Loader/ShadersWGSL/mmdOutline.vertex.js
+index 96b56134aa917ac53b064633b2859b9e98ad4df1..abcf898ebc3dda192352906974b9c4bcb35f23e5 100644
+--- a/esm/Loader/ShadersWGSL/mmdOutline.vertex.js
++++ b/esm/Loader/ShadersWGSL/mmdOutline.vertex.js
+@@ -12,7 +12,7 @@ import "@babylonjs/core/ShadersWGSL/ShadersInclude/bonesVertex";
+ import "@babylonjs/core/ShadersWGSL/ShadersInclude/bakedVertexAnimation";
+ import "@babylonjs/core/ShadersWGSL/ShadersInclude/clipPlaneVertex";
+ import "@babylonjs/core/ShadersWGSL/ShadersInclude/logDepthVertex";
+-import { ShaderStore } from "@babylonjs/core/Engines/shaderStore";
++import { ShaderStore } from "@babylonjs/core/Engines/shaderStore.js";
+ const Name = "mmdOutlineVertexShader";
+ const Shader = /* wgsl */ "\nattribute position: vec3f;attribute normal: vec3f;\n#include<bonesDeclaration>\n#include<bakedVertexAnimationDeclaration>\n#include<morphTargetsVertexGlobalDeclaration>\n#include<morphTargetsVertexDeclaration>[0..maxSimultaneousMorphTargets]\n#include<clipPlaneVertexDeclaration>\nuniform offset: f32;\n#include<instancesDeclaration>\nuniform viewport: vec2f;uniform view: mat3x3f;uniform viewProjection: mat4x4f;\n#ifdef WORLDPOS_REQUIRED\nuniform inverseViewProjection: mat4x4f;\n#endif\n#ifdef ALPHATEST\nvarying vUV: vec2f;uniform diffuseMatrix: mat4x4f; \n#ifdef UV1\nattribute uv: vec2f;\n#endif\n#ifdef UV2\nattribute uv2: vec2f;\n#endif\n#endif\n#include<logDepthDeclaration>\n#define CUSTOM_VERTEX_DEFINITIONS\n@vertex\nfn main(input: VertexInputs)->FragmentInputs {var positionUpdated: vec3f=vertexInputs.position;var normalUpdated: vec3f=vertexInputs.normal;\n#ifdef UV1\nvar uvUpdated: vec2f=vertexInputs.uv;\n#endif\n#ifdef UV2\nvar uv2Updated: vec2f=vertexInputs.uv2;\n#endif\n#include<morphTargetsVertexGlobal>\n#include<morphTargetsVertex>[0..maxSimultaneousMorphTargets]\n#include<instancesVertex>\n#include<bonesVertex>\n#include<bakedVertexAnimation>\nvar viewNormal: vec3f=uniforms.view*(mat3x3(finalWorld[0].xyz,finalWorld[1].xyz,finalWorld[2].xyz)*normalUpdated);var projectedPosition: vec4f=uniforms.viewProjection*finalWorld*vec4f(positionUpdated,1.0);var screenNormal: vec2f=normalize(viewNormal.xy);projectedPosition=vec4f(\nprojectedPosition.xy+(screenNormal/(uniforms.viewport*0.25/*0.5 */)*uniforms.offset*projectedPosition.w),\nprojectedPosition.z,\nprojectedPosition.w\n);vertexOutputs.position=projectedPosition;\n#ifdef WORLDPOS_REQUIRED\nvar worldPos: vec4f=uniforms.inverseViewProjection*projectedPosition;\n#endif\n#ifdef ALPHATEST\n#ifdef UV1\nvertexOutputs.vUV=(uniforms.diffuseMatrix*vec4f(uvUpdated,1.0,0.0)).xy;\n#endif\n#ifdef UV2\nvertexOutputs.vUV=(uniforms.diffuseMatrix*vec4f(uv2Updated,1.0,0.0)).xy;\n#endif\n#endif\n#include<clipPlaneVertex>\n#include<logDepthVertex>\n}\n";
+ // Sideeffect
+diff --git a/esm/Loader/ShadersWGSL/mmdStandard.js b/esm/Loader/ShadersWGSL/mmdStandard.js
+index 9e32eea7f356424e850368c1ddadaff8ed7ab01f..5d6e40a750308574b22cd2087acf17e476bada07 100644
+--- a/esm/Loader/ShadersWGSL/mmdStandard.js
++++ b/esm/Loader/ShadersWGSL/mmdStandard.js
+@@ -1,8 +1,8 @@
+-import { ShaderLanguage } from "@babylonjs/core/Materials/shaderLanguage";
+-import { MmdPluginMaterial as MmdPluginMaterialBase } from "../mmdPluginMaterial.pure";
+-import { EscapeRegExp } from "./escapeRegExp";
+-import { SdefDeclaration } from "./sdefDeclaration";
+-import { SdefVertex } from "./sdefVertex";
++import { ShaderLanguage } from "@babylonjs/core/Materials/shaderLanguage.js";
++import { MmdPluginMaterial as MmdPluginMaterialBase } from "../mmdPluginMaterial.pure.js";
++import { EscapeRegExp } from "./escapeRegExp.js";
++import { SdefDeclaration } from "./sdefDeclaration.js";
++import { SdefVertex } from "./sdefVertex.js";
+ export class MmdPluginMaterial extends MmdPluginMaterialBase {
+     /**
+      * Gets a boolean indicating that the plugin is compatible with a given shader language.
+diff --git a/esm/Loader/ShadersWGSL/textureAlphaChecker.fragment.js b/esm/Loader/ShadersWGSL/textureAlphaChecker.fragment.js
+index a36fb7c16e8b5693f713a09b11f2e2a10854683d..827cd6c27c83b4abd8811b69c466f6c833ac704a 100644
+--- a/esm/Loader/ShadersWGSL/textureAlphaChecker.fragment.js
++++ b/esm/Loader/ShadersWGSL/textureAlphaChecker.fragment.js
+@@ -1,4 +1,4 @@
+-import { ShaderStore } from "@babylonjs/core/Engines/shaderStore";
++import { ShaderStore } from "@babylonjs/core/Engines/shaderStore.js";
+ const Name = "textureAlphaCheckerPixelShader";
+ const Shader = /* wgsl */ "\nvar textureSamplerSampler: sampler;var textureSampler: texture_2d<f32>;varying vUv: vec2f;@fragment\nfn main(input: FragmentInputs)->FragmentOutputs {fragmentOutputs.color=vec4f(\nvec3f(1.0)-vec3f(textureSample(textureSampler,textureSamplerSampler,fragmentInputs.vUv).a),\n1.0\n);}\n";
+ // Sideeffect
+diff --git a/esm/Loader/ShadersWGSL/textureAlphaChecker.vertex.js b/esm/Loader/ShadersWGSL/textureAlphaChecker.vertex.js
+index 0ae24e1e30df68a8ef1421659992920d46fb43ab..7c26135d71e726e10dc4b364ab08b110cf506350 100644
+--- a/esm/Loader/ShadersWGSL/textureAlphaChecker.vertex.js
++++ b/esm/Loader/ShadersWGSL/textureAlphaChecker.vertex.js
+@@ -1,4 +1,4 @@
+-import { ShaderStore } from "@babylonjs/core/Engines/shaderStore";
++import { ShaderStore } from "@babylonjs/core/Engines/shaderStore.js";
+ const Name = "textureAlphaCheckerVertexShader";
+ const Shader = /* wgsl */ "\nattribute uv: vec2f;varying vUv: vec2f;@vertex\nfn main(input: VertexInputs)->FragmentInputs {vertexOutputs.vUv=vertexInputs.uv;vertexOutputs.position=vec4f(\n(vertexInputs.uv % 1.0)*2.0-1.0,\n0.0,\n1.0\n);}\n";
+ // Sideeffect
+diff --git a/esm/Loader/Util/animationRetargeter.js b/esm/Loader/Util/animationRetargeter.js
+index 088abdf1d53002c5a829bb17228837e447d70653..7befd78895c574de172a214c3a2065764f870482 100644
+--- a/esm/Loader/Util/animationRetargeter.js
++++ b/esm/Loader/Util/animationRetargeter.js
+@@ -1,9 +1,9 @@
+-import { Vector3 } from "@babylonjs/core/Maths/math.vector.pure";
+-import { Quaternion } from "@babylonjs/core/Maths/math.vector.pure";
+-import { Matrix } from "@babylonjs/core/Maths/math.vector.pure";
+-import { Logger } from "@babylonjs/core/Misc/logger";
+-import { ConvertToAdditiveAnimation } from "./convertToAdditiveAnimation";
+-import { DeepCopyAnimationGroup } from "./deepCopyAnimation";
++import { Vector3 } from "@babylonjs/core/Maths/math.vector.pure.js";
++import { Quaternion } from "@babylonjs/core/Maths/math.vector.pure.js";
++import { Matrix } from "@babylonjs/core/Maths/math.vector.pure.js";
++import { Logger } from "@babylonjs/core/Misc/logger.js";
++import { ConvertToAdditiveAnimation } from "./convertToAdditiveAnimation.js";
++import { DeepCopyAnimationGroup } from "./deepCopyAnimation.js";
+ /**
+  * Make animation compatible with mmd model
+  */
+diff --git a/esm/Loader/Util/convertToAdditiveAnimation.js b/esm/Loader/Util/convertToAdditiveAnimation.js
+index 8d2c4d066afedce2c387664a0a748ab02004f0fa..649a21267f1027a02f12d5daa5f763aaba64b85f 100644
+--- a/esm/Loader/Util/convertToAdditiveAnimation.js
++++ b/esm/Loader/Util/convertToAdditiveAnimation.js
+@@ -1,5 +1,5 @@
+-import { Animation } from "@babylonjs/core/Animations/animation.pure";
+-import { Quaternion } from "@babylonjs/core/Maths/math.vector.pure";
++import { Animation } from "@babylonjs/core/Animations/animation.pure.js";
++import { Quaternion } from "@babylonjs/core/Maths/math.vector.pure.js";
+ function ConvertToAdditiveAnimationInternal(animation, bone, logger) {
+     const target = bone;
+     if (target[animation.targetProperty] === undefined) {
+diff --git a/esm/Loader/Util/deepCopyAnimation.js b/esm/Loader/Util/deepCopyAnimation.js
+index 6e1097324d0ffff85a436747d7ef0eeee860d1d1..ecc7ee73b4195512ac1d3771f572b5b5321b5f5f 100644
+--- a/esm/Loader/Util/deepCopyAnimation.js
++++ b/esm/Loader/Util/deepCopyAnimation.js
+@@ -1,5 +1,5 @@
+-import { Animation } from "@babylonjs/core/Animations/animation.pure";
+-import { AnimationGroup } from "@babylonjs/core/Animations/animationGroup.pure";
++import { Animation } from "@babylonjs/core/Animations/animation.pure.js";
++import { AnimationGroup } from "@babylonjs/core/Animations/animationGroup.pure.js";
+ /**
+  * Deep copy animation data
+  * @param animation animation to copy
+diff --git a/esm/Loader/Util/index.js b/esm/Loader/Util/index.js
+index 23636b7e1152538083f7e072eb27d340014e7414..5da98c4ed23dd85a9ed760e5384c723d8488ab5d 100644
+--- a/esm/Loader/Util/index.js
++++ b/esm/Loader/Util/index.js
+@@ -1,5 +1,5 @@
+-export * from "./animationRetargeter";
+-export * from "./convertToAdditiveAnimation";
+-export * from "./deepCopyAnimation";
+-export * from "./mmdHumanoidMapper";
+-export * from "./pathNormalize";
++export * from "./animationRetargeter.js";
++export * from "./convertToAdditiveAnimation.js";
++export * from "./deepCopyAnimation.js";
++export * from "./mmdHumanoidMapper.js";
++export * from "./pathNormalize.js";
+diff --git a/esm/Loader/Util/pure.js b/esm/Loader/Util/pure.js
+index 23636b7e1152538083f7e072eb27d340014e7414..5da98c4ed23dd85a9ed760e5384c723d8488ab5d 100644
+--- a/esm/Loader/Util/pure.js
++++ b/esm/Loader/Util/pure.js
+@@ -1,5 +1,5 @@
+-export * from "./animationRetargeter";
+-export * from "./convertToAdditiveAnimation";
+-export * from "./deepCopyAnimation";
+-export * from "./mmdHumanoidMapper";
+-export * from "./pathNormalize";
++export * from "./animationRetargeter.js";
++export * from "./convertToAdditiveAnimation.js";
++export * from "./deepCopyAnimation.js";
++export * from "./mmdHumanoidMapper.js";
++export * from "./pathNormalize.js";
+diff --git a/esm/Loader/dxBmpTextureLoader.js b/esm/Loader/dxBmpTextureLoader.js
+index ff708f9058eb23dd1714d8371314e49881661af0..35f14806d1cb416cf94027ff2c3c7995e7673924 100644
+--- a/esm/Loader/dxBmpTextureLoader.js
++++ b/esm/Loader/dxBmpTextureLoader.js
+@@ -1,5 +1,5 @@
+-import { AbstractEngine } from "@babylonjs/core/Engines/abstractEngine.pure";
+-import { Constants } from "@babylonjs/core/Engines/constants";
++import { AbstractEngine } from "@babylonjs/core/Engines/abstractEngine.pure.js";
++import { Constants } from "@babylonjs/core/Engines/constants.js";
+ /**
+  * Implementation of the .bmp texture loader that handle alpha for BITMAPINFOHEADER like DirectX9 behavior.
+  * @internal
+diff --git a/esm/Loader/dynamic.js b/esm/Loader/dynamic.js
+index d01259c221035b3382d699e407de87ada68ff8e0..1b5e09ab508071e049e7b8949e87b79283603b7e 100644
+--- a/esm/Loader/dynamic.js
++++ b/esm/Loader/dynamic.js
+@@ -1,7 +1,7 @@
+-import { RegisterSceneLoaderPlugin } from "@babylonjs/core/Loading/sceneLoader";
+-import { BpmxLoaderMetadata } from "./Optimized/bpmxLoader.metadata";
+-import { PmdLoaderMetadata } from "./pmdLoader.metadata";
+-import { PmxLoaderMetadata } from "./pmxLoader.metadata";
++import { RegisterSceneLoaderPlugin } from "@babylonjs/core/Loading/sceneLoader.js";
++import { BpmxLoaderMetadata } from "./Optimized/bpmxLoader.metadata.js";
++import { PmdLoaderMetadata } from "./pmdLoader.metadata.js";
++import { PmxLoaderMetadata } from "./pmxLoader.metadata.js";
+ /**
+  * Registers the async plugin factories for all mmd model loaders (pmx, pmd, bpmx).
+  * Loaders will be dynamically imported on demand, only when a SceneLoader load operation needs each respective loader.
+@@ -12,7 +12,7 @@ export function RegisterMmdModelLoaders() {
+         ...PmxLoaderMetadata,
+         // eslint-disable-next-line @typescript-eslint/naming-convention
+         createPlugin: async (options) => {
+-            const { PmxLoader: pmxLoader } = await import("./pmxLoader.pure");
++            const { PmxLoader: pmxLoader } = await import("./pmxLoader.pure.js");
+             return new pmxLoader(options.mmdmodel);
+         }
+     });
+@@ -21,7 +21,7 @@ export function RegisterMmdModelLoaders() {
+         ...PmdLoaderMetadata,
+         // eslint-disable-next-line @typescript-eslint/naming-convention
+         createPlugin: async (options) => {
+-            const { PmdLoader: pmdLoader } = await import("./pmdLoader.pure");
++            const { PmdLoader: pmdLoader } = await import("./pmdLoader.pure.js");
+             return new pmdLoader(options.mmdmodel);
+         }
+     });
+@@ -30,7 +30,7 @@ export function RegisterMmdModelLoaders() {
+         ...BpmxLoaderMetadata,
+         // eslint-disable-next-line @typescript-eslint/naming-convention
+         createPlugin: async (options) => {
+-            const { BpmxLoader: bpmxLoader } = await import("./Optimized/bpmxLoader.pure");
++            const { BpmxLoader: bpmxLoader } = await import("./Optimized/bpmxLoader.pure.js");
+             return new bpmxLoader(options.mmdmodel);
+         }
+     });
+diff --git a/esm/Loader/index.js b/esm/Loader/index.js
+index d4a45f03d7c6d9c7593f8930b37628adf7d9dfde..17a5f85eedfb7a031eb2c792748a9e3de9f32cd3 100644
+--- a/esm/Loader/index.js
++++ b/esm/Loader/index.js
+@@ -1,42 +1,42 @@
+-import { RegisterMmdModelLoaders } from "./dynamic";
+-import { RegisterDxBmpTextureLoader } from "./registerDxBmpTextureLoader";
++import { RegisterMmdModelLoaders } from "./dynamic.js";
++import { RegisterDxBmpTextureLoader } from "./registerDxBmpTextureLoader.js";
+ // Animation
+-export * from "./Animation/index";
++export * from "./Animation/index.js";
+ // Optimized
+-export * from "./Optimized/index";
++export * from "./Optimized/index.js";
+ // Parser
+-export * from "./Parser/index";
++export * from "./Parser/index.js";
+ // Util
+-export * from "./Util/index";
++export * from "./Util/index.js";
+ // ./
+-export * from "./dxBmpTextureLoader";
+-export * from "./dynamic";
+-export * from "./IMmdMaterialBuilder";
+-export * from "./materialBuilderBase";
+-export * from "./mmdAsyncTextureLoader";
+-export * from "./mmdBufferKind";
+-export * from "./mmdModelLoader"; // default material builder override sideeffect
+-export * from "./mmdModelMetadata";
+-export * from "./mmdOutlineRenderer"; // scene component sideeffect
+-export * from "./mmdPluginMaterial"; // register class sideeffect
+-export * from "./mmdStandardMaterial"; // register class sideeffect
+-export * from "./mmdStandardMaterialBuilder";
+-// export * from "./objectUniqueIdProvider";
+-export * from "./pbrMaterialBuilder";
+-export * from "./pmdLoader"; // register scene loader sideeffect
+-export * from "./pmdLoader.metadata";
+-export * from "./pmLoader";
+-export * from "./pmxLoader"; // register scene loader sideeffect
+-export * from "./pmxLoader.metadata";
+-export * from "./progress";
+-export * from "./referenceFileResolver";
+-export * from "./registerDxBmpTextureLoader";
+-export * from "./sdefInjector";
+-export * from "./sdefMesh"; // register class sideeffect
+-export * from "./sharedToonTextures";
+-export * from "./standardMaterialBuilder";
+-export * from "./textureAlphaChecker";
+-export * from "./vmdLoader";
+-export * from "./vpdLoader";
++export * from "./dxBmpTextureLoader.js";
++export * from "./dynamic.js";
++export * from "./IMmdMaterialBuilder.js";
++export * from "./materialBuilderBase.js";
++export * from "./mmdAsyncTextureLoader.js";
++export * from "./mmdBufferKind.js";
++export * from "./mmdModelLoader.js"; // default material builder override sideeffect
++export * from "./mmdModelMetadata.js";
++export * from "./mmdOutlineRenderer.js"; // scene component sideeffect
++export * from "./mmdPluginMaterial.js"; // register class sideeffect
++export * from "./mmdStandardMaterial.js"; // register class sideeffect
++export * from "./mmdStandardMaterialBuilder.js";
++// export * from "./objectUniqueIdProvider.js";
++export * from "./pbrMaterialBuilder.js";
++export * from "./pmdLoader.js"; // register scene loader sideeffect
++export * from "./pmdLoader.metadata.js";
++export * from "./pmLoader.js";
++export * from "./pmxLoader.js"; // register scene loader sideeffect
++export * from "./pmxLoader.metadata.js";
++export * from "./progress.js";
++export * from "./referenceFileResolver.js";
++export * from "./registerDxBmpTextureLoader.js";
++export * from "./sdefInjector.js";
++export * from "./sdefMesh.js"; // register class sideeffect
++export * from "./sharedToonTextures.js";
++export * from "./standardMaterialBuilder.js";
++export * from "./textureAlphaChecker.js";
++export * from "./vmdLoader.js";
++export * from "./vpdLoader.js";
+ RegisterMmdModelLoaders();
+ RegisterDxBmpTextureLoader();
+diff --git a/esm/Loader/materialBuilderBase.js b/esm/Loader/materialBuilderBase.js
+index 7e48fe910f0eeb6a3c9b040d08be482b742c4170..dc5d39d888c9fa282a1b818c3f8d3b4afed5070c 100644
+--- a/esm/Loader/materialBuilderBase.js
++++ b/esm/Loader/materialBuilderBase.js
+@@ -1,7 +1,7 @@
+-import { Material } from "@babylonjs/core/Materials/material.pure";
+-import { MmdAsyncTextureLoader } from "./mmdAsyncTextureLoader";
+-import { ReferenceFileResolver } from "./referenceFileResolver";
+-import { TextureAlphaChecker } from "./textureAlphaChecker";
++import { Material } from "@babylonjs/core/Materials/material.pure.js";
++import { MmdAsyncTextureLoader } from "./mmdAsyncTextureLoader.js";
++import { ReferenceFileResolver } from "./referenceFileResolver.js";
++import { TextureAlphaChecker } from "./textureAlphaChecker.js";
+ /**
+  * Render method of MMD material
+  *
+diff --git a/esm/Loader/mmdAsyncTextureLoader.js b/esm/Loader/mmdAsyncTextureLoader.js
+index d5bdb30cb34a2cf472321bb468175a54f11bde06..81fe5c45f1fc23e693ddc6f65c327be762f66439 100644
+--- a/esm/Loader/mmdAsyncTextureLoader.js
++++ b/esm/Loader/mmdAsyncTextureLoader.js
+@@ -1,9 +1,9 @@
+-import { Constants } from "@babylonjs/core/Engines/constants";
+-import { Texture } from "@babylonjs/core/Materials/Textures/texture.pure";
+-import { Observable } from "@babylonjs/core/Misc/observable.pure";
+-import { TimingTools } from "@babylonjs/core/Misc/timingTools";
+-import { SharedToonTextures } from "./sharedToonTextures";
+-import { PathNormalize } from "./Util/pathNormalize";
++import { Constants } from "@babylonjs/core/Engines/constants.js";
++import { Texture } from "@babylonjs/core/Materials/Textures/texture.pure.js";
++import { Observable } from "@babylonjs/core/Misc/observable.pure.js";
++import { TimingTools } from "@babylonjs/core/Misc/timingTools.js";
++import { SharedToonTextures } from "./sharedToonTextures.js";
++import { PathNormalize } from "./Util/pathNormalize.js";
+ class TextureLoadingModel {
+     uniqueId;
+     leftLoadCount;
+diff --git a/esm/Loader/mmdModelLoader.js b/esm/Loader/mmdModelLoader.js
+index 093e6248ad40e819fd6dc3f80520912469afca0b..004d0fd4f09dff5812ab63aacc0594be821e8f54 100644
+--- a/esm/Loader/mmdModelLoader.js
++++ b/esm/Loader/mmdModelLoader.js
+@@ -1,4 +1,4 @@
+-import { RegisterMmdModelLoaderDefaultSharedMaterialBuilder } from "./mmdModelLoader.pure";
+-export * from "./mmdModelLoader.pure";
+-export * from "./mmdModelLoader.types";
++import { RegisterMmdModelLoaderDefaultSharedMaterialBuilder } from "./mmdModelLoader.pure.js";
++export * from "./mmdModelLoader.pure.js";
++export * from "./mmdModelLoader.types.js";
+ RegisterMmdModelLoaderDefaultSharedMaterialBuilder();
+diff --git a/esm/Loader/mmdModelLoader.pure.js b/esm/Loader/mmdModelLoader.pure.js
+index 1a820888c784c8be10ef4b36ede6120e84002c8d..7e1bf2db4b8c9533a88f856ba89d3ad5795007dd 100644
+--- a/esm/Loader/mmdModelLoader.pure.js
++++ b/esm/Loader/mmdModelLoader.pure.js
+@@ -1,11 +1,11 @@
+-import { AssetContainer } from "@babylonjs/core/assetContainer";
+-import { Bone } from "@babylonjs/core/Bones/bone.pure";
+-import { Skeleton } from "@babylonjs/core/Bones/skeleton";
+-import { BoundingInfo } from "@babylonjs/core/Culling/boundingInfo";
+-import { Matrix, Vector3 } from "@babylonjs/core/Maths/math.vector.pure";
+-import { Logger } from "@babylonjs/core/Misc/logger";
+-import { MmdStandardMaterialBuilder } from "./mmdStandardMaterialBuilder";
+-import { Progress } from "./progress";
++import { AssetContainer } from "@babylonjs/core/assetContainer.js";
++import { Bone } from "@babylonjs/core/Bones/bone.pure.js";
++import { Skeleton } from "@babylonjs/core/Bones/skeleton.js";
++import { BoundingInfo } from "@babylonjs/core/Culling/boundingInfo.js";
++import { Matrix, Vector3 } from "@babylonjs/core/Maths/math.vector.pure.js";
++import { Logger } from "@babylonjs/core/Misc/logger.js";
++import { MmdStandardMaterialBuilder } from "./mmdStandardMaterialBuilder.js";
++import { Progress } from "./progress.js";
+ /**
+  * @internal
+  * Base class of loader for MMD model (pmx / pmd / bpmx)
+diff --git a/esm/Loader/mmdOutlineRenderer.js b/esm/Loader/mmdOutlineRenderer.js
+index 92acec0c3aadc2c116df028b8ca42bb9cbacb27e..5d04f599b05a5895ab130f494b143f0e798a2ddb 100644
+--- a/esm/Loader/mmdOutlineRenderer.js
++++ b/esm/Loader/mmdOutlineRenderer.js
+@@ -1,4 +1,4 @@
+-import { RegisterMmdOutlineRenderer } from "./mmdOutlineRenderer.pure";
+-export * from "./mmdOutlineRenderer.pure";
+-export * from "./mmdOutlineRenderer.types";
++import { RegisterMmdOutlineRenderer } from "./mmdOutlineRenderer.pure.js";
++export * from "./mmdOutlineRenderer.pure.js";
++export * from "./mmdOutlineRenderer.types.js";
+ RegisterMmdOutlineRenderer();
+diff --git a/esm/Loader/mmdOutlineRenderer.pure.js b/esm/Loader/mmdOutlineRenderer.pure.js
+index d95e806b3c49193605a3cd8cc068b1b60b362881..ccc1c5129b99706aca31e996120f59123b08236c 100644
+--- a/esm/Loader/mmdOutlineRenderer.pure.js
++++ b/esm/Loader/mmdOutlineRenderer.pure.js
+@@ -1,15 +1,15 @@
+-import { VertexBuffer } from "@babylonjs/core/Buffers/buffer.pure";
+-import { Constants } from "@babylonjs/core/Engines/constants";
+-import { AddClipPlaneUniforms, BindClipPlane, PrepareStringDefinesForClipPlanes } from "@babylonjs/core/Materials/clipPlaneMaterialHelper";
+-import { DrawWrapper } from "@babylonjs/core/Materials/drawWrapper";
+-import { EffectFallbacks } from "@babylonjs/core/Materials/effectFallbacks";
+-import { BindBonesParameters, BindMorphTargetParameters, PrepareDefinesAndAttributesForMorphTargets, PushAttributesForInstances } from "@babylonjs/core/Materials/materialHelper.functions";
+-import { ShaderLanguage } from "@babylonjs/core/Materials/shaderLanguage";
+-import { Matrix } from "@babylonjs/core/Maths/math.vector.pure";
+-import { Scene } from "@babylonjs/core/scene.pure";
+-import { SceneComponentConstants } from "@babylonjs/core/sceneComponent";
+-import { MmdBufferKind } from "./mmdBufferKind";
+-import { SdefInjector } from "./sdefInjector";
++import { VertexBuffer } from "@babylonjs/core/Buffers/buffer.pure.js";
++import { Constants } from "@babylonjs/core/Engines/constants.js";
++import { AddClipPlaneUniforms, BindClipPlane, PrepareStringDefinesForClipPlanes } from "@babylonjs/core/Materials/clipPlaneMaterialHelper.js";
++import { DrawWrapper } from "@babylonjs/core/Materials/drawWrapper.js";
++import { EffectFallbacks } from "@babylonjs/core/Materials/effectFallbacks.js";
++import { BindBonesParameters, BindMorphTargetParameters, PrepareDefinesAndAttributesForMorphTargets, PushAttributesForInstances } from "@babylonjs/core/Materials/materialHelper.functions.js";
++import { ShaderLanguage } from "@babylonjs/core/Materials/shaderLanguage.js";
++import { Matrix } from "@babylonjs/core/Maths/math.vector.pure.js";
++import { Scene } from "@babylonjs/core/scene.pure.js";
++import { SceneComponentConstants } from "@babylonjs/core/sceneComponent.js";
++import { MmdBufferKind } from "./mmdBufferKind.js";
++import { SdefInjector } from "./sdefInjector.js";
+ /**
+  * This class is responsible to draw the outline/overlay of meshes.
+  * It should not be used directly but through the available method on mesh.
+@@ -304,10 +304,10 @@ export class MmdOutlineRenderer {
+                 shaderLanguage: shaderLanguage,
+                 extraInitializationsAsync: async () => {
+                     if (shaderLanguage === ShaderLanguage.WGSL) {
+-                        await Promise.all([import("./ShadersWGSL/mmdOutline.fragment"), import("./ShadersWGSL/mmdOutline.vertex")]);
++                        await Promise.all([import("./ShadersWGSL/mmdOutline.fragment.js"), import("./ShadersWGSL/mmdOutline.vertex.js")]);
+                     }
+                     else {
+-                        await Promise.all([import("./Shaders/mmdOutline.fragment"), import("./Shaders/mmdOutline.vertex")]);
++                        await Promise.all([import("./Shaders/mmdOutline.fragment.js"), import("./Shaders/mmdOutline.vertex.js")]);
+                     }
+                 }
+             }, this.scene.getEngine()), join);
+diff --git a/esm/Loader/mmdPluginMaterial.js b/esm/Loader/mmdPluginMaterial.js
+index 7bba65ab4a9f36bcc88f358c4680e2a274267829..fda4ca47c9c470965dd0eedec426065f08aebbe4 100644
+--- a/esm/Loader/mmdPluginMaterial.js
++++ b/esm/Loader/mmdPluginMaterial.js
+@@ -1,3 +1,3 @@
+-import { RegisterMmdPluginMaterial } from "./mmdPluginMaterial.pure";
+-export * from "./mmdPluginMaterial.pure";
++import { RegisterMmdPluginMaterial } from "./mmdPluginMaterial.pure.js";
++export * from "./mmdPluginMaterial.pure.js";
+ RegisterMmdPluginMaterial();
+diff --git a/esm/Loader/mmdPluginMaterial.pure.js b/esm/Loader/mmdPluginMaterial.pure.js
+index 7235105e6ad74669a66752b7b938895056047797..1f60ed3cbdea9b45913135a67b75daa72c7c4071 100644
+--- a/esm/Loader/mmdPluginMaterial.pure.js
++++ b/esm/Loader/mmdPluginMaterial.pure.js
+@@ -4,13 +4,13 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
+     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+     return c > 3 && r && Object.defineProperty(target, key, r), r;
+ };
+-import { Constants } from "@babylonjs/core/Engines/constants";
+-import { MaterialDefines } from "@babylonjs/core/Materials/materialDefines";
+-import { MaterialPluginBase } from "@babylonjs/core/Materials/materialPluginBase.pure";
+-import { Color4 } from "@babylonjs/core/Maths/math.color.pure";
+-import { serialize, serializeAsTexture } from "@babylonjs/core/Misc/decorators";
+-import { RegisterClass } from "@babylonjs/core/Misc/typeStore";
+-import { MmdBufferKind } from "./mmdBufferKind";
++import { Constants } from "@babylonjs/core/Engines/constants.js";
++import { MaterialDefines } from "@babylonjs/core/Materials/materialDefines.js";
++import { MaterialPluginBase } from "@babylonjs/core/Materials/materialPluginBase.pure.js";
++import { Color4 } from "@babylonjs/core/Maths/math.color.pure.js";
++import { serialize, serializeAsTexture } from "@babylonjs/core/Misc/decorators.js";
++import { RegisterClass } from "@babylonjs/core/Misc/typeStore.js";
++import { MmdBufferKind } from "./mmdBufferKind.js";
+ /**
+  * for convert MMD material to Babylon material
+  *
+diff --git a/esm/Loader/mmdStandardMaterial.js b/esm/Loader/mmdStandardMaterial.js
+index dcf2f528cfd0c44265a3b2c4f11f2bef695cf652..ccc0411141ab4f1f6a9e4f9c67a3b85e4f49b566 100644
+--- a/esm/Loader/mmdStandardMaterial.js
++++ b/esm/Loader/mmdStandardMaterial.js
+@@ -1,3 +1,3 @@
+-import { RegisterMmdStandardMaterial } from "./mmdStandardMaterial.pure";
+-export * from "./mmdStandardMaterial.pure";
++import { RegisterMmdStandardMaterial } from "./mmdStandardMaterial.pure.js";
++export * from "./mmdStandardMaterial.pure.js";
+ RegisterMmdStandardMaterial();
+diff --git a/esm/Loader/mmdStandardMaterial.pure.js b/esm/Loader/mmdStandardMaterial.pure.js
+index e62b41dca6ab2658543b25f92470b199a350cd9f..7556e76368162efa42aba402463ef74dbe9faec0 100644
+--- a/esm/Loader/mmdStandardMaterial.pure.js
++++ b/esm/Loader/mmdStandardMaterial.pure.js
+@@ -4,15 +4,15 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
+     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+     return c > 3 && r && Object.defineProperty(target, key, r), r;
+ };
+-import { Material } from "@babylonjs/core/Materials/material.pure";
+-import { ShaderLanguage } from "@babylonjs/core/Materials/shaderLanguage";
+-import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial.pure";
+-import { Color4 } from "@babylonjs/core/Maths/math.color.pure";
+-import { Color3 } from "@babylonjs/core/Maths/math.color.pure";
+-import { serialize, serializeAsColor3 } from "@babylonjs/core/Misc/decorators";
+-import { SerializationHelper } from "@babylonjs/core/Misc/decorators.serialization";
+-import { RegisterClass } from "@babylonjs/core/Misc/typeStore";
+-import { MmdPluginMaterialSphereTextureBlendMode } from "./mmdPluginMaterial.pure";
++import { Material } from "@babylonjs/core/Materials/material.pure.js";
++import { ShaderLanguage } from "@babylonjs/core/Materials/shaderLanguage.js";
++import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial.pure.js";
++import { Color4 } from "@babylonjs/core/Maths/math.color.pure.js";
++import { Color3 } from "@babylonjs/core/Maths/math.color.pure.js";
++import { serialize, serializeAsColor3 } from "@babylonjs/core/Misc/decorators.js";
++import { SerializationHelper } from "@babylonjs/core/Misc/decorators.serialization.js";
++import { RegisterClass } from "@babylonjs/core/Misc/typeStore.js";
++import { MmdPluginMaterialSphereTextureBlendMode } from "./mmdPluginMaterial.pure.js";
+ class MmdPluginMaterialMock {
+     isMock = true;
+     sphereTexture = null;
+@@ -71,8 +71,8 @@ export class MmdStandardMaterial extends StandardMaterial {
+     }
+     async _initPluginShaderSourceAsync(shaderLanguage) {
+         const mmdPluginMaterial = shaderLanguage === ShaderLanguage.GLSL
+-            ? (await import("./Shaders/mmdStandard")).MmdPluginMaterial
+-            : (await import("./ShadersWGSL/mmdStandard")).MmdPluginMaterial;
++            ? (await import("./Shaders/mmdStandard.js")).MmdPluginMaterial
++            : (await import("./ShadersWGSL/mmdStandard.js")).MmdPluginMaterial;
+         if (this._disposed) {
+             return;
+         }
+diff --git a/esm/Loader/mmdStandardMaterialBuilder.js b/esm/Loader/mmdStandardMaterialBuilder.js
+index bb9f168d6c0dc1eb3e1fde98468d3d4a767bc782..97f208c3702fb75e875e487cf570de3c736df391 100644
+--- a/esm/Loader/mmdStandardMaterialBuilder.js
++++ b/esm/Loader/mmdStandardMaterialBuilder.js
+@@ -1,9 +1,9 @@
+-import { Constants } from "@babylonjs/core/Engines/constants";
+-import { Color3 } from "@babylonjs/core/Maths/math.color.pure";
+-import { Scene } from "@babylonjs/core/scene.pure";
+-import { MmdStandardMaterial } from "./mmdStandardMaterial.pure";
+-import { PmxObject } from "./Parser/pmxObject";
+-import { StandardMaterialBuilderBase } from "./standardMaterialBuilder";
++import { Constants } from "@babylonjs/core/Engines/constants.js";
++import { Color3 } from "@babylonjs/core/Maths/math.color.pure.js";
++import { Scene } from "@babylonjs/core/scene.pure.js";
++import { MmdStandardMaterial } from "./mmdStandardMaterial.pure.js";
++import { PmxObject } from "./Parser/pmxObject.js";
++import { StandardMaterialBuilderBase } from "./standardMaterialBuilder.js";
+ /**
+  * MMD standard material builder
+  *
+diff --git a/esm/Loader/pbrMaterialBuilder.js b/esm/Loader/pbrMaterialBuilder.js
+index 2df59831c02d0868b15d692b22526ec941aabad0..0c8caac3cf40012ef8d81949b3eb4388585faf46 100644
+--- a/esm/Loader/pbrMaterialBuilder.js
++++ b/esm/Loader/pbrMaterialBuilder.js
+@@ -1,10 +1,10 @@
+-import { Constants } from "@babylonjs/core/Engines/constants";
+-import { Material } from "@babylonjs/core/Materials/material.pure";
+-import { PBRMaterial } from "@babylonjs/core/Materials/PBR/pbrMaterial.pure";
+-import { _GetCompatibleTextureLoader } from "@babylonjs/core/Materials/Textures/Loaders/textureLoaderManager";
+-import { Color3 } from "@babylonjs/core/Maths/math.color.pure";
+-import { MaterialBuilderBase, MmdMaterialRenderMethod } from "./materialBuilderBase";
+-import { PmxObject } from "./Parser/pmxObject";
++import { Constants } from "@babylonjs/core/Engines/constants.js";
++import { Material } from "@babylonjs/core/Materials/material.pure.js";
++import { PBRMaterial } from "@babylonjs/core/Materials/PBR/pbrMaterial.pure.js";
++import { _GetCompatibleTextureLoader } from "@babylonjs/core/Materials/Textures/Loaders/textureLoaderManager.js";
++import { Color3 } from "@babylonjs/core/Maths/math.color.pure.js";
++import { MaterialBuilderBase, MmdMaterialRenderMethod } from "./materialBuilderBase.js";
++import { PmxObject } from "./Parser/pmxObject.js";
+ /**
+  * PBR material builder
+  *
+diff --git a/esm/Loader/pmLoader.js b/esm/Loader/pmLoader.js
+index 26793a50d29f98966d363bd9a992afbaa6c68553..28973bc48b62d8fe5ed04b7511815a55a138999e 100644
+--- a/esm/Loader/pmLoader.js
++++ b/esm/Loader/pmLoader.js
+@@ -1,17 +1,17 @@
+-import { VertexBuffer } from "@babylonjs/core/Buffers/buffer.pure";
+-import { MultiMaterial } from "@babylonjs/core/Materials/multiMaterial.pure";
+-import { Geometry } from "@babylonjs/core/Meshes/geometry";
+-import { Mesh } from "@babylonjs/core/Meshes/mesh.pure";
+-import { VertexData } from "@babylonjs/core/Meshes/mesh.vertexData";
+-import { SubMesh } from "@babylonjs/core/Meshes/subMesh.pure";
+-import { Tools } from "@babylonjs/core/Misc/tools.pure";
+-import { MorphTarget } from "@babylonjs/core/Morph/morphTarget";
+-import { MorphTargetManager } from "@babylonjs/core/Morph/morphTargetManager";
+-import { MmdBufferKind } from "./mmdBufferKind";
+-import { MmdModelLoader } from "./mmdModelLoader.pure";
+-import { ObjectUniqueIdProvider } from "./objectUniqueIdProvider";
+-import { PmxObject } from "./Parser/pmxObject";
+-import { SdefMesh } from "./sdefMesh.pure";
++import { VertexBuffer } from "@babylonjs/core/Buffers/buffer.pure.js";
++import { MultiMaterial } from "@babylonjs/core/Materials/multiMaterial.pure.js";
++import { Geometry } from "@babylonjs/core/Meshes/geometry.js";
++import { Mesh } from "@babylonjs/core/Meshes/mesh.pure.js";
++import { VertexData } from "@babylonjs/core/Meshes/mesh.vertexData.js";
++import { SubMesh } from "@babylonjs/core/Meshes/subMesh.pure.js";
++import { Tools } from "@babylonjs/core/Misc/tools.pure.js";
++import { MorphTarget } from "@babylonjs/core/Morph/morphTarget.js";
++import { MorphTargetManager } from "@babylonjs/core/Morph/morphTargetManager.js";
++import { MmdBufferKind } from "./mmdBufferKind.js";
++import { MmdModelLoader } from "./mmdModelLoader.pure.js";
++import { ObjectUniqueIdProvider } from "./objectUniqueIdProvider.js";
++import { PmxObject } from "./Parser/pmxObject.js";
++import { SdefMesh } from "./sdefMesh.pure.js";
+ /**
+  * @internal
+  * Base class of pmx / pmd loader
+diff --git a/esm/Loader/pmdLoader.js b/esm/Loader/pmdLoader.js
+index c26f2a1a67c78286c4c0d9ba370fc745a5dc9746..6b4a9666e5f0df376560940933acbc387c6afe2d 100644
+--- a/esm/Loader/pmdLoader.js
++++ b/esm/Loader/pmdLoader.js
+@@ -1,3 +1,3 @@
+-import { RegisterPmdLoader } from "./pmdLoader.pure";
+-export * from "./pmdLoader.pure";
++import { RegisterPmdLoader } from "./pmdLoader.pure.js";
++export * from "./pmdLoader.pure.js";
+ RegisterPmdLoader();
+diff --git a/esm/Loader/pmdLoader.pure.js b/esm/Loader/pmdLoader.pure.js
+index 68eff9e0afb065b9df332ac92a776724df5e3e6c..c1e1eb5ec5cc492d42c817e7505811b3bbe6efbc 100644
+--- a/esm/Loader/pmdLoader.pure.js
++++ b/esm/Loader/pmdLoader.pure.js
+@@ -1,7 +1,7 @@
+-import { RegisterSceneLoaderPlugin } from "@babylonjs/core/Loading/sceneLoader";
+-import { PmdReader } from "./Parser/pmdReader";
+-import { PmdLoaderMetadata } from "./pmdLoader.metadata";
+-import { PmLoader } from "./pmLoader";
++import { RegisterSceneLoaderPlugin } from "@babylonjs/core/Loading/sceneLoader.js";
++import { PmdReader } from "./Parser/pmdReader.js";
++import { PmdLoaderMetadata } from "./pmdLoader.metadata.js";
++import { PmLoader } from "./pmLoader.js";
+ /**
+  * PmdLoader is a loader that loads the model in the PMD format
+  *
+diff --git a/esm/Loader/pmxLoader.js b/esm/Loader/pmxLoader.js
+index f286eb52427d2eaf6cb03612b5df21d7ebfffb43..98d8f6fc06366c0fd1e9c347938743301ca832dd 100644
+--- a/esm/Loader/pmxLoader.js
++++ b/esm/Loader/pmxLoader.js
+@@ -1,3 +1,3 @@
+-import { RegisterPmxLoader } from "./pmxLoader.pure";
+-export * from "./pmxLoader.pure";
++import { RegisterPmxLoader } from "./pmxLoader.pure.js";
++export * from "./pmxLoader.pure.js";
+ RegisterPmxLoader();
+diff --git a/esm/Loader/pmxLoader.pure.js b/esm/Loader/pmxLoader.pure.js
+index 0f860945cd7a04fe538cddd9c741acf11fe67b64..54003c30aa7016be708287c66fe0380437632085 100644
+--- a/esm/Loader/pmxLoader.pure.js
++++ b/esm/Loader/pmxLoader.pure.js
+@@ -1,7 +1,7 @@
+-import { RegisterSceneLoaderPlugin } from "@babylonjs/core/Loading/sceneLoader";
+-import { PmxReader } from "./Parser/pmxReader";
+-import { PmLoader } from "./pmLoader";
+-import { PmxLoaderMetadata } from "./pmxLoader.metadata";
++import { RegisterSceneLoaderPlugin } from "@babylonjs/core/Loading/sceneLoader.js";
++import { PmxReader } from "./Parser/pmxReader.js";
++import { PmLoader } from "./pmLoader.js";
++import { PmxLoaderMetadata } from "./pmxLoader.metadata.js";
+ /**
+  * PmxLoader is a loader that loads the model in the PMX format
+  *
+diff --git a/esm/Loader/pure.js b/esm/Loader/pure.js
+index f29ee051d8d1ddf9e7b3572bfca420988c19a587..229006e7ed14ff8888a6717f1ba3d2bde6c5dbe2 100644
+--- a/esm/Loader/pure.js
++++ b/esm/Loader/pure.js
+@@ -1,38 +1,38 @@
+ // Animation
+-export * from "./Animation/pure";
++export * from "./Animation/pure.js";
+ // Optimized
+-export * from "./Optimized/pure";
++export * from "./Optimized/pure.js";
+ // Parser
+-export * from "./Parser/pure";
++export * from "./Parser/pure.js";
+ // Util
+-export * from "./Util/pure";
++export * from "./Util/pure.js";
+ // ./
+-export * from "./dxBmpTextureLoader";
+-export * from "./dynamic";
+-export * from "./IMmdMaterialBuilder";
+-export * from "./materialBuilderBase";
+-export * from "./mmdAsyncTextureLoader";
+-export * from "./mmdBufferKind";
+-export * from "./mmdModelLoader.pure";
+-export * from "./mmdModelMetadata";
+-export * from "./mmdOutlineRenderer.pure";
+-export * from "./mmdPluginMaterial.pure";
+-export * from "./mmdStandardMaterial.pure";
+-export * from "./mmdStandardMaterialBuilder";
+-// export * from "./objectUniqueIdProvider";
+-export * from "./pbrMaterialBuilder";
+-export * from "./pmdLoader.metadata";
+-export * from "./pmdLoader.pure";
+-export * from "./pmLoader";
+-export * from "./pmxLoader.metadata";
+-export * from "./pmxLoader.pure";
+-export * from "./progress";
+-export * from "./referenceFileResolver";
+-export * from "./registerDxBmpTextureLoader";
+-export * from "./sdefInjector";
+-export * from "./sdefMesh.pure";
+-export * from "./sharedToonTextures";
+-export * from "./standardMaterialBuilder";
+-export * from "./textureAlphaChecker";
+-export * from "./vmdLoader";
+-export * from "./vpdLoader";
++export * from "./dxBmpTextureLoader.js";
++export * from "./dynamic.js";
++export * from "./IMmdMaterialBuilder.js";
++export * from "./materialBuilderBase.js";
++export * from "./mmdAsyncTextureLoader.js";
++export * from "./mmdBufferKind.js";
++export * from "./mmdModelLoader.pure.js";
++export * from "./mmdModelMetadata.js";
++export * from "./mmdOutlineRenderer.pure.js";
++export * from "./mmdPluginMaterial.pure.js";
++export * from "./mmdStandardMaterial.pure.js";
++export * from "./mmdStandardMaterialBuilder.js";
++// export * from "./objectUniqueIdProvider.js";
++export * from "./pbrMaterialBuilder.js";
++export * from "./pmdLoader.metadata.js";
++export * from "./pmdLoader.pure.js";
++export * from "./pmLoader.js";
++export * from "./pmxLoader.metadata.js";
++export * from "./pmxLoader.pure.js";
++export * from "./progress.js";
++export * from "./referenceFileResolver.js";
++export * from "./registerDxBmpTextureLoader.js";
++export * from "./sdefInjector.js";
++export * from "./sdefMesh.pure.js";
++export * from "./sharedToonTextures.js";
++export * from "./standardMaterialBuilder.js";
++export * from "./textureAlphaChecker.js";
++export * from "./vmdLoader.js";
++export * from "./vpdLoader.js";
+diff --git a/esm/Loader/referenceFileResolver.js b/esm/Loader/referenceFileResolver.js
+index b31c4cbbf6d8778e57c6f939d158eb46b0f9ab79..8761321d9e1098910d8d93c714621153c2e91c3a 100644
+--- a/esm/Loader/referenceFileResolver.js
++++ b/esm/Loader/referenceFileResolver.js
+@@ -1,4 +1,4 @@
+-import { PathNormalize } from "./Util/pathNormalize";
++import { PathNormalize } from "./Util/pathNormalize.js";
+ /**
+  * Reference file resolver
+  *
+diff --git a/esm/Loader/registerDxBmpTextureLoader.js b/esm/Loader/registerDxBmpTextureLoader.js
+index 50b5f21f7b830a5ed1e92a605d72a299c6a7c672..89991fba90ccbf65e7e225182749b7b705524014 100644
+--- a/esm/Loader/registerDxBmpTextureLoader.js
++++ b/esm/Loader/registerDxBmpTextureLoader.js
+@@ -1,4 +1,4 @@
+-import { registerTextureLoader } from "@babylonjs/core/Materials/Textures/Loaders/textureLoaderManager";
++import { registerTextureLoader } from "@babylonjs/core/Materials/Textures/Loaders/textureLoaderManager.js";
+ let Registered = false;
+ /**
+  * Register the bmp texture loader that behaves like the directx bmp texture loader
+@@ -12,5 +12,5 @@ export function RegisterDxBmpTextureLoader() {
+         return;
+     }
+     Registered = true;
+-    registerTextureLoader(".dxbmp", () => import("./dxBmpTextureLoader").then(((module) => new module._DxBmpTextureLoader())));
++    registerTextureLoader(".dxbmp", () => import("./dxBmpTextureLoader.js").then(((module) => new module._DxBmpTextureLoader())));
+ }
+diff --git a/esm/Loader/sdefInjector.js b/esm/Loader/sdefInjector.js
+index a9db7889445fadb75896ff83f71415a0d757bb22..78b25852523077bd57962f76ecd16677d62eca50 100644
+--- a/esm/Loader/sdefInjector.js
++++ b/esm/Loader/sdefInjector.js
+@@ -1,9 +1,9 @@
+-import { ShaderLanguage } from "@babylonjs/core/Materials/shaderLanguage";
+-import { MmdBufferKind } from "./mmdBufferKind";
+-import { SdefDeclaration } from "./Shaders/sdefDeclaration";
+-import { SdefVertex } from "./Shaders/sdefVertex";
+-import { SdefDeclaration as sdefDeclarationWgsl } from "./ShadersWGSL/sdefDeclaration";
+-import { SdefVertex as sdefVertexWgsl } from "./ShadersWGSL/sdefVertex";
++import { ShaderLanguage } from "@babylonjs/core/Materials/shaderLanguage.js";
++import { MmdBufferKind } from "./mmdBufferKind.js";
++import { SdefDeclaration } from "./Shaders/sdefDeclaration.js";
++import { SdefVertex } from "./Shaders/sdefVertex.js";
++import { SdefDeclaration as sdefDeclarationWgsl } from "./ShadersWGSL/sdefDeclaration.js";
++import { SdefVertex as sdefVertexWgsl } from "./ShadersWGSL/sdefVertex.js";
+ /**
+  * Sdef injector
+  *
+diff --git a/esm/Loader/sdefMesh.js b/esm/Loader/sdefMesh.js
+index 35c4dfacb95ec6375d2dcea45488f36b9419d343..1bd2e2c14bd267106357edd60f6b055237dfd4d5 100644
+--- a/esm/Loader/sdefMesh.js
++++ b/esm/Loader/sdefMesh.js
+@@ -1,3 +1,3 @@
+-import { RegisterSdefMesh } from "./sdefMesh.pure";
+-export * from "./sdefMesh.pure";
++import { RegisterSdefMesh } from "./sdefMesh.pure.js";
++export * from "./sdefMesh.pure.js";
+ RegisterSdefMesh();
+diff --git a/esm/Loader/sdefMesh.pure.js b/esm/Loader/sdefMesh.pure.js
+index f9d59e17d20d86329d547a92a0639ca1ee0343e9..cddf43242fde9062e3c429ac7da2b60810a6eaba 100644
+--- a/esm/Loader/sdefMesh.pure.js
++++ b/esm/Loader/sdefMesh.pure.js
+@@ -1,8 +1,8 @@
+-import { VertexBuffer } from "@babylonjs/core/Buffers/buffer.pure";
+-import { Matrix, Quaternion, Vector3 } from "@babylonjs/core/Maths/math.vector.pure";
+-import { Mesh } from "@babylonjs/core/Meshes/mesh.pure";
+-import { RegisterClass } from "@babylonjs/core/Misc/typeStore";
+-import { MmdBufferKind } from "./mmdBufferKind";
++import { VertexBuffer } from "@babylonjs/core/Buffers/buffer.pure.js";
++import { Matrix, Quaternion, Vector3 } from "@babylonjs/core/Maths/math.vector.pure.js";
++import { Mesh } from "@babylonjs/core/Meshes/mesh.pure.js";
++import { RegisterClass } from "@babylonjs/core/Misc/typeStore.js";
++import { MmdBufferKind } from "./mmdBufferKind.js";
+ /* eslint-enable @typescript-eslint/naming-convention */
+ // NOTE: just copy of Babylon.js internal code
+ const MeshCreationOptions = {
+diff --git a/esm/Loader/standardMaterialBuilder.js b/esm/Loader/standardMaterialBuilder.js
+index 1bb6dc3ac62dddf0add0c906c1676be14dd9b13e..f1c4a755f106ddec7104482b6f1fbb51e870ccae 100644
+--- a/esm/Loader/standardMaterialBuilder.js
++++ b/esm/Loader/standardMaterialBuilder.js
+@@ -1,10 +1,10 @@
+-import { Constants } from "@babylonjs/core/Engines/constants";
+-import { Material } from "@babylonjs/core/Materials/material.pure";
+-import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial.pure";
+-import { _GetCompatibleTextureLoader } from "@babylonjs/core/Materials/Textures/Loaders/textureLoaderManager";
+-import { Color3 } from "@babylonjs/core/Maths/math.color.pure";
+-import { MaterialBuilderBase, MmdMaterialRenderMethod } from "./materialBuilderBase";
+-import { PmxObject } from "./Parser/pmxObject";
++import { Constants } from "@babylonjs/core/Engines/constants.js";
++import { Material } from "@babylonjs/core/Materials/material.pure.js";
++import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial.pure.js";
++import { _GetCompatibleTextureLoader } from "@babylonjs/core/Materials/Textures/Loaders/textureLoaderManager.js";
++import { Color3 } from "@babylonjs/core/Maths/math.color.pure.js";
++import { MaterialBuilderBase, MmdMaterialRenderMethod } from "./materialBuilderBase.js";
++import { PmxObject } from "./Parser/pmxObject.js";
+ /**
+  * Standard material builder base class
+  */
+diff --git a/esm/Loader/textureAlphaChecker.js b/esm/Loader/textureAlphaChecker.js
+index c49f040e80132f61101a2da00e2ecaa027eacee6..90212d7ed8953a9452e70005471b04f23ba20d8e 100644
+--- a/esm/Loader/textureAlphaChecker.js
++++ b/esm/Loader/textureAlphaChecker.js
+@@ -1,9 +1,9 @@
+-import { Constants } from "@babylonjs/core/Engines/constants";
+-import { Material } from "@babylonjs/core/Materials/material.pure";
+-import { ShaderLanguage } from "@babylonjs/core/Materials/shaderLanguage";
+-import { ShaderMaterial } from "@babylonjs/core/Materials/shaderMaterial.pure";
+-import { RenderTargetTexture } from "@babylonjs/core/Materials/Textures/renderTargetTexture.pure";
+-import { Color4 } from "@babylonjs/core/Maths/math.color.pure";
++import { Constants } from "@babylonjs/core/Engines/constants.js";
++import { Material } from "@babylonjs/core/Materials/material.pure.js";
++import { ShaderLanguage } from "@babylonjs/core/Materials/shaderLanguage.js";
++import { ShaderMaterial } from "@babylonjs/core/Materials/shaderMaterial.pure.js";
++import { RenderTargetTexture } from "@babylonjs/core/Materials/Textures/renderTargetTexture.pure.js";
++import { Color4 } from "@babylonjs/core/Maths/math.color.pure.js";
+ /**
+  * Material transparency mode
+  *
+@@ -230,10 +230,10 @@ export class TextureAlphaChecker {
+                 shaderLanguage: shaderLanguage,
+                 extraInitializationsAsync: async () => {
+                     if (shaderLanguage === ShaderLanguage.WGSL) {
+-                        await Promise.all([import("./ShadersWGSL/textureAlphaChecker.fragment"), import("./ShadersWGSL/textureAlphaChecker.vertex")]);
++                        await Promise.all([import("./ShadersWGSL/textureAlphaChecker.fragment.js"), import("./ShadersWGSL/textureAlphaChecker.vertex.js")]);
+                     }
+                     else {
+-                        await Promise.all([import("./Shaders/textureAlphaChecker.fragment"), import("./Shaders/textureAlphaChecker.vertex")]);
++                        await Promise.all([import("./Shaders/textureAlphaChecker.fragment.js"), import("./Shaders/textureAlphaChecker.vertex.js")]);
+                     }
+                 }
+             });
+diff --git a/esm/Loader/vmdLoader.js b/esm/Loader/vmdLoader.js
+index caef887bcb2fdda19a8a4eae26fad1c7d0dedcf5..2d1f21f31429ca2e404cb0c3973f3658c9bde5b5 100644
+--- a/esm/Loader/vmdLoader.js
++++ b/esm/Loader/vmdLoader.js
+@@ -1,8 +1,8 @@
+-import { Logger } from "@babylonjs/core/Misc/logger";
+-import { Tools } from "@babylonjs/core/Misc/tools.pure";
+-import { MmdAnimation } from "./Animation/mmdAnimation";
+-import { MmdBoneAnimationTrack, MmdCameraAnimationTrack, MmdMorphAnimationTrack, MmdMovableBoneAnimationTrack, MmdPropertyAnimationTrack } from "./Animation/mmdAnimationTrack";
+-import { VmdData, VmdObject } from "./Parser/vmdObject";
++import { Logger } from "@babylonjs/core/Misc/logger.js";
++import { Tools } from "@babylonjs/core/Misc/tools.pure.js";
++import { MmdAnimation } from "./Animation/mmdAnimation.js";
++import { MmdBoneAnimationTrack, MmdCameraAnimationTrack, MmdMorphAnimationTrack, MmdMovableBoneAnimationTrack, MmdPropertyAnimationTrack } from "./Animation/mmdAnimationTrack.js";
++import { VmdData, VmdObject } from "./Parser/vmdObject.js";
+ /**
+  * VmdLoader is a loader that loads MMD animation data in VMD format
+  *
+diff --git a/esm/Loader/vpdLoader.js b/esm/Loader/vpdLoader.js
+index 720e8a69d0a11a5d8f2b411daf154646aa7d4115..202f5eb5ed34ba1a38fcc2585249d04eb46ed02b 100644
+--- a/esm/Loader/vpdLoader.js
++++ b/esm/Loader/vpdLoader.js
+@@ -1,7 +1,7 @@
+-import { Logger } from "@babylonjs/core/Misc/logger";
+-import { MmdAnimation } from "./Animation/mmdAnimation";
+-import { MmdBoneAnimationTrack, MmdCameraAnimationTrack, MmdMorphAnimationTrack, MmdMovableBoneAnimationTrack, MmdPropertyAnimationTrack } from "./Animation/mmdAnimationTrack";
+-import { VpdReader } from "./Parser/vpdReader";
++import { Logger } from "@babylonjs/core/Misc/logger.js";
++import { MmdAnimation } from "./Animation/mmdAnimation.js";
++import { MmdBoneAnimationTrack, MmdCameraAnimationTrack, MmdMorphAnimationTrack, MmdMovableBoneAnimationTrack, MmdPropertyAnimationTrack } from "./Animation/mmdAnimationTrack.js";
++import { VpdReader } from "./Parser/vpdReader.js";
+ /**
+  * VpdLoader is a loader that loads MMD pose data in VPD format
+  *
+diff --git a/esm/Runtime/Animation/Common/createAnimationState.js b/esm/Runtime/Animation/Common/createAnimationState.js
+index c60ee14fbcd52e0e80308ef404efa64d77829e5f..40302a33ff78ebebd8a0b41b6ba904d0e000d437 100644
+--- a/esm/Runtime/Animation/Common/createAnimationState.js
++++ b/esm/Runtime/Animation/Common/createAnimationState.js
+@@ -1,4 +1,4 @@
+-import { Animation } from "@babylonjs/core/Animations/animation.pure";
++import { Animation } from "@babylonjs/core/Animations/animation.pure.js";
+ /**
+  * Creates a new animation state
+  * @returns A new animation state
+diff --git a/esm/Runtime/Animation/Common/induceMmdStandardMaterialRecompile.js b/esm/Runtime/Animation/Common/induceMmdStandardMaterialRecompile.js
+index 8c3a995c2b61280653934a3f508ac659008664ae..36eabe73e3a1fae7c64186bc78b11137884bebb8 100644
+--- a/esm/Runtime/Animation/Common/induceMmdStandardMaterialRecompile.js
++++ b/esm/Runtime/Animation/Common/induceMmdStandardMaterialRecompile.js
+@@ -1,4 +1,4 @@
+-import { PmxObject } from "../../../Loader/Parser/pmxObject";
++import { PmxObject } from "../../../Loader/Parser/pmxObject.js";
+ /**
+  * Induces a recompilation of the `MmdStandardMaterial`.
+  *
+diff --git a/esm/Runtime/Animation/bezierAnimation.js b/esm/Runtime/Animation/bezierAnimation.js
+index 0e1ceff9acaffd8d5f0cd43f96dbd20e2a33ea75..4dd2ffc8424fe4d11b641e552e188a3ed642ddcf 100644
+--- a/esm/Runtime/Animation/bezierAnimation.js
++++ b/esm/Runtime/Animation/bezierAnimation.js
+@@ -1,3 +1,3 @@
+-import { RegisterBezierAnimation } from "./bezierAnimation.pure";
+-export * from "./bezierAnimation.pure";
++import { RegisterBezierAnimation } from "./bezierAnimation.pure.js";
++export * from "./bezierAnimation.pure.js";
+ RegisterBezierAnimation();
+diff --git a/esm/Runtime/Animation/bezierAnimation.pure.js b/esm/Runtime/Animation/bezierAnimation.pure.js
+index af2f7b44f460ac6edcbae40d9478048ff32ffa7a..7770705a96a248f67c2a99cb120551dda4201bd2 100644
+--- a/esm/Runtime/Animation/bezierAnimation.pure.js
++++ b/esm/Runtime/Animation/bezierAnimation.pure.js
+@@ -1,9 +1,9 @@
+-import { _StaticOffsetValueColor3, _StaticOffsetValueColor4, _StaticOffsetValueQuaternion, _StaticOffsetValueSize, _StaticOffsetValueVector2, _StaticOffsetValueVector3, Animation } from "@babylonjs/core/Animations/animation.pure";
+-import { AnimationKeyInterpolation } from "@babylonjs/core/Animations/animationKey";
+-import { Color3, Color4 } from "@babylonjs/core/Maths/math.color.pure";
+-import { Quaternion, Vector2, Vector3 } from "@babylonjs/core/Maths/math.vector.pure";
+-import { RegisterClass } from "@babylonjs/core/Misc/typeStore";
+-import { BezierInterpolate } from "./bezierInterpolate";
++import { _StaticOffsetValueColor3, _StaticOffsetValueColor4, _StaticOffsetValueQuaternion, _StaticOffsetValueSize, _StaticOffsetValueVector2, _StaticOffsetValueVector3, Animation } from "@babylonjs/core/Animations/animation.pure.js";
++import { AnimationKeyInterpolation } from "@babylonjs/core/Animations/animationKey.js";
++import { Color3, Color4 } from "@babylonjs/core/Maths/math.color.pure.js";
++import { Quaternion, Vector2, Vector3 } from "@babylonjs/core/Maths/math.vector.pure.js";
++import { RegisterClass } from "@babylonjs/core/Misc/typeStore.js";
++import { BezierInterpolate } from "./bezierInterpolate.js";
+ /**
+  * extends of AnimationKeyInterpolation to add bezier interpolation
+  */
+diff --git a/esm/Runtime/Animation/index.js b/esm/Runtime/Animation/index.js
+index 3b25d3fb4d981e3576584c14b66c5c6f01a240a2..e13837f535b0e379a218e24b62250422f62128c8 100644
+--- a/esm/Runtime/Animation/index.js
++++ b/esm/Runtime/Animation/index.js
+@@ -1,16 +1,16 @@
+ // Common
+-// export * from "./Common/createAnimationState";
+-// export * from "./Common/induceMmdStandardMaterialRecompile";
++// export * from "./Common/createAnimationState.js";
++// export * from "./Common/induceMmdStandardMaterialRecompile.js";
+ // ./
+-export * from "./bezierAnimation"; // register class sideeffect
+-export * from "./bezierInterpolate";
+-export * from "./IMmdBindableAnimation";
+-export * from "./IMmdRuntimeAnimation";
+-export * from "./mmdCompositeAnimation";
+-export * from "./mmdCompositeRuntimeCameraAnimation"; // prototype extension sideeffect
+-export * from "./mmdCompositeRuntimeModelAnimation"; // prototype extension sideeffect
+-export * from "./mmdRuntimeAnimation";
+-export * from "./mmdRuntimeCameraAnimation"; // prototype extension sideeffect
+-export * from "./mmdRuntimeCameraAnimationContainer"; // prototype extension sideeffect
+-export * from "./mmdRuntimeModelAnimation"; // prototype extension sideeffect
+-export * from "./mmdRuntimeModelAnimationContainer"; // prototype extension sideeffect
++export * from "./bezierAnimation.js"; // register class sideeffect
++export * from "./bezierInterpolate.js";
++export * from "./IMmdBindableAnimation.js";
++export * from "./IMmdRuntimeAnimation.js";
++export * from "./mmdCompositeAnimation.js";
++export * from "./mmdCompositeRuntimeCameraAnimation.js"; // prototype extension sideeffect
++export * from "./mmdCompositeRuntimeModelAnimation.js"; // prototype extension sideeffect
++export * from "./mmdRuntimeAnimation.js";
++export * from "./mmdRuntimeCameraAnimation.js"; // prototype extension sideeffect
++export * from "./mmdRuntimeCameraAnimationContainer.js"; // prototype extension sideeffect
++export * from "./mmdRuntimeModelAnimation.js"; // prototype extension sideeffect
++export * from "./mmdRuntimeModelAnimationContainer.js"; // prototype extension sideeffect
+diff --git a/esm/Runtime/Animation/mmdCompositeAnimation.js b/esm/Runtime/Animation/mmdCompositeAnimation.js
+index 7dca3d58d6d3853661123bf401b24baf16d458c4..a86c696f18e52efe68053c9bdb9bfd84dabc230c 100644
+--- a/esm/Runtime/Animation/mmdCompositeAnimation.js
++++ b/esm/Runtime/Animation/mmdCompositeAnimation.js
+@@ -1,4 +1,4 @@
+-import { Observable } from "@babylonjs/core/Misc/observable.pure";
++import { Observable } from "@babylonjs/core/Misc/observable.pure.js";
+ /**
+  * Represents a slice of an MMD animation
+  */
+diff --git a/esm/Runtime/Animation/mmdCompositeRuntimeCameraAnimation.js b/esm/Runtime/Animation/mmdCompositeRuntimeCameraAnimation.js
+index 0b7686ca0083d5e911271ad330a753b951085498..120d980743306644b47df2bf8f3a75fb7756312e 100644
+--- a/esm/Runtime/Animation/mmdCompositeRuntimeCameraAnimation.js
++++ b/esm/Runtime/Animation/mmdCompositeRuntimeCameraAnimation.js
+@@ -1,4 +1,4 @@
+-import { RegisterMmdCompositeRuntimeCameraAnimation } from "./mmdCompositeRuntimeCameraAnimation.pure";
+-export * from "./mmdCompositeRuntimeCameraAnimation.pure";
+-export * from "./mmdCompositeRuntimeCameraAnimation.types";
++import { RegisterMmdCompositeRuntimeCameraAnimation } from "./mmdCompositeRuntimeCameraAnimation.pure.js";
++export * from "./mmdCompositeRuntimeCameraAnimation.pure.js";
++export * from "./mmdCompositeRuntimeCameraAnimation.types.js";
+ RegisterMmdCompositeRuntimeCameraAnimation();
+diff --git a/esm/Runtime/Animation/mmdCompositeRuntimeCameraAnimation.pure.js b/esm/Runtime/Animation/mmdCompositeRuntimeCameraAnimation.pure.js
+index 29979aed0ee518947caff61a3cb7c1c9848afd2a..cae0e0a9e0ed9d3f5899f34aab4f02fbb627d9f5 100644
+--- a/esm/Runtime/Animation/mmdCompositeRuntimeCameraAnimation.pure.js
++++ b/esm/Runtime/Animation/mmdCompositeRuntimeCameraAnimation.pure.js
+@@ -1,5 +1,5 @@
+-import { Vector3 } from "@babylonjs/core/Maths/math.vector.pure";
+-import { MmdCompositeAnimation } from "./mmdCompositeAnimation";
++import { Vector3 } from "@babylonjs/core/Maths/math.vector.pure.js";
++import { MmdCompositeAnimation } from "./mmdCompositeAnimation.js";
+ /**
+  * Mmd composite runtime camera animation
+  *
+diff --git a/esm/Runtime/Animation/mmdCompositeRuntimeModelAnimation.js b/esm/Runtime/Animation/mmdCompositeRuntimeModelAnimation.js
+index d973781f588e19d1469eddf018d5af4af45e539c..648e7df267a5d86a101a4803c01fc30dc628bf68 100644
+--- a/esm/Runtime/Animation/mmdCompositeRuntimeModelAnimation.js
++++ b/esm/Runtime/Animation/mmdCompositeRuntimeModelAnimation.js
+@@ -1,4 +1,4 @@
+-import { RegisterMmdCompositeRuntimeModelAnimation } from "./mmdCompositeRuntimeModelAnimation.pure";
+-export * from "./mmdCompositeRuntimeModelAnimation.pure";
+-export * from "./mmdCompositeRuntimeModelAnimation.types";
++import { RegisterMmdCompositeRuntimeModelAnimation } from "./mmdCompositeRuntimeModelAnimation.pure.js";
++export * from "./mmdCompositeRuntimeModelAnimation.pure.js";
++export * from "./mmdCompositeRuntimeModelAnimation.types.js";
+ RegisterMmdCompositeRuntimeModelAnimation();
+diff --git a/esm/Runtime/Animation/mmdCompositeRuntimeModelAnimation.pure.js b/esm/Runtime/Animation/mmdCompositeRuntimeModelAnimation.pure.js
+index 664f391abdecb64e6c9ffa54e85ba8addb281e80..da2a4aa1458133efac4a839762c29d9927ee486a 100644
+--- a/esm/Runtime/Animation/mmdCompositeRuntimeModelAnimation.pure.js
++++ b/esm/Runtime/Animation/mmdCompositeRuntimeModelAnimation.pure.js
+@@ -1,7 +1,7 @@
+-import { Quaternion } from "@babylonjs/core/Maths/math.vector.pure";
+-import { Vector3 } from "@babylonjs/core/Maths/math.vector.pure";
+-import { SetMorphTargetManagersNumMaxInfluencers } from "./Common/induceMmdStandardMaterialRecompile";
+-import { MmdCompositeAnimation } from "./mmdCompositeAnimation";
++import { Quaternion } from "@babylonjs/core/Maths/math.vector.pure.js";
++import { Vector3 } from "@babylonjs/core/Maths/math.vector.pure.js";
++import { SetMorphTargetManagersNumMaxInfluencers } from "./Common/induceMmdStandardMaterialRecompile.js";
++import { MmdCompositeAnimation } from "./mmdCompositeAnimation.js";
+ /**
+  * Mmd composite runtime model animation
+  *
+diff --git a/esm/Runtime/Animation/mmdRuntimeCameraAnimation.js b/esm/Runtime/Animation/mmdRuntimeCameraAnimation.js
+index 98d93401e1dc540e6209e70ddb69807f6d86d580..acc579413c9f67f008283a51227847142cf1cbf4 100644
+--- a/esm/Runtime/Animation/mmdRuntimeCameraAnimation.js
++++ b/esm/Runtime/Animation/mmdRuntimeCameraAnimation.js
+@@ -1,4 +1,4 @@
+-import { RegisterMmdRuntimeCameraAnimation } from "./mmdRuntimeCameraAnimation.pure";
+-export * from "./mmdRuntimeCameraAnimation.pure";
+-export * from "./mmdRuntimeCameraAnimation.types";
++import { RegisterMmdRuntimeCameraAnimation } from "./mmdRuntimeCameraAnimation.pure.js";
++export * from "./mmdRuntimeCameraAnimation.pure.js";
++export * from "./mmdRuntimeCameraAnimation.types.js";
+ RegisterMmdRuntimeCameraAnimation();
+diff --git a/esm/Runtime/Animation/mmdRuntimeCameraAnimation.pure.js b/esm/Runtime/Animation/mmdRuntimeCameraAnimation.pure.js
+index 2ca6fa21c62a217fa9b043d4020e608200832447..828dfa91b377302cb7e4209b9d102adb0d765fcd 100644
+--- a/esm/Runtime/Animation/mmdRuntimeCameraAnimation.pure.js
++++ b/esm/Runtime/Animation/mmdRuntimeCameraAnimation.pure.js
+@@ -1,7 +1,7 @@
+-import { Vector3 } from "@babylonjs/core/Maths/math.vector.pure";
+-import { MmdAnimationBase } from "../../Loader/Animation/mmdAnimationBase";
+-import { BezierInterpolate } from "./bezierInterpolate";
+-import { MmdRuntimeAnimation } from "./mmdRuntimeAnimation";
++import { Vector3 } from "@babylonjs/core/Maths/math.vector.pure.js";
++import { MmdAnimationBase } from "../../Loader/Animation/mmdAnimationBase.js";
++import { BezierInterpolate } from "./bezierInterpolate.js";
++import { MmdRuntimeAnimation } from "./mmdRuntimeAnimation.js";
+ /**
+  * Mmd runtime camera animation
+  *
+diff --git a/esm/Runtime/Animation/mmdRuntimeCameraAnimationContainer.js b/esm/Runtime/Animation/mmdRuntimeCameraAnimationContainer.js
+index 4103dccc328de442f681db9efb08573dbf635412..6d0429af9e50c07fb4720b18f1bcbf86d8cd8ab8 100644
+--- a/esm/Runtime/Animation/mmdRuntimeCameraAnimationContainer.js
++++ b/esm/Runtime/Animation/mmdRuntimeCameraAnimationContainer.js
+@@ -1,4 +1,4 @@
+-import { RegisterMmdRuntimeCameraAnimationContainer } from "./mmdRuntimeCameraAnimationContainer.pure";
+-export * from "./mmdRuntimeCameraAnimationContainer.pure";
+-export * from "./mmdRuntimeCameraAnimationContainer.types";
++import { RegisterMmdRuntimeCameraAnimationContainer } from "./mmdRuntimeCameraAnimationContainer.pure.js";
++export * from "./mmdRuntimeCameraAnimationContainer.pure.js";
++export * from "./mmdRuntimeCameraAnimationContainer.types.js";
+ RegisterMmdRuntimeCameraAnimationContainer();
+diff --git a/esm/Runtime/Animation/mmdRuntimeCameraAnimationContainer.pure.js b/esm/Runtime/Animation/mmdRuntimeCameraAnimationContainer.pure.js
+index 78d7f5e54a7764af07aa417b8ef2899caffbd007..4b014df210d6a39161b06c224b8f2e58405067c7 100644
+--- a/esm/Runtime/Animation/mmdRuntimeCameraAnimationContainer.pure.js
++++ b/esm/Runtime/Animation/mmdRuntimeCameraAnimationContainer.pure.js
+@@ -1,5 +1,5 @@
+-import { MmdCameraAnimationContainer } from "../../Loader/Animation/mmdCameraAnimationContainer";
+-import { CreateAnimationState } from "./Common/createAnimationState";
++import { MmdCameraAnimationContainer } from "../../Loader/Animation/mmdCameraAnimationContainer.js";
++import { CreateAnimationState } from "./Common/createAnimationState.js";
+ /**
+  * Mmd runtime camera animation that use animation container of babylon.js
+  *
+diff --git a/esm/Runtime/Animation/mmdRuntimeModelAnimation.js b/esm/Runtime/Animation/mmdRuntimeModelAnimation.js
+index 5aaadee34b5b97d92794a93397713f49e11201e2..b96b8110fc4582d3c9721cbf35cf13ad1fa5ea0c 100644
+--- a/esm/Runtime/Animation/mmdRuntimeModelAnimation.js
++++ b/esm/Runtime/Animation/mmdRuntimeModelAnimation.js
+@@ -1,4 +1,4 @@
+-import { RegisterMmdRuntimeModelAnimation } from "./mmdRuntimeModelAnimation.pure";
+-export * from "./mmdRuntimeModelAnimation.pure";
+-export * from "./mmdRuntimeModelAnimation.types";
++import { RegisterMmdRuntimeModelAnimation } from "./mmdRuntimeModelAnimation.pure.js";
++export * from "./mmdRuntimeModelAnimation.pure.js";
++export * from "./mmdRuntimeModelAnimation.types.js";
+ RegisterMmdRuntimeModelAnimation();
+diff --git a/esm/Runtime/Animation/mmdRuntimeModelAnimation.pure.js b/esm/Runtime/Animation/mmdRuntimeModelAnimation.pure.js
+index 87525c8d9dddd21574cf218f36ed366666f446e6..cbb0694b9b81bc942d568afec89e876b514a4b40 100644
+--- a/esm/Runtime/Animation/mmdRuntimeModelAnimation.pure.js
++++ b/esm/Runtime/Animation/mmdRuntimeModelAnimation.pure.js
+@@ -1,9 +1,9 @@
+-import { Space } from "@babylonjs/core/Maths/math.axis";
+-import { Quaternion, Vector3 } from "@babylonjs/core/Maths/math.vector.pure";
+-import { MmdAnimationBase } from "../../Loader/Animation/mmdAnimationBase";
+-import { BezierInterpolate } from "./bezierInterpolate";
+-import { InduceMmdStandardMaterialRecompile, SetMorphTargetManagersNumMaxInfluencers } from "./Common/induceMmdStandardMaterialRecompile";
+-import { MmdRuntimeAnimation } from "./mmdRuntimeAnimation";
++import { Space } from "@babylonjs/core/Maths/math.axis.js";
++import { Quaternion, Vector3 } from "@babylonjs/core/Maths/math.vector.pure.js";
++import { MmdAnimationBase } from "../../Loader/Animation/mmdAnimationBase.js";
++import { BezierInterpolate } from "./bezierInterpolate.js";
++import { InduceMmdStandardMaterialRecompile, SetMorphTargetManagersNumMaxInfluencers } from "./Common/induceMmdStandardMaterialRecompile.js";
++import { MmdRuntimeAnimation } from "./mmdRuntimeAnimation.js";
+ /**
+  * Mmd runtime model animation
+  *
+diff --git a/esm/Runtime/Animation/mmdRuntimeModelAnimationContainer.js b/esm/Runtime/Animation/mmdRuntimeModelAnimationContainer.js
+index 40a6ae0f287229c8a9e592c976acedbced6f4202..849c0338db27575ab902b89e4368671ad6e0ac5a 100644
+--- a/esm/Runtime/Animation/mmdRuntimeModelAnimationContainer.js
++++ b/esm/Runtime/Animation/mmdRuntimeModelAnimationContainer.js
+@@ -1,4 +1,4 @@
+-import { RegisterMmdRuntimeModelAnimationContainer } from "./mmdRuntimeModelAnimationContainer.pure";
+-export * from "./mmdRuntimeModelAnimationContainer.pure";
+-export * from "./mmdRuntimeModelAnimationContainer.types";
++import { RegisterMmdRuntimeModelAnimationContainer } from "./mmdRuntimeModelAnimationContainer.pure.js";
++export * from "./mmdRuntimeModelAnimationContainer.pure.js";
++export * from "./mmdRuntimeModelAnimationContainer.types.js";
+ RegisterMmdRuntimeModelAnimationContainer();
+diff --git a/esm/Runtime/Animation/mmdRuntimeModelAnimationContainer.pure.js b/esm/Runtime/Animation/mmdRuntimeModelAnimationContainer.pure.js
+index fb2525c6805fb02af257ca9a7a97817f0adb33ae..2ecfaaae0585a16df9487e3e3a73c72e03b86462 100644
+--- a/esm/Runtime/Animation/mmdRuntimeModelAnimationContainer.pure.js
++++ b/esm/Runtime/Animation/mmdRuntimeModelAnimationContainer.pure.js
+@@ -1,8 +1,8 @@
+-import { Space } from "@babylonjs/core/Maths/math.axis";
+-import { Vector3 } from "@babylonjs/core/Maths/math.vector.pure";
+-import { MmdModelAnimationContainer } from "../../Loader/Animation/mmdModelAnimationContainer";
+-import { CreateAnimationState } from "./Common/createAnimationState";
+-import { InduceMmdStandardMaterialRecompile, SetMorphTargetManagersNumMaxInfluencers } from "./Common/induceMmdStandardMaterialRecompile";
++import { Space } from "@babylonjs/core/Maths/math.axis.js";
++import { Vector3 } from "@babylonjs/core/Maths/math.vector.pure.js";
++import { MmdModelAnimationContainer } from "../../Loader/Animation/mmdModelAnimationContainer.js";
++import { CreateAnimationState } from "./Common/createAnimationState.js";
++import { InduceMmdStandardMaterialRecompile, SetMorphTargetManagersNumMaxInfluencers } from "./Common/induceMmdStandardMaterialRecompile.js";
+ /**
+  * Mmd runtime model animation that use animation container of babylon.js
+  *
+diff --git a/esm/Runtime/Animation/pure.js b/esm/Runtime/Animation/pure.js
+index ec5ab92dfb2c92a4b53092f23b52f3f84e4d0c8a..e7c67e24d2032e34643edd8e45c401468ccba477 100644
+--- a/esm/Runtime/Animation/pure.js
++++ b/esm/Runtime/Animation/pure.js
+@@ -1,16 +1,16 @@
+ // Common
+-// export * from "./Common/createAnimationState";
+-// export * from "./Common/induceMmdStandardMaterialRecompile";
++// export * from "./Common/createAnimationState.js";
++// export * from "./Common/induceMmdStandardMaterialRecompile.js";
+ // ./
+-export * from "./bezierAnimation.pure";
+-export * from "./bezierInterpolate";
+-export * from "./IMmdBindableAnimation";
+-export * from "./IMmdRuntimeAnimation";
+-export * from "./mmdCompositeAnimation";
+-export * from "./mmdCompositeRuntimeCameraAnimation.pure";
+-export * from "./mmdCompositeRuntimeModelAnimation.pure";
+-export * from "./mmdRuntimeAnimation";
+-export * from "./mmdRuntimeCameraAnimation.pure";
+-export * from "./mmdRuntimeCameraAnimationContainer.pure";
+-export * from "./mmdRuntimeModelAnimation.pure";
+-export * from "./mmdRuntimeModelAnimationContainer.pure";
++export * from "./bezierAnimation.pure.js";
++export * from "./bezierInterpolate.js";
++export * from "./IMmdBindableAnimation.js";
++export * from "./IMmdRuntimeAnimation.js";
++export * from "./mmdCompositeAnimation.js";
++export * from "./mmdCompositeRuntimeCameraAnimation.pure.js";
++export * from "./mmdCompositeRuntimeModelAnimation.pure.js";
++export * from "./mmdRuntimeAnimation.js";
++export * from "./mmdRuntimeCameraAnimation.pure.js";
++export * from "./mmdRuntimeCameraAnimationContainer.pure.js";
++export * from "./mmdRuntimeModelAnimation.pure.js";
++export * from "./mmdRuntimeModelAnimationContainer.pure.js";
+diff --git a/esm/Runtime/Audio/index.js b/esm/Runtime/Audio/index.js
+index fe596cdbaac31615f8ebaaa8048fba683938ec7f..bf684261ffd9cce877005b54a549a4fed38b1c09 100644
+--- a/esm/Runtime/Audio/index.js
++++ b/esm/Runtime/Audio/index.js
+@@ -1,2 +1,2 @@
+-export * from "./IAudioPlayer";
+-export * from "./streamAudioPlayer";
++export * from "./IAudioPlayer.js";
++export * from "./streamAudioPlayer.js";
+diff --git a/esm/Runtime/Audio/pure.js b/esm/Runtime/Audio/pure.js
+index fe596cdbaac31615f8ebaaa8048fba683938ec7f..bf684261ffd9cce877005b54a549a4fed38b1c09 100644
+--- a/esm/Runtime/Audio/pure.js
++++ b/esm/Runtime/Audio/pure.js
+@@ -1,2 +1,2 @@
+-export * from "./IAudioPlayer";
+-export * from "./streamAudioPlayer";
++export * from "./IAudioPlayer.js";
++export * from "./streamAudioPlayer.js";
+diff --git a/esm/Runtime/Audio/streamAudioPlayer.js b/esm/Runtime/Audio/streamAudioPlayer.js
+index 9a085ed2f491883ffacdb3fdea29ea99238efbcf..5fad0cdf52862eddec6d80beeddc81a1787ca720 100644
+--- a/esm/Runtime/Audio/streamAudioPlayer.js
++++ b/esm/Runtime/Audio/streamAudioPlayer.js
+@@ -1,4 +1,4 @@
+-import { Observable } from "@babylonjs/core/Misc/observable.pure";
++import { Observable } from "@babylonjs/core/Misc/observable.pure.js";
+ /**
+  * This class is used to pooling the audio element
+  */
+diff --git a/esm/Runtime/Common/index.js b/esm/Runtime/Common/index.js
+index df8780329ab39a8a71c11f0d92c42ccff0115a76..ebd8fc7bc84417a25b0441547f0b7b137928fa4e 100644
+--- a/esm/Runtime/Common/index.js
++++ b/esm/Runtime/Common/index.js
+@@ -1 +1 @@
+-export * from "./quaternionToAxisAngle";
++export * from "./quaternionToAxisAngle.js";
+diff --git a/esm/Runtime/Common/pure.js b/esm/Runtime/Common/pure.js
+index df8780329ab39a8a71c11f0d92c42ccff0115a76..ebd8fc7bc84417a25b0441547f0b7b137928fa4e 100644
+--- a/esm/Runtime/Common/pure.js
++++ b/esm/Runtime/Common/pure.js
+@@ -1 +1 @@
+-export * from "./quaternionToAxisAngle";
++export * from "./quaternionToAxisAngle.js";
+diff --git a/esm/Runtime/ILogger.js b/esm/Runtime/ILogger.js
+index 18da7b173a52691afcfa9b678144423d8927e573..ae0aa8f4a84cdbee0eff91a445a8eb18ab1e062e 100644
+--- a/esm/Runtime/ILogger.js
++++ b/esm/Runtime/ILogger.js
+@@ -1 +1 @@
+-export { ConsoleLogger } from "../Loader/Parser/ILogger";
++export { ConsoleLogger } from "../Loader/Parser/ILogger.js";
+diff --git a/esm/Runtime/Optimized/Animation/index.js b/esm/Runtime/Optimized/Animation/index.js
+index e2d317953931d6cbbd6e71897c33cf692fc85972..fa77bc7b0c3a7fdffc13719360567d9cd5429805 100644
+--- a/esm/Runtime/Optimized/Animation/index.js
++++ b/esm/Runtime/Optimized/Animation/index.js
+@@ -1,4 +1,4 @@
+-// export * from "./animationPoolWrapper";
+-export * from "./mmdWasmAnimation";
+-export * from "./mmdWasmAnimationTrack";
+-export * from "./mmdWasmRuntimeModelAnimation"; // prototype extension sideeffect
++// export * from "./animationPoolWrapper.js";
++export * from "./mmdWasmAnimation.js";
++export * from "./mmdWasmAnimationTrack.js";
++export * from "./mmdWasmRuntimeModelAnimation.js"; // prototype extension sideeffect
+diff --git a/esm/Runtime/Optimized/Animation/mmdWasmAnimation.js b/esm/Runtime/Optimized/Animation/mmdWasmAnimation.js
+index 8aeb860bb1bfd05fc1a3e3f82bf7bb8b5361adeb..22047991a72438a34ae1a27979d1f15abe1fc849 100644
+--- a/esm/Runtime/Optimized/Animation/mmdWasmAnimation.js
++++ b/esm/Runtime/Optimized/Animation/mmdWasmAnimation.js
+@@ -1,7 +1,7 @@
+-import { MmdAnimationBase } from "../../../Loader/Animation/mmdAnimationBase";
+-import { MmdCameraAnimationTrack, MmdPropertyAnimationTrack } from "../../../Loader/Animation/mmdAnimationTrack";
+-import { AnimationPoolWrapper } from "./animationPoolWrapper";
+-import { MmdWasmBoneAnimationTrack, MmdWasmMorphAnimationTrack, MmdWasmMovableBoneAnimationTrack, MmdWasmPropertyAnimationTrack } from "./mmdWasmAnimationTrack";
++import { MmdAnimationBase } from "../../../Loader/Animation/mmdAnimationBase.js";
++import { MmdCameraAnimationTrack, MmdPropertyAnimationTrack } from "../../../Loader/Animation/mmdAnimationTrack.js";
++import { AnimationPoolWrapper } from "./animationPoolWrapper.js";
++import { MmdWasmBoneAnimationTrack, MmdWasmMorphAnimationTrack, MmdWasmMovableBoneAnimationTrack, MmdWasmPropertyAnimationTrack } from "./mmdWasmAnimationTrack.js";
+ /**
+  * MmdWasmAnimation is a Mmd animation data container that allocates data in WASM memory
+  *
+diff --git a/esm/Runtime/Optimized/Animation/mmdWasmRuntimeModelAnimation.js b/esm/Runtime/Optimized/Animation/mmdWasmRuntimeModelAnimation.js
+index 4b80364e4e7052e7c49a5ac6ca6e9b7fe98b2217..8b2d0ff0ead6f698565337ef094cf55fc30afc1e 100644
+--- a/esm/Runtime/Optimized/Animation/mmdWasmRuntimeModelAnimation.js
++++ b/esm/Runtime/Optimized/Animation/mmdWasmRuntimeModelAnimation.js
+@@ -1,4 +1,4 @@
+-import { RegisterMmdWasmRuntimeModelAnimation } from "./mmdWasmRuntimeModelAnimation.pure";
+-export * from "./mmdWasmRuntimeModelAnimation.pure";
+-export * from "./mmdWasmRuntimeModelAnimation.types";
++import { RegisterMmdWasmRuntimeModelAnimation } from "./mmdWasmRuntimeModelAnimation.pure.js";
++export * from "./mmdWasmRuntimeModelAnimation.pure.js";
++export * from "./mmdWasmRuntimeModelAnimation.types.js";
+ RegisterMmdWasmRuntimeModelAnimation();
+diff --git a/esm/Runtime/Optimized/Animation/mmdWasmRuntimeModelAnimation.pure.js b/esm/Runtime/Optimized/Animation/mmdWasmRuntimeModelAnimation.pure.js
+index 84189692d6ccd0943ead477e962256c024a4da3f..54f2676c61a6d85de560176caa1fd594c97aedfb 100644
+--- a/esm/Runtime/Optimized/Animation/mmdWasmRuntimeModelAnimation.pure.js
++++ b/esm/Runtime/Optimized/Animation/mmdWasmRuntimeModelAnimation.pure.js
+@@ -1,6 +1,6 @@
+-import { InduceMmdStandardMaterialRecompile, SetMorphTargetManagersNumMaxInfluencers } from "../../Animation/Common/induceMmdStandardMaterialRecompile";
+-import { MmdRuntimeAnimation } from "../../Animation/mmdRuntimeAnimation";
+-import { MmdWasmAnimation } from "./mmdWasmAnimation";
++import { InduceMmdStandardMaterialRecompile, SetMorphTargetManagersNumMaxInfluencers } from "../../Animation/Common/induceMmdStandardMaterialRecompile.js";
++import { MmdRuntimeAnimation } from "../../Animation/mmdRuntimeAnimation.js";
++import { MmdWasmAnimation } from "./mmdWasmAnimation.js";
+ /**
+  * Mmd WASM runtime model animation
+  *
+diff --git a/esm/Runtime/Optimized/Animation/pure.js b/esm/Runtime/Optimized/Animation/pure.js
+index 41e4f30b196300d06b3723c7730b70772c2c0c8c..ab5a1f2ce43c29ab92e64db80c03ece52fa3160e 100644
+--- a/esm/Runtime/Optimized/Animation/pure.js
++++ b/esm/Runtime/Optimized/Animation/pure.js
+@@ -1,4 +1,4 @@
+-// export * from "./animationPoolWrapper";
+-export * from "./mmdWasmAnimation";
+-export * from "./mmdWasmAnimationTrack";
+-export * from "./mmdWasmRuntimeModelAnimation.pure";
++// export * from "./animationPoolWrapper.js";
++export * from "./mmdWasmAnimation.js";
++export * from "./mmdWasmAnimationTrack.js";
++export * from "./mmdWasmRuntimeModelAnimation.pure.js";
+diff --git a/esm/Runtime/Optimized/InstanceType/index.js b/esm/Runtime/Optimized/InstanceType/index.js
+index d286741e3eea8dfdfa65101332c6d8a605c585ed..8111ef64bd6450b8b70f7fbde23d126170d23423 100644
+--- a/esm/Runtime/Optimized/InstanceType/index.js
++++ b/esm/Runtime/Optimized/InstanceType/index.js
+@@ -1,8 +1,8 @@
+-export * from "./multiDebug";
+-export * from "./multiPhysicsDebug";
+-export * from "./multiPhysicsRelease";
+-export * from "./multiRelease";
+-export * from "./singleDebug";
+-export * from "./singlePhysicsDebug";
+-export * from "./singlePhysicsRelease";
+-export * from "./singleRelease";
++export * from "./multiDebug.js";
++export * from "./multiPhysicsDebug.js";
++export * from "./multiPhysicsRelease.js";
++export * from "./multiRelease.js";
++export * from "./singleDebug.js";
++export * from "./singlePhysicsDebug.js";
++export * from "./singlePhysicsRelease.js";
++export * from "./singleRelease.js";
+diff --git a/esm/Runtime/Optimized/InstanceType/multiDebug.js b/esm/Runtime/Optimized/InstanceType/multiDebug.js
+index 11a348041ae0bc89130f095f5724963e2cc2176b..92bd309b84dc85ce138392198b6b0897f8c6409a 100644
+--- a/esm/Runtime/Optimized/InstanceType/multiDebug.js
++++ b/esm/Runtime/Optimized/InstanceType/multiDebug.js
+@@ -1,4 +1,4 @@
+-import * as wasmBindgen from "../wasm/md";
++import * as wasmBindgen from "../wasm/md/index.js";
+ /**
+  * Multithreaded debug build MmdWasmInstanceType
+  *
+diff --git a/esm/Runtime/Optimized/InstanceType/multiPhysicsDebug.js b/esm/Runtime/Optimized/InstanceType/multiPhysicsDebug.js
+index bfa1039fba005159410f014c2c7f477901c9aab6..bff8fd02c6a0a69e92e1c1fe16403bffaec3d118 100644
+--- a/esm/Runtime/Optimized/InstanceType/multiPhysicsDebug.js
++++ b/esm/Runtime/Optimized/InstanceType/multiPhysicsDebug.js
+@@ -1,4 +1,4 @@
+-import * as wasmBindgen from "../wasm/mpd";
++import * as wasmBindgen from "../wasm/mpd/index.js";
+ /**
+  * Multithreaded debug build MmdWasmInstanceType with integrated bullet physics
+  *
+diff --git a/esm/Runtime/Optimized/InstanceType/multiPhysicsRelease.js b/esm/Runtime/Optimized/InstanceType/multiPhysicsRelease.js
+index 26f12bf2bde9fd7c6cc529d10e661fede7332c94..99c5d380ef308ec395ac88667fdb9652e6f0a4c2 100644
+--- a/esm/Runtime/Optimized/InstanceType/multiPhysicsRelease.js
++++ b/esm/Runtime/Optimized/InstanceType/multiPhysicsRelease.js
+@@ -1,4 +1,4 @@
+-import * as wasmBindgen from "../wasm/mpr";
++import * as wasmBindgen from "../wasm/mpr/index.js";
+ /**
+  * Multithreaded release build MmdWasmInstanceType with integrated bullet physics
+  *
+diff --git a/esm/Runtime/Optimized/InstanceType/multiRelease.js b/esm/Runtime/Optimized/InstanceType/multiRelease.js
+index 68903cf5af1ae1c054ce9e7ba6e8a24d00578497..0c187c296739c525418191860cce97c580979d05 100644
+--- a/esm/Runtime/Optimized/InstanceType/multiRelease.js
++++ b/esm/Runtime/Optimized/InstanceType/multiRelease.js
+@@ -1,4 +1,4 @@
+-import * as wasmBindgen from "../wasm/mr";
++import * as wasmBindgen from "../wasm/mr/index.js";
+ /**
+  * Multithreaded release build MmdWasmInstanceType
+  *
+diff --git a/esm/Runtime/Optimized/InstanceType/pure.js b/esm/Runtime/Optimized/InstanceType/pure.js
+index d286741e3eea8dfdfa65101332c6d8a605c585ed..8111ef64bd6450b8b70f7fbde23d126170d23423 100644
+--- a/esm/Runtime/Optimized/InstanceType/pure.js
++++ b/esm/Runtime/Optimized/InstanceType/pure.js
+@@ -1,8 +1,8 @@
+-export * from "./multiDebug";
+-export * from "./multiPhysicsDebug";
+-export * from "./multiPhysicsRelease";
+-export * from "./multiRelease";
+-export * from "./singleDebug";
+-export * from "./singlePhysicsDebug";
+-export * from "./singlePhysicsRelease";
+-export * from "./singleRelease";
++export * from "./multiDebug.js";
++export * from "./multiPhysicsDebug.js";
++export * from "./multiPhysicsRelease.js";
++export * from "./multiRelease.js";
++export * from "./singleDebug.js";
++export * from "./singlePhysicsDebug.js";
++export * from "./singlePhysicsRelease.js";
++export * from "./singleRelease.js";
+diff --git a/esm/Runtime/Optimized/InstanceType/singleDebug.js b/esm/Runtime/Optimized/InstanceType/singleDebug.js
+index 2bb1cafee9c5dbde896102d00a1bfb1a9463f4fd..0f58bd498ee3f172a5bf89cd20843efdf2ed1d54 100644
+--- a/esm/Runtime/Optimized/InstanceType/singleDebug.js
++++ b/esm/Runtime/Optimized/InstanceType/singleDebug.js
+@@ -1,4 +1,4 @@
+-import * as wasmBindgen from "../wasm/sd";
++import * as wasmBindgen from "../wasm/sd/index.js";
+ /**
+  * Singlethreaded debug build MmdWasmInstanceType
+  *
+diff --git a/esm/Runtime/Optimized/InstanceType/singlePhysicsDebug.js b/esm/Runtime/Optimized/InstanceType/singlePhysicsDebug.js
+index e068053b6afddcaec253d09538d6874d936c713d..b220f46e9f2e41e0537b3a9bce0ac4737b588aad 100644
+--- a/esm/Runtime/Optimized/InstanceType/singlePhysicsDebug.js
++++ b/esm/Runtime/Optimized/InstanceType/singlePhysicsDebug.js
+@@ -1,4 +1,4 @@
+-import * as wasmBindgen from "../wasm/spd";
++import * as wasmBindgen from "../wasm/spd/index.js";
+ /**
+  * Singlethreaded debug build MmdWasmInstanceType with integrated bullet physics
+  *
+diff --git a/esm/Runtime/Optimized/InstanceType/singlePhysicsRelease.js b/esm/Runtime/Optimized/InstanceType/singlePhysicsRelease.js
+index 6e97b42a9dd01245fcbd1799a4305cf41518b706..6bfd75869a6af74f0cf829ebaa2b528e1490e82f 100644
+--- a/esm/Runtime/Optimized/InstanceType/singlePhysicsRelease.js
++++ b/esm/Runtime/Optimized/InstanceType/singlePhysicsRelease.js
+@@ -1,4 +1,4 @@
+-import * as wasmBindgen from "../wasm/spr";
++import * as wasmBindgen from "../wasm/spr/index.js";
+ /**
+  * Singlethreaded release build MmdWasmInstanceType with integrated bullet physics
+  *
+diff --git a/esm/Runtime/Optimized/InstanceType/singleRelease.js b/esm/Runtime/Optimized/InstanceType/singleRelease.js
+index bc247012d4262db6e8c211e13f1c0d853f92cfc2..23f0d9aa4b0337dbc4e86be2a7eb054704cdb527 100644
+--- a/esm/Runtime/Optimized/InstanceType/singleRelease.js
++++ b/esm/Runtime/Optimized/InstanceType/singleRelease.js
+@@ -1,4 +1,4 @@
+-import * as wasmBindgen from "../wasm/sr";
++import * as wasmBindgen from "../wasm/sr/index.js";
+ /**
+  * Singlethreaded release build MmdWasmInstanceType
+  *
+diff --git a/esm/Runtime/Optimized/Misc/index.js b/esm/Runtime/Optimized/Misc/index.js
+index ec75aa4e0b917e28c06ff6b633a04a7477e9387d..74ce9785a025dea345ed1f8b258298f66939c37e 100644
+--- a/esm/Runtime/Optimized/Misc/index.js
++++ b/esm/Runtime/Optimized/Misc/index.js
+@@ -1,2 +1,2 @@
+-export * from "./IWasmSpinLock";
+-export * from "./IWasmTypedArray";
++export * from "./IWasmSpinLock.js";
++export * from "./IWasmTypedArray.js";
+diff --git a/esm/Runtime/Optimized/Misc/pure.js b/esm/Runtime/Optimized/Misc/pure.js
+index ec75aa4e0b917e28c06ff6b633a04a7477e9387d..74ce9785a025dea345ed1f8b258298f66939c37e 100644
+--- a/esm/Runtime/Optimized/Misc/pure.js
++++ b/esm/Runtime/Optimized/Misc/pure.js
+@@ -1,2 +1,2 @@
+-export * from "./IWasmSpinLock";
+-export * from "./IWasmTypedArray";
++export * from "./IWasmSpinLock.js";
++export * from "./IWasmTypedArray.js";
+diff --git a/esm/Runtime/Optimized/Physics/Bind/Impl/Buffered/bufferedRigidBodyBundleImpl.js b/esm/Runtime/Optimized/Physics/Bind/Impl/Buffered/bufferedRigidBodyBundleImpl.js
+index 22b59f7da45808cea17832477508b385024e6f6e..91a49750eddd4723e35d66c6bd4fec8a03c22ee0 100644
+--- a/esm/Runtime/Optimized/Physics/Bind/Impl/Buffered/bufferedRigidBodyBundleImpl.js
++++ b/esm/Runtime/Optimized/Physics/Bind/Impl/Buffered/bufferedRigidBodyBundleImpl.js
+@@ -1,4 +1,4 @@
+-import { Vector3 } from "@babylonjs/core/Maths/math.vector.pure";
++import { Vector3 } from "@babylonjs/core/Maths/math.vector.pure.js";
+ export class BufferedRigidBodyBundleImpl {
+     shouldSync;
+     _isDirty;
+diff --git a/esm/Runtime/Optimized/Physics/Bind/Impl/Buffered/bufferedRigidBodyImpl.js b/esm/Runtime/Optimized/Physics/Bind/Impl/Buffered/bufferedRigidBodyImpl.js
+index aff04cd82afea77c0411534ce2a2cff5e365049b..a8a0ffac1751ec0efb610a2f76ea74fdfed46789 100644
+--- a/esm/Runtime/Optimized/Physics/Bind/Impl/Buffered/bufferedRigidBodyImpl.js
++++ b/esm/Runtime/Optimized/Physics/Bind/Impl/Buffered/bufferedRigidBodyImpl.js
+@@ -1,4 +1,4 @@
+-import { Vector3 } from "@babylonjs/core/Maths/math.vector.pure";
++import { Vector3 } from "@babylonjs/core/Maths/math.vector.pure.js";
+ export class BufferedRigidBodyImpl {
+     shouldSync;
+     _isDirty;
+diff --git a/esm/Runtime/Optimized/Physics/Bind/Impl/Immediate/immediateRigidBodyBundleImpl.js b/esm/Runtime/Optimized/Physics/Bind/Impl/Immediate/immediateRigidBodyBundleImpl.js
+index 269e9aad973a43d661e3b0ac6998c0d264759189..8ce4e008685574bda9b7f3bb71a69480774d1f3f 100644
+--- a/esm/Runtime/Optimized/Physics/Bind/Impl/Immediate/immediateRigidBodyBundleImpl.js
++++ b/esm/Runtime/Optimized/Physics/Bind/Impl/Immediate/immediateRigidBodyBundleImpl.js
+@@ -1,4 +1,4 @@
+-import { Vector3 } from "@babylonjs/core/Maths/math.vector.pure";
++import { Vector3 } from "@babylonjs/core/Maths/math.vector.pure.js";
+ export class ImmediateRigidBodyBundleImpl {
+     shouldSync;
+     _count;
+diff --git a/esm/Runtime/Optimized/Physics/Bind/Impl/Immediate/immediateRigidBodyImpl.js b/esm/Runtime/Optimized/Physics/Bind/Impl/Immediate/immediateRigidBodyImpl.js
+index b4f96fb196d6c32386d103de8c1c276ebcbe6e19..f2d88fd3041e81b76061f336653241ba0386d795 100644
+--- a/esm/Runtime/Optimized/Physics/Bind/Impl/Immediate/immediateRigidBodyImpl.js
++++ b/esm/Runtime/Optimized/Physics/Bind/Impl/Immediate/immediateRigidBodyImpl.js
+@@ -1,4 +1,4 @@
+-import { Vector3 } from "@babylonjs/core/Maths/math.vector.pure";
++import { Vector3 } from "@babylonjs/core/Maths/math.vector.pure.js";
+ export class ImmediateRigidBodyImpl {
+     shouldSync;
+     constructor() {
+diff --git a/esm/Runtime/Optimized/Physics/Bind/Impl/index.js b/esm/Runtime/Optimized/Physics/Bind/Impl/index.js
+index 39cadbf0f184acae731400d492fb4598b038cf78..12b9ae1a79066de2d845e85169b694cf5ff9779b 100644
+--- a/esm/Runtime/Optimized/Physics/Bind/Impl/index.js
++++ b/esm/Runtime/Optimized/Physics/Bind/Impl/index.js
+@@ -1,15 +1,15 @@
+ // Buffered
+-// export * from "./Buffered/bufferedRigidBodyBundleImpl";
+-// export * from "./Buffered/bufferedRigidBodyImpl";
+-// export * from "./Buffered/rigidBodyCommand";
++// export * from "./Buffered/bufferedRigidBodyBundleImpl.js";
++// export * from "./Buffered/bufferedRigidBodyImpl.js";
++// export * from "./Buffered/rigidBodyCommand.js";
+ // Immediate
+-// export * from "./Immediate/immediateRigidBodyBundleImpl";
+-// export * from "./Immediate/immediateRigidBodyImpl";
++// export * from "./Immediate/immediateRigidBodyBundleImpl.js";
++// export * from "./Immediate/immediateRigidBodyImpl.js";
+ // ./
+-export * from "./IPhysicsRuntime";
+-export * from "./IRigidBodyBundleImpl";
+-export * from "./IRigidBodyImpl";
+-export * from "./multiPhysicsRuntime";
+-export * from "./nullPhysicsRuntime";
+-export * from "./physicsRuntime";
+-export * from "./physicsRuntimeEvaluationType";
++export * from "./IPhysicsRuntime.js";
++export * from "./IRigidBodyBundleImpl.js";
++export * from "./IRigidBodyImpl.js";
++export * from "./multiPhysicsRuntime.js";
++export * from "./nullPhysicsRuntime.js";
++export * from "./physicsRuntime.js";
++export * from "./physicsRuntimeEvaluationType.js";
+diff --git a/esm/Runtime/Optimized/Physics/Bind/Impl/multiPhysicsRuntime.js b/esm/Runtime/Optimized/Physics/Bind/Impl/multiPhysicsRuntime.js
+index e89f15923a2647e23f34afc675cf2f4441d0e294..e466bf68c3c09a39c1df9cf21608687c7ebf04ab 100644
+--- a/esm/Runtime/Optimized/Physics/Bind/Impl/multiPhysicsRuntime.js
++++ b/esm/Runtime/Optimized/Physics/Bind/Impl/multiPhysicsRuntime.js
+@@ -1,13 +1,13 @@
+-import { Vector3 } from "@babylonjs/core/Maths/math.vector.pure";
+-import { Observable } from "@babylonjs/core/Misc/observable.pure";
+-import { Scene } from "@babylonjs/core/scene.pure";
+-import { WasmSpinlock } from "../../../Misc/wasmSpinlock";
+-import { MultiPhysicsWorld } from "../multiPhysicsWorld";
+-import { BufferedRigidBodyBundleImpl } from "./Buffered/bufferedRigidBodyBundleImpl";
+-import { BufferedRigidBodyImpl } from "./Buffered/bufferedRigidBodyImpl";
+-import { ImmediateRigidBodyBundleImpl } from "./Immediate/immediateRigidBodyBundleImpl";
+-import { ImmediateRigidBodyImpl } from "./Immediate/immediateRigidBodyImpl";
+-import { PhysicsRuntimeEvaluationType } from "./physicsRuntimeEvaluationType";
++import { Vector3 } from "@babylonjs/core/Maths/math.vector.pure.js";
++import { Observable } from "@babylonjs/core/Misc/observable.pure.js";
++import { Scene } from "@babylonjs/core/scene.pure.js";
++import { WasmSpinlock } from "../../../Misc/wasmSpinlock.js";
++import { MultiPhysicsWorld } from "../multiPhysicsWorld.js";
++import { BufferedRigidBodyBundleImpl } from "./Buffered/bufferedRigidBodyBundleImpl.js";
++import { BufferedRigidBodyImpl } from "./Buffered/bufferedRigidBodyImpl.js";
++import { ImmediateRigidBodyBundleImpl } from "./Immediate/immediateRigidBodyBundleImpl.js";
++import { ImmediateRigidBodyImpl } from "./Immediate/immediateRigidBodyImpl.js";
++import { PhysicsRuntimeEvaluationType } from "./physicsRuntimeEvaluationType.js";
+ class MultiPhysicsRuntimeInner {
+     _lock;
+     _wasmInstance;
+diff --git a/esm/Runtime/Optimized/Physics/Bind/Impl/nullPhysicsRuntime.js b/esm/Runtime/Optimized/Physics/Bind/Impl/nullPhysicsRuntime.js
+index 197b958e5fa643353bc5905adfbe5ca89c87082c..4429c3a7009b9300e531d3ec72bae146b896b51f 100644
+--- a/esm/Runtime/Optimized/Physics/Bind/Impl/nullPhysicsRuntime.js
++++ b/esm/Runtime/Optimized/Physics/Bind/Impl/nullPhysicsRuntime.js
+@@ -1,5 +1,5 @@
+-import { ImmediateRigidBodyBundleImpl } from "./Immediate/immediateRigidBodyBundleImpl";
+-import { ImmediateRigidBodyImpl } from "./Immediate/immediateRigidBodyImpl";
++import { ImmediateRigidBodyBundleImpl } from "./Immediate/immediateRigidBodyBundleImpl.js";
++import { ImmediateRigidBodyImpl } from "./Immediate/immediateRigidBodyImpl.js";
+ class NullSpinlock {
+     wait() { }
+ }
+diff --git a/esm/Runtime/Optimized/Physics/Bind/Impl/physicsRuntime.js b/esm/Runtime/Optimized/Physics/Bind/Impl/physicsRuntime.js
+index 742ef94a8fdc55e79005f58023e56a3a784c5954..1f639741af130a2569d476cab42a89116c59beae 100644
+--- a/esm/Runtime/Optimized/Physics/Bind/Impl/physicsRuntime.js
++++ b/esm/Runtime/Optimized/Physics/Bind/Impl/physicsRuntime.js
+@@ -1,13 +1,13 @@
+-import { Vector3 } from "@babylonjs/core/Maths/math.vector.pure";
+-import { Observable } from "@babylonjs/core/Misc/observable.pure";
+-import { Scene } from "@babylonjs/core/scene.pure";
+-import { WasmSpinlock } from "../../../Misc/wasmSpinlock";
+-import { PhysicsWorld } from "../physicsWorld";
+-import { BufferedRigidBodyBundleImpl } from "./Buffered/bufferedRigidBodyBundleImpl";
+-import { BufferedRigidBodyImpl } from "./Buffered/bufferedRigidBodyImpl";
+-import { ImmediateRigidBodyBundleImpl } from "./Immediate/immediateRigidBodyBundleImpl";
+-import { ImmediateRigidBodyImpl } from "./Immediate/immediateRigidBodyImpl";
+-import { PhysicsRuntimeEvaluationType } from "./physicsRuntimeEvaluationType";
++import { Vector3 } from "@babylonjs/core/Maths/math.vector.pure.js";
++import { Observable } from "@babylonjs/core/Misc/observable.pure.js";
++import { Scene } from "@babylonjs/core/scene.pure.js";
++import { WasmSpinlock } from "../../../Misc/wasmSpinlock.js";
++import { PhysicsWorld } from "../physicsWorld.js";
++import { BufferedRigidBodyBundleImpl } from "./Buffered/bufferedRigidBodyBundleImpl.js";
++import { BufferedRigidBodyImpl } from "./Buffered/bufferedRigidBodyImpl.js";
++import { ImmediateRigidBodyBundleImpl } from "./Immediate/immediateRigidBodyBundleImpl.js";
++import { ImmediateRigidBodyImpl } from "./Immediate/immediateRigidBodyImpl.js";
++import { PhysicsRuntimeEvaluationType } from "./physicsRuntimeEvaluationType.js";
+ class PhysicsRuntimeInner {
+     _lock;
+     _wasmInstance;
+diff --git a/esm/Runtime/Optimized/Physics/Bind/Impl/pure.js b/esm/Runtime/Optimized/Physics/Bind/Impl/pure.js
+index 39cadbf0f184acae731400d492fb4598b038cf78..12b9ae1a79066de2d845e85169b694cf5ff9779b 100644
+--- a/esm/Runtime/Optimized/Physics/Bind/Impl/pure.js
++++ b/esm/Runtime/Optimized/Physics/Bind/Impl/pure.js
+@@ -1,15 +1,15 @@
+ // Buffered
+-// export * from "./Buffered/bufferedRigidBodyBundleImpl";
+-// export * from "./Buffered/bufferedRigidBodyImpl";
+-// export * from "./Buffered/rigidBodyCommand";
++// export * from "./Buffered/bufferedRigidBodyBundleImpl.js";
++// export * from "./Buffered/bufferedRigidBodyImpl.js";
++// export * from "./Buffered/rigidBodyCommand.js";
+ // Immediate
+-// export * from "./Immediate/immediateRigidBodyBundleImpl";
+-// export * from "./Immediate/immediateRigidBodyImpl";
++// export * from "./Immediate/immediateRigidBodyBundleImpl.js";
++// export * from "./Immediate/immediateRigidBodyImpl.js";
+ // ./
+-export * from "./IPhysicsRuntime";
+-export * from "./IRigidBodyBundleImpl";
+-export * from "./IRigidBodyImpl";
+-export * from "./multiPhysicsRuntime";
+-export * from "./nullPhysicsRuntime";
+-export * from "./physicsRuntime";
+-export * from "./physicsRuntimeEvaluationType";
++export * from "./IPhysicsRuntime.js";
++export * from "./IRigidBodyBundleImpl.js";
++export * from "./IRigidBodyImpl.js";
++export * from "./multiPhysicsRuntime.js";
++export * from "./nullPhysicsRuntime.js";
++export * from "./physicsRuntime.js";
++export * from "./physicsRuntimeEvaluationType.js";
+diff --git a/esm/Runtime/Optimized/Physics/Bind/Plugin/bulletPlugin.js b/esm/Runtime/Optimized/Physics/Bind/Plugin/bulletPlugin.js
+index 4d26734d5f4b5ba36f4d348c2a1b06bc482c6c04..9ac70505564dd5ff55e1b3fc3d2fa8e1dbb00aba 100644
+--- a/esm/Runtime/Optimized/Physics/Bind/Plugin/bulletPlugin.js
++++ b/esm/Runtime/Optimized/Physics/Bind/Plugin/bulletPlugin.js
+@@ -1,17 +1,17 @@
+-import { Vector3 } from "@babylonjs/core/Maths/math.vector.pure";
+-import { Quaternion } from "@babylonjs/core/Maths/math.vector.pure";
+-import { Matrix } from "@babylonjs/core/Maths/math.vector.pure";
+-import { Logger } from "@babylonjs/core/Misc/logger";
+-import { Observable } from "@babylonjs/core/Misc/observable.pure";
+-import { PhysicsMotionType, PhysicsPrestepType, PhysicsShapeType } from "@babylonjs/core/Physics/v2/IPhysicsEnginePlugin";
+-import { PhysicsMaterialCombineMode } from "@babylonjs/core/Physics/v2/physicsMaterial";
+-import { MultiPhysicsRuntime } from "../Impl/multiPhysicsRuntime";
+-import { MotionType } from "../motionType";
+-import { PluginBody } from "./pluginBody";
+-import { PluginBodyBundle } from "./pluginBodyBundle";
+-import { PluginConstructionInfo } from "./pluginConstructionInfo";
+-import { PluginConstructionInfoList } from "./pluginConstructionInfoList";
+-import { PluginBoxShape, PluginCapsuleShape, PluginSphereShape } from "./pluginShape";
++import { Vector3 } from "@babylonjs/core/Maths/math.vector.pure.js";
++import { Quaternion } from "@babylonjs/core/Maths/math.vector.pure.js";
++import { Matrix } from "@babylonjs/core/Maths/math.vector.pure.js";
++import { Logger } from "@babylonjs/core/Misc/logger.js";
++import { Observable } from "@babylonjs/core/Misc/observable.pure.js";
++import { PhysicsMotionType, PhysicsPrestepType, PhysicsShapeType } from "@babylonjs/core/Physics/v2/IPhysicsEnginePlugin.js";
++import { PhysicsMaterialCombineMode } from "@babylonjs/core/Physics/v2/physicsMaterial.js";
++import { MultiPhysicsRuntime } from "../Impl/multiPhysicsRuntime.js";
++import { MotionType } from "../motionType.js";
++import { PluginBody } from "./pluginBody.js";
++import { PluginBodyBundle } from "./pluginBodyBundle.js";
++import { PluginConstructionInfo } from "./pluginConstructionInfo.js";
++import { PluginConstructionInfoList } from "./pluginConstructionInfoList.js";
++import { PluginBoxShape, PluginCapsuleShape, PluginSphereShape } from "./pluginShape.js";
+ export class BulletPluginCommandContext {
+     worldId;
+     constructor() {
+diff --git a/esm/Runtime/Optimized/Physics/Bind/Plugin/index.js b/esm/Runtime/Optimized/Physics/Bind/Plugin/index.js
+index e39200578f397ed39a311f6bd996af95530aeadd..108639681f6a642eddb9088df0626c3eec059f92 100644
+--- a/esm/Runtime/Optimized/Physics/Bind/Plugin/index.js
++++ b/esm/Runtime/Optimized/Physics/Bind/Plugin/index.js
+@@ -1,6 +1,6 @@
+-export * from "./bulletPlugin";
+-export * from "./pluginBody";
+-export * from "./pluginBodyBundle";
+-export * from "./pluginConstructionInfo";
+-export * from "./pluginConstructionInfoList";
+-export * from "./pluginShape";
++export * from "./bulletPlugin.js";
++export * from "./pluginBody.js";
++export * from "./pluginBodyBundle.js";
++export * from "./pluginConstructionInfo.js";
++export * from "./pluginConstructionInfoList.js";
++export * from "./pluginShape.js";
+diff --git a/esm/Runtime/Optimized/Physics/Bind/Plugin/pluginBody.js b/esm/Runtime/Optimized/Physics/Bind/Plugin/pluginBody.js
+index dd8aa31658ee0ffbdf45d8cc94c7f5e4e99aaa28..1e9973158e5c661136fcaab2012ac6a4df397537 100644
+--- a/esm/Runtime/Optimized/Physics/Bind/Plugin/pluginBody.js
++++ b/esm/Runtime/Optimized/Physics/Bind/Plugin/pluginBody.js
+@@ -1,4 +1,4 @@
+-import { RigidBody } from "../rigidBody";
++import { RigidBody } from "../rigidBody.js";
+ export class PluginBody extends RigidBody {
+     worldId;
+     motionType;
+diff --git a/esm/Runtime/Optimized/Physics/Bind/Plugin/pluginBodyBundle.js b/esm/Runtime/Optimized/Physics/Bind/Plugin/pluginBodyBundle.js
+index 3f30a39dbf613ad90e55b50f282fa898ed825c18..87b4ef53913eabacdee46ddb381f600bdee49f8d 100644
+--- a/esm/Runtime/Optimized/Physics/Bind/Plugin/pluginBodyBundle.js
++++ b/esm/Runtime/Optimized/Physics/Bind/Plugin/pluginBodyBundle.js
+@@ -1,4 +1,4 @@
+-import { RigidBodyBundle } from "../rigidBodyBundle";
++import { RigidBodyBundle } from "../rigidBodyBundle.js";
+ export class PluginBodyBundle extends RigidBodyBundle {
+     info;
+     localTransform;
+diff --git a/esm/Runtime/Optimized/Physics/Bind/Plugin/pluginConstructionInfo.js b/esm/Runtime/Optimized/Physics/Bind/Plugin/pluginConstructionInfo.js
+index 78730b8fff91f93c6816201e5cc55c722e074639..f3e8c57eaba714e1778148b79cb20dcc1a512540 100644
+--- a/esm/Runtime/Optimized/Physics/Bind/Plugin/pluginConstructionInfo.js
++++ b/esm/Runtime/Optimized/Physics/Bind/Plugin/pluginConstructionInfo.js
+@@ -1,4 +1,4 @@
+-import { RigidBodyConstructionInfo } from "../rigidBodyConstructionInfo";
++import { RigidBodyConstructionInfo } from "../rigidBodyConstructionInfo.js";
+ export class PluginConstructionInfo extends RigidBodyConstructionInfo {
+     worldId;
+     commandsOnCreation;
+diff --git a/esm/Runtime/Optimized/Physics/Bind/Plugin/pluginConstructionInfoList.js b/esm/Runtime/Optimized/Physics/Bind/Plugin/pluginConstructionInfoList.js
+index 3d860e98ed514412240bc61edf5911c01cf1fbfd..777f27017b7af4f17cfef58297bd1ab8837134e4 100644
+--- a/esm/Runtime/Optimized/Physics/Bind/Plugin/pluginConstructionInfoList.js
++++ b/esm/Runtime/Optimized/Physics/Bind/Plugin/pluginConstructionInfoList.js
+@@ -1,4 +1,4 @@
+-import { RigidBodyConstructionInfoList } from "../rigidBodyConstructionInfoList";
++import { RigidBodyConstructionInfoList } from "../rigidBodyConstructionInfoList.js";
+ export class PluginConstructionInfoList extends RigidBodyConstructionInfoList {
+     worldId;
+     commandsOnCreation;
+diff --git a/esm/Runtime/Optimized/Physics/Bind/Plugin/pluginShape.js b/esm/Runtime/Optimized/Physics/Bind/Plugin/pluginShape.js
+index 5eb7b47234022a0f012c10dba7308cd1a213ea9e..5ef1fde774ffb1186465c9832158d314a53ebcc7 100644
+--- a/esm/Runtime/Optimized/Physics/Bind/Plugin/pluginShape.js
++++ b/esm/Runtime/Optimized/Physics/Bind/Plugin/pluginShape.js
+@@ -1,6 +1,6 @@
+-import { Quaternion } from "@babylonjs/core/Maths/math.vector.pure";
+-import { Matrix, Vector3 } from "@babylonjs/core/Maths/math.vector.pure";
+-import { PhysicsBoxShape, PhysicsCapsuleShape, PhysicsSphereShape } from "../physicsShape";
++import { Quaternion } from "@babylonjs/core/Maths/math.vector.pure.js";
++import { Matrix, Vector3 } from "@babylonjs/core/Maths/math.vector.pure.js";
++import { PhysicsBoxShape, PhysicsCapsuleShape, PhysicsSphereShape } from "../physicsShape.js";
+ const TempVector3 = new Vector3();
+ function LocalTransformMatrixFromTranslationRotationToRef(center, rotation, matrix) {
+     if (center?.equalsToFloats(0, 0, 0) === false ||
+diff --git a/esm/Runtime/Optimized/Physics/Bind/Plugin/pure.js b/esm/Runtime/Optimized/Physics/Bind/Plugin/pure.js
+index e39200578f397ed39a311f6bd996af95530aeadd..108639681f6a642eddb9088df0626c3eec059f92 100644
+--- a/esm/Runtime/Optimized/Physics/Bind/Plugin/pure.js
++++ b/esm/Runtime/Optimized/Physics/Bind/Plugin/pure.js
+@@ -1,6 +1,6 @@
+-export * from "./bulletPlugin";
+-export * from "./pluginBody";
+-export * from "./pluginBodyBundle";
+-export * from "./pluginConstructionInfo";
+-export * from "./pluginConstructionInfoList";
+-export * from "./pluginShape";
++export * from "./bulletPlugin.js";
++export * from "./pluginBody.js";
++export * from "./pluginBodyBundle.js";
++export * from "./pluginConstructionInfo.js";
++export * from "./pluginConstructionInfoList.js";
++export * from "./pluginShape.js";
+diff --git a/esm/Runtime/Optimized/Physics/Bind/index.js b/esm/Runtime/Optimized/Physics/Bind/index.js
+index d374eaf3546d7e2f6d6c3dd9f6ee33a108fa98fb..4123c35029f77118981286e1b7b1ec9b99323be4 100644
+--- a/esm/Runtime/Optimized/Physics/Bind/index.js
++++ b/esm/Runtime/Optimized/Physics/Bind/index.js
+@@ -1,17 +1,17 @@
+ // Impl
+-export * from "./Impl/index";
++export * from "./Impl/index.js";
+ // Plugin
+-export * from "./Plugin/index";
++export * from "./Plugin/index.js";
+ // ./
+-export * from "./bulletWasmInstance";
+-export * from "./constants";
+-export * from "./constraint";
+-export * from "./constructionInfoDataMask";
+-export * from "./motionType";
+-export * from "./multiPhysicsWorld";
+-export * from "./physicsShape";
+-export * from "./physicsWorld";
+-export * from "./rigidBody";
+-export * from "./rigidBodyBundle";
+-export * from "./rigidBodyConstructionInfo";
+-export * from "./rigidBodyConstructionInfoList";
++export * from "./bulletWasmInstance.js";
++export * from "./constants.js";
++export * from "./constraint.js";
++export * from "./constructionInfoDataMask.js";
++export * from "./motionType.js";
++export * from "./multiPhysicsWorld.js";
++export * from "./physicsShape.js";
++export * from "./physicsWorld.js";
++export * from "./rigidBody.js";
++export * from "./rigidBodyBundle.js";
++export * from "./rigidBodyConstructionInfo.js";
++export * from "./rigidBodyConstructionInfoList.js";
+diff --git a/esm/Runtime/Optimized/Physics/Bind/pure.js b/esm/Runtime/Optimized/Physics/Bind/pure.js
+index 619af3fe33db1ea7d87f520e2480413dc4cb7a70..89d07f54ddf9ce8505c8e04102dae72feeb6fbf0 100644
+--- a/esm/Runtime/Optimized/Physics/Bind/pure.js
++++ b/esm/Runtime/Optimized/Physics/Bind/pure.js
+@@ -1,17 +1,17 @@
+ // Impl
+-export * from "./Impl/pure";
++export * from "./Impl/pure.js";
+ // Plugin
+-export * from "./Plugin/pure";
++export * from "./Plugin/pure.js";
+ // ./
+-export * from "./bulletWasmInstance";
+-export * from "./constants";
+-export * from "./constraint";
+-export * from "./constructionInfoDataMask";
+-export * from "./motionType";
+-export * from "./multiPhysicsWorld";
+-export * from "./physicsShape";
+-export * from "./physicsWorld";
+-export * from "./rigidBody";
+-export * from "./rigidBodyBundle";
+-export * from "./rigidBodyConstructionInfo";
+-export * from "./rigidBodyConstructionInfoList";
++export * from "./bulletWasmInstance.js";
++export * from "./constants.js";
++export * from "./constraint.js";
++export * from "./constructionInfoDataMask.js";
++export * from "./motionType.js";
++export * from "./multiPhysicsWorld.js";
++export * from "./physicsShape.js";
++export * from "./physicsWorld.js";
++export * from "./rigidBody.js";
++export * from "./rigidBodyBundle.js";
++export * from "./rigidBodyConstructionInfo.js";
++export * from "./rigidBodyConstructionInfoList.js";
+diff --git a/esm/Runtime/Optimized/Physics/Bind/rigidBody.js b/esm/Runtime/Optimized/Physics/Bind/rigidBody.js
+index a37d901104ecaf335204a1f7ec59ed9059d6170d..858ca61dd858bb06a20885f7687ef07dd5a2446d 100644
+--- a/esm/Runtime/Optimized/Physics/Bind/rigidBody.js
++++ b/esm/Runtime/Optimized/Physics/Bind/rigidBody.js
+@@ -1,4 +1,4 @@
+-import { MotionType } from "./motionType";
++import { MotionType } from "./motionType.js";
+ class RigidBodyInner {
+     _wasmInstance;
+     _ptr;
+diff --git a/esm/Runtime/Optimized/Physics/Bind/rigidBodyBundle.js b/esm/Runtime/Optimized/Physics/Bind/rigidBodyBundle.js
+index 0c389b27812a83927baf83983038441535dcc1ca..7906eede600cad214aadb121aa4dc4d85b9cedde 100644
+--- a/esm/Runtime/Optimized/Physics/Bind/rigidBodyBundle.js
++++ b/esm/Runtime/Optimized/Physics/Bind/rigidBodyBundle.js
+@@ -1,4 +1,4 @@
+-import { MotionType } from "./motionType";
++import { MotionType } from "./motionType.js";
+ class RigidBodyBundleInner {
+     _wasmInstance;
+     _ptr;
+diff --git a/esm/Runtime/Optimized/Physics/Bind/rigidBodyConstructionInfo.js b/esm/Runtime/Optimized/Physics/Bind/rigidBodyConstructionInfo.js
+index b2eefda50444f2d5316ba9074bb75e93445fb9ca..e4277a082053f43c363b712c1566ee7a4f4c2b51 100644
+--- a/esm/Runtime/Optimized/Physics/Bind/rigidBodyConstructionInfo.js
++++ b/esm/Runtime/Optimized/Physics/Bind/rigidBodyConstructionInfo.js
+@@ -1,5 +1,5 @@
+-import { Vector3 } from "@babylonjs/core/Maths/math.vector.pure";
+-import { MotionType } from "./motionType";
++import { Vector3 } from "@babylonjs/core/Maths/math.vector.pure.js";
++import { MotionType } from "./motionType.js";
+ class RigidBodyConstructionInfoInner {
+     _wasmInstance;
+     _ptr;
+diff --git a/esm/Runtime/Optimized/Physics/Bind/rigidBodyConstructionInfoList.js b/esm/Runtime/Optimized/Physics/Bind/rigidBodyConstructionInfoList.js
+index 85cf0e213e79e38b462721aad449b5e684fda303..44a0ec5fffa788124600fc28d2cb1078c3a30944 100644
+--- a/esm/Runtime/Optimized/Physics/Bind/rigidBodyConstructionInfoList.js
++++ b/esm/Runtime/Optimized/Physics/Bind/rigidBodyConstructionInfoList.js
+@@ -1,4 +1,4 @@
+-import { MotionType } from "./motionType";
++import { MotionType } from "./motionType.js";
+ class RigidBodyConstructionInfoListInner {
+     _wasmInstance;
+     _ptr;
+diff --git a/esm/Runtime/Optimized/Physics/index.js b/esm/Runtime/Optimized/Physics/index.js
+index 40febdd85ee2f38f49148ef956141fcb9045af0b..f5922caf86209905b75972fa7a832721eff1f736 100644
+--- a/esm/Runtime/Optimized/Physics/index.js
++++ b/esm/Runtime/Optimized/Physics/index.js
+@@ -1,12 +1,12 @@
+ // Bind
+-export * from "./Bind/index";
++export * from "./Bind/index.js";
+ // ./
+-export * from "./IMmdWasmPhysicsRuntime";
+-export * from "./IPhysicsClock";
+-export * from "./mmdBulletPhysics";
+-export * from "./mmdWasmPhysics";
+-export * from "./mmdWasmPhysicsMetadataEncoder";
+-export * from "./mmdWasmPhysicsRuntime";
+-export * from "./mmdWasmPhysicsRuntimeImpl";
+-export * from "./nullPhysicsClock";
+-export * from "./physicsClock";
++export * from "./IMmdWasmPhysicsRuntime.js";
++export * from "./IPhysicsClock.js";
++export * from "./mmdBulletPhysics.js";
++export * from "./mmdWasmPhysics.js";
++export * from "./mmdWasmPhysicsMetadataEncoder.js";
++export * from "./mmdWasmPhysicsRuntime.js";
++export * from "./mmdWasmPhysicsRuntimeImpl.js";
++export * from "./nullPhysicsClock.js";
++export * from "./physicsClock.js";
+diff --git a/esm/Runtime/Optimized/Physics/mmdBulletPhysics.js b/esm/Runtime/Optimized/Physics/mmdBulletPhysics.js
+index bdc907cd66981b48323306a389039660b6cfa81c..b3879e7f55f580686dc288f47eaf00ee6784d5af 100644
+--- a/esm/Runtime/Optimized/Physics/mmdBulletPhysics.js
++++ b/esm/Runtime/Optimized/Physics/mmdBulletPhysics.js
+@@ -1,10 +1,10 @@
+-import { Matrix, Quaternion, Vector3 } from "@babylonjs/core/Maths/math.vector.pure";
+-import { PmxObject } from "../../../Loader/Parser/pmxObject";
+-import { Generic6DofSpringConstraint } from "./Bind/constraint";
+-import { MotionType } from "./Bind/motionType";
+-import { PhysicsBoxShape, PhysicsCapsuleShape, PhysicsSphereShape } from "./Bind/physicsShape";
+-import { RigidBodyBundle } from "./Bind/rigidBodyBundle";
+-import { RigidBodyConstructionInfoList } from "./Bind/rigidBodyConstructionInfoList";
++import { Matrix, Quaternion, Vector3 } from "@babylonjs/core/Maths/math.vector.pure.js";
++import { PmxObject } from "../../../Loader/Parser/pmxObject.js";
++import { Generic6DofSpringConstraint } from "./Bind/constraint.js";
++import { MotionType } from "./Bind/motionType.js";
++import { PhysicsBoxShape, PhysicsCapsuleShape, PhysicsSphereShape } from "./Bind/physicsShape.js";
++import { RigidBodyBundle } from "./Bind/rigidBodyBundle.js";
++import { RigidBodyConstructionInfoList } from "./Bind/rigidBodyConstructionInfoList.js";
+ class MmdRigidBodyData {
+     linkedBone;
+     physicsMode;
+diff --git a/esm/Runtime/Optimized/Physics/mmdWasmPhysics.js b/esm/Runtime/Optimized/Physics/mmdWasmPhysics.js
+index e6ccbd98ad1989d49c9117d4be228fcb53235919..00dfa3cad1854e334cb14c1cca973724a78150f6 100644
+--- a/esm/Runtime/Optimized/Physics/mmdWasmPhysics.js
++++ b/esm/Runtime/Optimized/Physics/mmdWasmPhysics.js
+@@ -1,6 +1,6 @@
+-import { MmdWasmPhysicsMetadataEncoder } from "./mmdWasmPhysicsMetadataEncoder";
+-import { MmdWasmPhysicsRuntime } from "./mmdWasmPhysicsRuntime";
+-import { PhysicsClock } from "./physicsClock";
++import { MmdWasmPhysicsMetadataEncoder } from "./mmdWasmPhysicsMetadataEncoder.js";
++import { MmdWasmPhysicsRuntime } from "./mmdWasmPhysicsRuntime.js";
++import { PhysicsClock } from "./physicsClock.js";
+ /**
+  * Mmd wasm integrated physics runtime helper object
+  *
+diff --git a/esm/Runtime/Optimized/Physics/mmdWasmPhysicsMetadataEncoder.js b/esm/Runtime/Optimized/Physics/mmdWasmPhysicsMetadataEncoder.js
+index 61d57cc529e9182f5f8294a9de1fcf3bfd71fb7a..d38ebdb69080cd589d582b218208a701ba3ec09a 100644
+--- a/esm/Runtime/Optimized/Physics/mmdWasmPhysicsMetadataEncoder.js
++++ b/esm/Runtime/Optimized/Physics/mmdWasmPhysicsMetadataEncoder.js
+@@ -1,4 +1,4 @@
+-import { MmdMetadataEncoder } from "../mmdMetadataEncoder";
++import { MmdMetadataEncoder } from "../mmdMetadataEncoder.js";
+ /**
+  * @internal
+  */
+diff --git a/esm/Runtime/Optimized/Physics/mmdWasmPhysicsRuntime.js b/esm/Runtime/Optimized/Physics/mmdWasmPhysicsRuntime.js
+index ecae9cf79378e73dfc820fdc1f37b42cc61e04fd..b27910e3a14e0641c1ce8d117d5647e3c8ce543e 100644
+--- a/esm/Runtime/Optimized/Physics/mmdWasmPhysicsRuntime.js
++++ b/esm/Runtime/Optimized/Physics/mmdWasmPhysicsRuntime.js
+@@ -1,4 +1,4 @@
+-import { Vector3 } from "@babylonjs/core/Maths/math.vector.pure";
++import { Vector3 } from "@babylonjs/core/Maths/math.vector.pure.js";
+ class PhysicsInitializer {
+     _wasmInternal;
+     constructor(wasmInternal) {
+diff --git a/esm/Runtime/Optimized/Physics/mmdWasmPhysicsRuntimeImpl.js b/esm/Runtime/Optimized/Physics/mmdWasmPhysicsRuntimeImpl.js
+index 0cd7bad66e7e8e85e9b7a352ddd28d80e2839c84..5a5706e4fcbe70ba6046ca6f4185b9c0030ed129 100644
+--- a/esm/Runtime/Optimized/Physics/mmdWasmPhysicsRuntimeImpl.js
++++ b/esm/Runtime/Optimized/Physics/mmdWasmPhysicsRuntimeImpl.js
+@@ -1,10 +1,10 @@
+-import { Observable } from "@babylonjs/core/Misc/observable.pure";
+-import { MmdWasmRuntimeAnimationEvaluationType } from "../mmdWasmRuntime";
+-import { BufferedRigidBodyBundleImpl } from "./Bind/Impl/Buffered/bufferedRigidBodyBundleImpl";
+-import { BufferedRigidBodyImpl } from "./Bind/Impl/Buffered/bufferedRigidBodyImpl";
+-import { ImmediateRigidBodyBundleImpl } from "./Bind/Impl/Immediate/immediateRigidBodyBundleImpl";
+-import { ImmediateRigidBodyImpl } from "./Bind/Impl/Immediate/immediateRigidBodyImpl";
+-import { MultiPhysicsWorld } from "./Bind/multiPhysicsWorld";
++import { Observable } from "@babylonjs/core/Misc/observable.pure.js";
++import { MmdWasmRuntimeAnimationEvaluationType } from "../mmdWasmRuntime.js";
++import { BufferedRigidBodyBundleImpl } from "./Bind/Impl/Buffered/bufferedRigidBodyBundleImpl.js";
++import { BufferedRigidBodyImpl } from "./Bind/Impl/Buffered/bufferedRigidBodyImpl.js";
++import { ImmediateRigidBodyBundleImpl } from "./Bind/Impl/Immediate/immediateRigidBodyBundleImpl.js";
++import { ImmediateRigidBodyImpl } from "./Bind/Impl/Immediate/immediateRigidBodyImpl.js";
++import { MultiPhysicsWorld } from "./Bind/multiPhysicsWorld.js";
+ /**
+  * For access full physics world feature, you need to pass this object to the `MmdWasmPhysicsRuntime.getWorld` method
+  */
+diff --git a/esm/Runtime/Optimized/Physics/pure.js b/esm/Runtime/Optimized/Physics/pure.js
+index 5aa03600eda50f73845841faec1e936a7cdeee10..33be884ae314676986c3bbbddd8f2c973300c934 100644
+--- a/esm/Runtime/Optimized/Physics/pure.js
++++ b/esm/Runtime/Optimized/Physics/pure.js
+@@ -1,12 +1,12 @@
+ // Bind
+-export * from "./Bind/pure";
++export * from "./Bind/pure.js";
+ // ./
+-export * from "./IMmdWasmPhysicsRuntime";
+-export * from "./IPhysicsClock";
+-export * from "./mmdBulletPhysics";
+-export * from "./mmdWasmPhysics";
+-export * from "./mmdWasmPhysicsMetadataEncoder";
+-export * from "./mmdWasmPhysicsRuntime";
+-export * from "./mmdWasmPhysicsRuntimeImpl";
+-export * from "./nullPhysicsClock";
+-export * from "./physicsClock";
++export * from "./IMmdWasmPhysicsRuntime.js";
++export * from "./IPhysicsClock.js";
++export * from "./mmdBulletPhysics.js";
++export * from "./mmdWasmPhysics.js";
++export * from "./mmdWasmPhysicsMetadataEncoder.js";
++export * from "./mmdWasmPhysicsRuntime.js";
++export * from "./mmdWasmPhysicsRuntimeImpl.js";
++export * from "./nullPhysicsClock.js";
++export * from "./physicsClock.js";
+diff --git a/esm/Runtime/Optimized/index.js b/esm/Runtime/Optimized/index.js
+index 8d997e5bcb87b1ae599b8c80b21a80d5cb5ccbed..a089518c024afc5c5abc9d5e42bdef956489f78d 100644
+--- a/esm/Runtime/Optimized/index.js
++++ b/esm/Runtime/Optimized/index.js
+@@ -1,15 +1,15 @@
+ // Animation
+-export * from "./Animation/index";
++export * from "./Animation/index.js";
+ // InstanceType
+-export * from "./InstanceType/index";
++export * from "./InstanceType/index.js";
+ // Misc
+-export * from "./Misc/index";
++export * from "./Misc/index.js";
+ // Physics
+-export * from "./Physics/index";
++export * from "./Physics/index.js";
+ // ./
+-export * from "./mmdMetadataEncoder";
+-export * from "./mmdWasmInstance";
+-export * from "./mmdWasmModel";
+-export * from "./mmdWasmMorphController";
+-export * from "./mmdWasmRuntime";
+-export * from "./mmdWasmRuntimeBone";
++export * from "./mmdMetadataEncoder.js";
++export * from "./mmdWasmInstance.js";
++export * from "./mmdWasmModel.js";
++export * from "./mmdWasmMorphController.js";
++export * from "./mmdWasmRuntime.js";
++export * from "./mmdWasmRuntimeBone.js";
+diff --git a/esm/Runtime/Optimized/mmdMetadataEncoder.js b/esm/Runtime/Optimized/mmdMetadataEncoder.js
+index 51ad474ac3f41f39f530fae91bb403612fc51a51..7f647f4752e9ee6f8f2f8789bc50b44607127770 100644
+--- a/esm/Runtime/Optimized/mmdMetadataEncoder.js
++++ b/esm/Runtime/Optimized/mmdMetadataEncoder.js
+@@ -1,6 +1,6 @@
+-import { Vector3 } from "@babylonjs/core/Maths/math.vector.pure";
+-import { AlignedDataSerializer } from "../../Loader/Optimized/alignedDataSerializer";
+-import { PmxObject } from "../../Loader/Parser/pmxObject";
++import { Vector3 } from "@babylonjs/core/Maths/math.vector.pure.js";
++import { AlignedDataSerializer } from "../../Loader/Optimized/alignedDataSerializer.js";
++import { PmxObject } from "../../Loader/Parser/pmxObject.js";
+ /**
+  * mmd model metadata representation in binary
+  *
+diff --git a/esm/Runtime/Optimized/mmdWasmInstance.js b/esm/Runtime/Optimized/mmdWasmInstance.js
+index e60c126ffa185428078a6ae390f3ece9f2c1ddb0..2f58a019a86c89cfb496f88224670b326070e81c 100644
+--- a/esm/Runtime/Optimized/mmdWasmInstance.js
++++ b/esm/Runtime/Optimized/mmdWasmInstance.js
+@@ -1,5 +1,5 @@
+-import { WasmSharedTypedArray } from "./Misc/wasmSharedTypedArray";
+-import { WasmTypedArray } from "./Misc/wasmTypedArray";
++import { WasmSharedTypedArray } from "./Misc/wasmSharedTypedArray.js";
++import { WasmTypedArray } from "./Misc/wasmTypedArray.js";
+ const WasmInstanceMap = new WeakMap();
+ /**
+  * Load MMD WASM instance
+diff --git a/esm/Runtime/Optimized/mmdWasmModel.js b/esm/Runtime/Optimized/mmdWasmModel.js
+index dff894f742aa45f455fa2594b16f7a09321dac38..3c86b23f094f1cf3ce9730cd7aabaf45b2ee0319 100644
+--- a/esm/Runtime/Optimized/mmdWasmModel.js
++++ b/esm/Runtime/Optimized/mmdWasmModel.js
+@@ -1,13 +1,13 @@
+-import { Space } from "@babylonjs/core/Maths/math.axis";
+-import { Matrix } from "@babylonjs/core/Maths/math.vector.pure";
+-import { Quaternion, Vector3 } from "@babylonjs/core/Maths/math.vector.pure";
+-import { Observable } from "@babylonjs/core/Misc/observable.pure";
+-import { PmxObject } from "../../Loader/Parser/pmxObject";
+-import { CreateMmdRuntimeAnimationHandle } from "../mmdRuntimeAnimationHandle";
+-import { WasmBufferedArray } from "./Misc/wasmBufferedArray";
+-import { MmdWasmMorphController } from "./mmdWasmMorphController";
+-import { MmdWasmRuntimeAnimationEvaluationType } from "./mmdWasmRuntime";
+-import { MmdWasmRuntimeBone } from "./mmdWasmRuntimeBone";
++import { Space } from "@babylonjs/core/Maths/math.axis.js";
++import { Matrix } from "@babylonjs/core/Maths/math.vector.pure.js";
++import { Quaternion, Vector3 } from "@babylonjs/core/Maths/math.vector.pure.js";
++import { Observable } from "@babylonjs/core/Misc/observable.pure.js";
++import { PmxObject } from "../../Loader/Parser/pmxObject.js";
++import { CreateMmdRuntimeAnimationHandle } from "../mmdRuntimeAnimationHandle.js";
++import { WasmBufferedArray } from "./Misc/wasmBufferedArray.js";
++import { MmdWasmMorphController } from "./mmdWasmMorphController.js";
++import { MmdWasmRuntimeAnimationEvaluationType } from "./mmdWasmRuntime.js";
++import { MmdWasmRuntimeBone } from "./mmdWasmRuntimeBone.js";
+ /**
+  * MmdWasmModel is a class that controls the `MmdSkinnedMesh` to animate the Mesh with MMD Wasm Runtime
+  *
+diff --git a/esm/Runtime/Optimized/mmdWasmMorphController.js b/esm/Runtime/Optimized/mmdWasmMorphController.js
+index feedf4ac7e38625ea0c1914209bc6b12c486c186..e573c22c48996cea47e83ad8cbb29b9ee75d2b64 100644
+--- a/esm/Runtime/Optimized/mmdWasmMorphController.js
++++ b/esm/Runtime/Optimized/mmdWasmMorphController.js
+@@ -1,4 +1,4 @@
+-import { MmdMorphControllerBase } from "../mmdMorphControllerBase";
++import { MmdMorphControllerBase } from "../mmdMorphControllerBase.js";
+ /**
+  * The MmdWasmMorphController uses `MorphTargetManager` to handle position uv morphs, while the material, bone, and group morphs are handled by CPU bound
+  *
+diff --git a/esm/Runtime/Optimized/mmdWasmRuntime.js b/esm/Runtime/Optimized/mmdWasmRuntime.js
+index fb8b6d2f1075a22416df1ba2d65c2463606258fe..6703b3552748ae43a96c1199d5bed7d03330ec53 100644
+--- a/esm/Runtime/Optimized/mmdWasmRuntime.js
++++ b/esm/Runtime/Optimized/mmdWasmRuntime.js
+@@ -1,11 +1,11 @@
+-import { Logger } from "@babylonjs/core/Misc/logger";
+-import { Observable } from "@babylonjs/core/Misc/observable.pure";
+-import { MmdMesh } from "../mmdMesh";
+-import { MmdRuntimeShared } from "../mmdRuntimeShared.pure";
+-import { WasmSpinlock } from "./Misc/wasmSpinlock";
+-import { MmdMetadataEncoder } from "./mmdMetadataEncoder";
+-import { MmdWasmModel } from "./mmdWasmModel";
+-import { NullPhysicsClock } from "./Physics/nullPhysicsClock";
++import { Logger } from "@babylonjs/core/Misc/logger.js";
++import { Observable } from "@babylonjs/core/Misc/observable.pure.js";
++import { MmdMesh } from "../mmdMesh.js";
++import { MmdRuntimeShared } from "../mmdRuntimeShared.pure.js";
++import { WasmSpinlock } from "./Misc/wasmSpinlock.js";
++import { MmdMetadataEncoder } from "./mmdMetadataEncoder.js";
++import { MmdWasmModel } from "./mmdWasmModel.js";
++import { NullPhysicsClock } from "./Physics/nullPhysicsClock.js";
+ /**
+  * MMD WASM runtime animation evaluation type
+  */
+diff --git a/esm/Runtime/Optimized/mmdWasmRuntimeBone.js b/esm/Runtime/Optimized/mmdWasmRuntimeBone.js
+index 1e131bd9c151e6f07bb2f85ff283d1629c1d789e..038aada86a91f5d89236a8518831c2548a8281a4 100644
+--- a/esm/Runtime/Optimized/mmdWasmRuntimeBone.js
++++ b/esm/Runtime/Optimized/mmdWasmRuntimeBone.js
+@@ -1,6 +1,6 @@
+-import { Matrix, Vector3 } from "@babylonjs/core/Maths/math.vector.pure";
+-import { PmxObject } from "../../Loader/Parser/pmxObject";
+-import { WasmBufferedArraySpan } from "./Misc/wasmBufferedArray";
++import { Matrix, Vector3 } from "@babylonjs/core/Maths/math.vector.pure.js";
++import { PmxObject } from "../../Loader/Parser/pmxObject.js";
++import { WasmBufferedArraySpan } from "./Misc/wasmBufferedArray.js";
+ /**
+  * Bone for MMD WASM runtime
+  *
+diff --git a/esm/Runtime/Optimized/pure.js b/esm/Runtime/Optimized/pure.js
+index 09517674b4fe3637a1b463e0af88a950f4aedd7f..93c93ea30382ba0cb7bc7b0fa2e429800290e838 100644
+--- a/esm/Runtime/Optimized/pure.js
++++ b/esm/Runtime/Optimized/pure.js
+@@ -1,15 +1,15 @@
+ // Animation
+-export * from "./Animation/pure";
++export * from "./Animation/pure.js";
+ // InstanceType
+-export * from "./InstanceType/pure";
++export * from "./InstanceType/pure.js";
+ // Misc
+-export * from "./Misc/pure";
++export * from "./Misc/pure.js";
+ // Physics
+-export * from "./Physics/pure";
++export * from "./Physics/pure.js";
+ // ./
+-export * from "./mmdMetadataEncoder";
+-export * from "./mmdWasmInstance";
+-export * from "./mmdWasmModel";
+-export * from "./mmdWasmMorphController";
+-export * from "./mmdWasmRuntime";
+-export * from "./mmdWasmRuntimeBone";
++export * from "./mmdMetadataEncoder.js";
++export * from "./mmdWasmInstance.js";
++export * from "./mmdWasmModel.js";
++export * from "./mmdWasmMorphController.js";
++export * from "./mmdWasmRuntime.js";
++export * from "./mmdWasmRuntimeBone.js";
+diff --git a/esm/Runtime/Optimized/wasm/md/snippets/wasm-bindgen-rayon-38edf6e439f6d70d/src/workerHelpers.js b/esm/Runtime/Optimized/wasm/md/snippets/wasm-bindgen-rayon-38edf6e439f6d70d/src/workerHelpers.js
+index 60f220148ccc6b402ab949f3a391eb131dcb153a..4ae5976e51609d3e538cd3173d99dead4441c0bb 100644
+--- a/esm/Runtime/Optimized/wasm/md/snippets/wasm-bindgen-rayon-38edf6e439f6d70d/src/workerHelpers.js
++++ b/esm/Runtime/Optimized/wasm/md/snippets/wasm-bindgen-rayon-38edf6e439f6d70d/src/workerHelpers.js
+@@ -51,7 +51,7 @@ waitForMsgType(self, 'wasm_bindgen_worker_init').then(async ({ init, receiver })
+   // OTOH, even though it can't be inlined, it should be still reasonably
+   // cheap since the requested file is already in cache (it was loaded by
+   // the main thread).
+-  const pkg = await import('../../..');
++  const pkg = await import('../../../index.js');
+   await pkg.default(init);
+   postMessage({ type: 'wasm_bindgen_worker_ready' });
+   pkg.wbg_rayon_start_worker(receiver);
+diff --git a/esm/Runtime/Optimized/wasm/mpd/snippets/wasm-bindgen-rayon-38edf6e439f6d70d/src/workerHelpers.js b/esm/Runtime/Optimized/wasm/mpd/snippets/wasm-bindgen-rayon-38edf6e439f6d70d/src/workerHelpers.js
+index 60f220148ccc6b402ab949f3a391eb131dcb153a..4ae5976e51609d3e538cd3173d99dead4441c0bb 100644
+--- a/esm/Runtime/Optimized/wasm/mpd/snippets/wasm-bindgen-rayon-38edf6e439f6d70d/src/workerHelpers.js
++++ b/esm/Runtime/Optimized/wasm/mpd/snippets/wasm-bindgen-rayon-38edf6e439f6d70d/src/workerHelpers.js
+@@ -51,7 +51,7 @@ waitForMsgType(self, 'wasm_bindgen_worker_init').then(async ({ init, receiver })
+   // OTOH, even though it can't be inlined, it should be still reasonably
+   // cheap since the requested file is already in cache (it was loaded by
+   // the main thread).
+-  const pkg = await import('../../..');
++  const pkg = await import('../../../index.js');
+   await pkg.default(init);
+   postMessage({ type: 'wasm_bindgen_worker_ready' });
+   pkg.wbg_rayon_start_worker(receiver);
+diff --git a/esm/Runtime/Optimized/wasm/mpr/snippets/wasm-bindgen-rayon-38edf6e439f6d70d/src/workerHelpers.js b/esm/Runtime/Optimized/wasm/mpr/snippets/wasm-bindgen-rayon-38edf6e439f6d70d/src/workerHelpers.js
+index 60f220148ccc6b402ab949f3a391eb131dcb153a..4ae5976e51609d3e538cd3173d99dead4441c0bb 100644
+--- a/esm/Runtime/Optimized/wasm/mpr/snippets/wasm-bindgen-rayon-38edf6e439f6d70d/src/workerHelpers.js
++++ b/esm/Runtime/Optimized/wasm/mpr/snippets/wasm-bindgen-rayon-38edf6e439f6d70d/src/workerHelpers.js
+@@ -51,7 +51,7 @@ waitForMsgType(self, 'wasm_bindgen_worker_init').then(async ({ init, receiver })
+   // OTOH, even though it can't be inlined, it should be still reasonably
+   // cheap since the requested file is already in cache (it was loaded by
+   // the main thread).
+-  const pkg = await import('../../..');
++  const pkg = await import('../../../index.js');
+   await pkg.default(init);
+   postMessage({ type: 'wasm_bindgen_worker_ready' });
+   pkg.wbg_rayon_start_worker(receiver);
+diff --git a/esm/Runtime/Optimized/wasm/mr/snippets/wasm-bindgen-rayon-38edf6e439f6d70d/src/workerHelpers.js b/esm/Runtime/Optimized/wasm/mr/snippets/wasm-bindgen-rayon-38edf6e439f6d70d/src/workerHelpers.js
+index 60f220148ccc6b402ab949f3a391eb131dcb153a..4ae5976e51609d3e538cd3173d99dead4441c0bb 100644
+--- a/esm/Runtime/Optimized/wasm/mr/snippets/wasm-bindgen-rayon-38edf6e439f6d70d/src/workerHelpers.js
++++ b/esm/Runtime/Optimized/wasm/mr/snippets/wasm-bindgen-rayon-38edf6e439f6d70d/src/workerHelpers.js
+@@ -51,7 +51,7 @@ waitForMsgType(self, 'wasm_bindgen_worker_init').then(async ({ init, receiver })
+   // OTOH, even though it can't be inlined, it should be still reasonably
+   // cheap since the requested file is already in cache (it was loaded by
+   // the main thread).
+-  const pkg = await import('../../..');
++  const pkg = await import('../../../index.js');
+   await pkg.default(init);
+   postMessage({ type: 'wasm_bindgen_worker_ready' });
+   pkg.wbg_rayon_start_worker(receiver);
+diff --git a/esm/Runtime/Physics/index.js b/esm/Runtime/Physics/index.js
+index f50067a2b85326d5ab00208d0fe58be9e0e55805..0e5c39600b1cc95b121c076c1cd26a3eae6faa36 100644
+--- a/esm/Runtime/Physics/index.js
++++ b/esm/Runtime/Physics/index.js
+@@ -1,4 +1,4 @@
+-export * from "./IMmdPhysics";
+-export * from "./mmdAmmoJSPlugin";
+-export * from "./mmdAmmoPhysics";
+-export * from "./mmdPhysics";
++export * from "./IMmdPhysics.js";
++export * from "./mmdAmmoJSPlugin.js";
++export * from "./mmdAmmoPhysics.js";
++export * from "./mmdPhysics.js";
+diff --git a/esm/Runtime/Physics/mmdAmmoJSPlugin.js b/esm/Runtime/Physics/mmdAmmoJSPlugin.js
+index 8183d8189039958525112ec218c61525759fe962..0de41ef2e30b52a2f88c2394cb16b7282287f2e5 100644
+--- a/esm/Runtime/Physics/mmdAmmoJSPlugin.js
++++ b/esm/Runtime/Physics/mmdAmmoJSPlugin.js
+@@ -1,6 +1,6 @@
+-import { Matrix, Quaternion, Vector3 } from "@babylonjs/core/Maths/math.vector.pure";
+-import { PhysicsJoint } from "@babylonjs/core/Physics/v1/physicsJoint";
+-import { AmmoJSPlugin } from "@babylonjs/core/Physics/v1/Plugins/ammoJSPlugin";
++import { Matrix, Quaternion, Vector3 } from "@babylonjs/core/Maths/math.vector.pure.js";
++import { PhysicsJoint } from "@babylonjs/core/Physics/v1/physicsJoint.js";
++import { AmmoJSPlugin } from "@babylonjs/core/Physics/v1/Plugins/ammoJSPlugin.js";
+ export const Generic6DofSpringJointKind = 20;
+ /**
+  * AmmoJS Physics plugin modified for MMD
+diff --git a/esm/Runtime/Physics/mmdAmmoPhysics.js b/esm/Runtime/Physics/mmdAmmoPhysics.js
+index 5ff9ebef95b6f61139dba46541de04ca3bcbadb4..8219c549667c6899c46dc41285d0bd1fa11e71d1 100644
+--- a/esm/Runtime/Physics/mmdAmmoPhysics.js
++++ b/esm/Runtime/Physics/mmdAmmoPhysics.js
+@@ -1,9 +1,9 @@
+-import { BoundingInfo } from "@babylonjs/core/Culling/boundingInfo";
+-import { Matrix, Quaternion, Vector3 } from "@babylonjs/core/Maths/math.vector.pure";
+-import { AbstractMesh } from "@babylonjs/core/Meshes/abstractMesh.pure";
+-import { PhysicsImpostor } from "@babylonjs/core/Physics/v1/physicsImpostor.pure";
+-import { PmxObject } from "../../Loader/Parser/pmxObject";
+-import { Generic6DofSpringJoint } from "./mmdAmmoJSPlugin";
++import { BoundingInfo } from "@babylonjs/core/Culling/boundingInfo.js";
++import { Matrix, Quaternion, Vector3 } from "@babylonjs/core/Maths/math.vector.pure.js";
++import { AbstractMesh } from "@babylonjs/core/Meshes/abstractMesh.pure.js";
++import { PhysicsImpostor } from "@babylonjs/core/Physics/v1/physicsImpostor.pure.js";
++import { PmxObject } from "../../Loader/Parser/pmxObject.js";
++import { Generic6DofSpringJoint } from "./mmdAmmoJSPlugin.js";
+ class MmdPhysicsMesh extends AbstractMesh {
+     linkedBone;
+     physicsMode;
+diff --git a/esm/Runtime/Physics/mmdPhysics.js b/esm/Runtime/Physics/mmdPhysics.js
+index 956e30e84f255581698d4b9ffea7b90030f7fa7b..0fcc8cba7a44c289b856b4572e9ff8f98c0b2f55 100644
+--- a/esm/Runtime/Physics/mmdPhysics.js
++++ b/esm/Runtime/Physics/mmdPhysics.js
+@@ -1,10 +1,10 @@
+-import { Matrix, Quaternion, Vector3 } from "@babylonjs/core/Maths/math.vector.pure";
+-import { TransformNode } from "@babylonjs/core/Meshes/transformNode.pure";
+-import { PhysicsActivationControl, PhysicsConstraintAxis, PhysicsMotionType } from "@babylonjs/core/Physics/v2/IPhysicsEnginePlugin";
+-import { PhysicsBody } from "@babylonjs/core/Physics/v2/physicsBody";
+-import { Physics6DoFConstraint } from "@babylonjs/core/Physics/v2/physicsConstraint";
+-import { PhysicsShapeBox, PhysicsShapeCapsule, PhysicsShapeSphere } from "@babylonjs/core/Physics/v2/physicsShape";
+-import { PmxObject } from "../../Loader/Parser/pmxObject";
++import { Matrix, Quaternion, Vector3 } from "@babylonjs/core/Maths/math.vector.pure.js";
++import { TransformNode } from "@babylonjs/core/Meshes/transformNode.pure.js";
++import { PhysicsActivationControl, PhysicsConstraintAxis, PhysicsMotionType } from "@babylonjs/core/Physics/v2/IPhysicsEnginePlugin.js";
++import { PhysicsBody } from "@babylonjs/core/Physics/v2/physicsBody.js";
++import { Physics6DoFConstraint } from "@babylonjs/core/Physics/v2/physicsConstraint.js";
++import { PhysicsShapeBox, PhysicsShapeCapsule, PhysicsShapeSphere } from "@babylonjs/core/Physics/v2/physicsShape.js";
++import { PmxObject } from "../../Loader/Parser/pmxObject.js";
+ class MmdPhysicsTransformNode extends TransformNode {
+     linkedBone;
+     physicsMode;
+diff --git a/esm/Runtime/Physics/pure.js b/esm/Runtime/Physics/pure.js
+index f50067a2b85326d5ab00208d0fe58be9e0e55805..0e5c39600b1cc95b121c076c1cd26a3eae6faa36 100644
+--- a/esm/Runtime/Physics/pure.js
++++ b/esm/Runtime/Physics/pure.js
+@@ -1,4 +1,4 @@
+-export * from "./IMmdPhysics";
+-export * from "./mmdAmmoJSPlugin";
+-export * from "./mmdAmmoPhysics";
+-export * from "./mmdPhysics";
++export * from "./IMmdPhysics.js";
++export * from "./mmdAmmoJSPlugin.js";
++export * from "./mmdAmmoPhysics.js";
++export * from "./mmdPhysics.js";
+diff --git a/esm/Runtime/Util/humanoidMmd.js b/esm/Runtime/Util/humanoidMmd.js
+index e9a28c15ff8138bd736901bc8d11bfac446f176f..04c85082b40ab40e412024637e8e4bceb85df5f5 100644
+--- a/esm/Runtime/Util/humanoidMmd.js
++++ b/esm/Runtime/Util/humanoidMmd.js
+@@ -1,8 +1,8 @@
+-// import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial.pure";
+-import { Quaternion, Vector3 } from "@babylonjs/core/Maths/math.vector.pure";
+-import { Matrix } from "@babylonjs/core/Maths/math.vector.pure";
+-import { PmxObject } from "../../Loader/Parser/pmxObject";
+-import { MmdMesh } from "../mmdMesh";
++// import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial.pure.js";
++import { Quaternion, Vector3 } from "@babylonjs/core/Maths/math.vector.pure.js";
++import { Matrix } from "@babylonjs/core/Maths/math.vector.pure.js";
++import { PmxObject } from "../../Loader/Parser/pmxObject.js";
++import { MmdMesh } from "../mmdMesh.js";
+ class LinkedBoneProxy {
+     index;
+     name;
+diff --git a/esm/Runtime/Util/index.js b/esm/Runtime/Util/index.js
+index c67b357bef5c9fee50dcf66913266492ec85b451..5d1543471858e99dd8c833b32ebb7699e394dae5 100644
+--- a/esm/Runtime/Util/index.js
++++ b/esm/Runtime/Util/index.js
+@@ -1,3 +1,3 @@
+-export * from "./humanoidMmd";
+-export * from "./mmdPlayerControl";
+-export * from "./oiComputeTransformInjector";
++export * from "./humanoidMmd.js";
++export * from "./mmdPlayerControl.js";
++export * from "./oiComputeTransformInjector.js";
+diff --git a/esm/Runtime/Util/pure.js b/esm/Runtime/Util/pure.js
+index c67b357bef5c9fee50dcf66913266492ec85b451..5d1543471858e99dd8c833b32ebb7699e394dae5 100644
+--- a/esm/Runtime/Util/pure.js
++++ b/esm/Runtime/Util/pure.js
+@@ -1,3 +1,3 @@
+-export * from "./humanoidMmd";
+-export * from "./mmdPlayerControl";
+-export * from "./oiComputeTransformInjector";
++export * from "./humanoidMmd.js";
++export * from "./mmdPlayerControl.js";
++export * from "./oiComputeTransformInjector.js";
+diff --git a/esm/Runtime/appendTransformSolver.js b/esm/Runtime/appendTransformSolver.js
+index 96ac250fa2b98ce9ac0e60081f4499b3484b547c..a9b1fa1079a3af8c6f13c3f5fe5f3ba68bf7cf13 100644
+--- a/esm/Runtime/appendTransformSolver.js
++++ b/esm/Runtime/appendTransformSolver.js
+@@ -1,5 +1,5 @@
+-import { Matrix, Quaternion, Vector3 } from "@babylonjs/core/Maths/math.vector.pure";
+-import { PmxObject } from "../Loader/Parser/pmxObject";
++import { Matrix, Quaternion, Vector3 } from "@babylonjs/core/Maths/math.vector.pure.js";
++import { PmxObject } from "../Loader/Parser/pmxObject.js";
+ /**
+  * Gives the effect of being in a child parent relationship regardless of the bone hierarchy. Similar to Unity's Parent constraint
+  */
+diff --git a/esm/Runtime/ikChainInfo.js b/esm/Runtime/ikChainInfo.js
+index c96f7626142945d2e66271930553365f0de2ea54..60c41a6f26d1b8f2301aa042562f8f7a687d94ac 100644
+--- a/esm/Runtime/ikChainInfo.js
++++ b/esm/Runtime/ikChainInfo.js
+@@ -1,4 +1,4 @@
+-import { Quaternion, Vector3 } from "@babylonjs/core/Maths/math.vector.pure";
++import { Quaternion, Vector3 } from "@babylonjs/core/Maths/math.vector.pure.js";
+ /**
+  * Ik chain information for solving IK
+  */
+diff --git a/esm/Runtime/ikSolver.js b/esm/Runtime/ikSolver.js
+index ecdc5c168ea81e14d2f5354b269b44ba308ae882..74bd90f1e016e0ce6fcd328f29b7874dfdf81733 100644
+--- a/esm/Runtime/ikSolver.js
++++ b/esm/Runtime/ikSolver.js
+@@ -2,8 +2,8 @@
+  * code based on
+  * https://github.com/benikabocha/saba/blob/master/src/Saba/Model/MMD/MMDIkSolver.cpp
+  */
+-import { Matrix, Quaternion, Vector3 } from "@babylonjs/core/Maths/math.vector.pure";
+-import { IkChainInfo } from "./ikChainInfo";
++import { Matrix, Quaternion, Vector3 } from "@babylonjs/core/Maths/math.vector.pure.js";
++import { IkChainInfo } from "./ikChainInfo.js";
+ class IkChain {
+     bone;
+     minimumAngle;
+diff --git a/esm/Runtime/index.js b/esm/Runtime/index.js
+index 3c202d111d42abe84edf42580c4d34d40a572b22..b9b64478a3c96f4bebd3fe76eb9045bf2b21ecca 100644
+--- a/esm/Runtime/index.js
++++ b/esm/Runtime/index.js
+@@ -1,37 +1,37 @@
+ // Animation
+-export * from "./Animation/index";
++export * from "./Animation/index.js";
+ // Audio
+-export * from "./Audio/index";
++export * from "./Audio/index.js";
+ // Common
+-export * from "./Common/index";
++export * from "./Common/index.js";
+ // Optimized
+-export * from "./Optimized/index";
++export * from "./Optimized/index.js";
+ // Physics
+-export * from "./Physics/index";
++export * from "./Physics/index.js";
+ // Util
+-export * from "./Util/index";
++export * from "./Util/index.js";
+ // ./
+-export * from "./appendTransformSolver";
+-export * from "./IDisposeObserable";
+-export * from "./IIkStateContainer";
+-export * from "./ikChainInfo";
+-export * from "./ikSolver";
+-export * from "./ILogger";
+-export * from "./IMmdCamera";
+-export * from "./IMmdMaterialProxy";
+-export * from "./IMmdModel";
+-export * from "./IMmdRuntime";
+-export * from "./IMmdRuntimeAnimatable";
+-export * from "./IMmdRuntimeBone";
+-export * from "./IMmdRuntimeLinkedBone";
+-export * from "./IRIgidBodyStateContainer";
+-export * from "./mmdCamera"; // register class sideeffect
+-export * from "./mmdMesh";
+-export * from "./mmdModel";
+-export * from "./mmdMorphController";
+-export * from "./mmdMorphControllerBase";
+-export * from "./mmdRuntime";
+-export * from "./mmdRuntimeBone";
+-export * from "./mmdRuntimeShared"; // default material proxy registration sideeffect
+-export * from "./mmdStandardMaterialProxy";
+-export * from "./standardMaterialProxy";
++export * from "./appendTransformSolver.js";
++export * from "./IDisposeObserable.js";
++export * from "./IIkStateContainer.js";
++export * from "./ikChainInfo.js";
++export * from "./ikSolver.js";
++export * from "./ILogger.js";
++export * from "./IMmdCamera.js";
++export * from "./IMmdMaterialProxy.js";
++export * from "./IMmdModel.js";
++export * from "./IMmdRuntime.js";
++export * from "./IMmdRuntimeAnimatable.js";
++export * from "./IMmdRuntimeBone.js";
++export * from "./IMmdRuntimeLinkedBone.js";
++export * from "./IRIgidBodyStateContainer.js";
++export * from "./mmdCamera.js"; // register class sideeffect
++export * from "./mmdMesh.js";
++export * from "./mmdModel.js";
++export * from "./mmdMorphController.js";
++export * from "./mmdMorphControllerBase.js";
++export * from "./mmdRuntime.js";
++export * from "./mmdRuntimeBone.js";
++export * from "./mmdRuntimeShared.js"; // default material proxy registration sideeffect
++export * from "./mmdStandardMaterialProxy.js";
++export * from "./standardMaterialProxy.js";
+diff --git a/esm/Runtime/mmdCamera.js b/esm/Runtime/mmdCamera.js
+index 82708cf3daba81c7144bf1f760c155fb4850c82c..dded341d951b4463f8e79232356c4e74a6f68565 100644
+--- a/esm/Runtime/mmdCamera.js
++++ b/esm/Runtime/mmdCamera.js
+@@ -1,3 +1,3 @@
+-import { RegisterMmdCamera } from "./mmdCamera.pure";
+-export * from "./mmdCamera.pure";
++import { RegisterMmdCamera } from "./mmdCamera.pure.js";
++export * from "./mmdCamera.pure.js";
+ RegisterMmdCamera();
+diff --git a/esm/Runtime/mmdCamera.pure.js b/esm/Runtime/mmdCamera.pure.js
+index 83b5ae69b3e77fbbe1f86c24ed2a8d76b6b27142..b959f8f91a01d5f07ee96ce46f8ae318d43ecb59 100644
+--- a/esm/Runtime/mmdCamera.pure.js
++++ b/esm/Runtime/mmdCamera.pure.js
+@@ -4,13 +4,13 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
+     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+     return c > 3 && r && Object.defineProperty(target, key, r), r;
+ };
+-import { Camera } from "@babylonjs/core/Cameras/camera.pure";
+-import { Matrix, Vector3 } from "@babylonjs/core/Maths/math.vector.pure";
+-import { serialize, serializeAsVector3 } from "@babylonjs/core/Misc/decorators";
+-import { Observable } from "@babylonjs/core/Misc/observable.pure";
+-import { RegisterClass } from "@babylonjs/core/Misc/typeStore";
+-import { Node } from "@babylonjs/core/node";
+-import { CreateMmdRuntimeAnimationHandle } from "./mmdRuntimeAnimationHandle";
++import { Camera } from "@babylonjs/core/Cameras/camera.pure.js";
++import { Matrix, Vector3 } from "@babylonjs/core/Maths/math.vector.pure.js";
++import { serialize, serializeAsVector3 } from "@babylonjs/core/Misc/decorators.js";
++import { Observable } from "@babylonjs/core/Misc/observable.pure.js";
++import { RegisterClass } from "@babylonjs/core/Misc/typeStore.js";
++import { Node } from "@babylonjs/core/node.js";
++import { CreateMmdRuntimeAnimationHandle } from "./mmdRuntimeAnimationHandle.js";
+ /**
+  * MMD camera
+  *
+diff --git a/esm/Runtime/mmdModel.js b/esm/Runtime/mmdModel.js
+index 1252a17f0205d5fb4a88aa72ed7f14b8b40d5b82..48b71fe2b9e45045afe73b0511e8f2f615a9e9b3 100644
+--- a/esm/Runtime/mmdModel.js
++++ b/esm/Runtime/mmdModel.js
+@@ -1,13 +1,13 @@
+-import { Space } from "@babylonjs/core/Maths/math.axis";
+-import { Matrix } from "@babylonjs/core/Maths/math.vector.pure";
+-import { Quaternion, Vector3 } from "@babylonjs/core/Maths/math.vector.pure";
+-import { Observable } from "@babylonjs/core/Misc/observable.pure";
+-import { PmxObject } from "../Loader/Parser/pmxObject";
+-import { AppendTransformSolver } from "./appendTransformSolver";
+-import { IkSolver } from "./ikSolver";
+-import { MmdMorphController } from "./mmdMorphController";
+-import { CreateMmdRuntimeAnimationHandle } from "./mmdRuntimeAnimationHandle";
+-import { MmdRuntimeBone } from "./mmdRuntimeBone";
++import { Space } from "@babylonjs/core/Maths/math.axis.js";
++import { Matrix } from "@babylonjs/core/Maths/math.vector.pure.js";
++import { Quaternion, Vector3 } from "@babylonjs/core/Maths/math.vector.pure.js";
++import { Observable } from "@babylonjs/core/Misc/observable.pure.js";
++import { PmxObject } from "../Loader/Parser/pmxObject.js";
++import { AppendTransformSolver } from "./appendTransformSolver.js";
++import { IkSolver } from "./ikSolver.js";
++import { MmdMorphController } from "./mmdMorphController.js";
++import { CreateMmdRuntimeAnimationHandle } from "./mmdRuntimeAnimationHandle.js";
++import { MmdRuntimeBone } from "./mmdRuntimeBone.js";
+ /**
+  * MmdModel is a class that controls the `MmdSkinnedMesh` to animate the Mesh with MMD Runtime
+  *
+diff --git a/esm/Runtime/mmdMorphController.js b/esm/Runtime/mmdMorphController.js
+index 8e6c10567c54c8c467612fb1d3a5cbb9044cb959..1e3bd615433fbeceb96ee89ab414724175cdcab3 100644
+--- a/esm/Runtime/mmdMorphController.js
++++ b/esm/Runtime/mmdMorphController.js
+@@ -1,5 +1,5 @@
+-import { Quaternion } from "@babylonjs/core/Maths/math.vector.pure";
+-import { MmdMorphControllerBase } from "./mmdMorphControllerBase";
++import { Quaternion } from "@babylonjs/core/Maths/math.vector.pure.js";
++import { MmdMorphControllerBase } from "./mmdMorphControllerBase.js";
+ /**
+  * The MmdMorphController uses `MorphTargetManager` to handle position uv morphs, while the material, bone, and group morphs are handled by CPU bound
+  *
+diff --git a/esm/Runtime/mmdMorphControllerBase.js b/esm/Runtime/mmdMorphControllerBase.js
+index 240015811080572e7f385cff9a639eafa9e7ad45..b7b0411bfc06f7b037a0d507d7dd1aa32ec6d5bc 100644
+--- a/esm/Runtime/mmdMorphControllerBase.js
++++ b/esm/Runtime/mmdMorphControllerBase.js
+@@ -1,4 +1,4 @@
+-import { PmxObject } from "../Loader/Parser/pmxObject";
++import { PmxObject } from "../Loader/Parser/pmxObject.js";
+ /**
+  * The MmdMorphControllerBase uses `MorphTargetManager` to handle position uv morphs, while the material, bone, and group morphs are handled by CPU bound
+  *
+diff --git a/esm/Runtime/mmdRuntime.js b/esm/Runtime/mmdRuntime.js
+index eadfcd902258e299927de00df2675e451f517e10..7d6f053979d2309b7790910a097e3def2ee95a9d 100644
+--- a/esm/Runtime/mmdRuntime.js
++++ b/esm/Runtime/mmdRuntime.js
+@@ -1,8 +1,8 @@
+-import { Logger } from "@babylonjs/core/Misc/logger";
+-import { Observable } from "@babylonjs/core/Misc/observable.pure";
+-import { MmdMesh } from "./mmdMesh";
+-import { MmdModel } from "./mmdModel";
+-import { MmdRuntimeShared } from "./mmdRuntimeShared.pure";
++import { Logger } from "@babylonjs/core/Misc/logger.js";
++import { Observable } from "@babylonjs/core/Misc/observable.pure.js";
++import { MmdMesh } from "./mmdMesh.js";
++import { MmdModel } from "./mmdModel.js";
++import { MmdRuntimeShared } from "./mmdRuntimeShared.pure.js";
+ /**
+  * MMD runtime orchestrates several MMD components (models, camera, audio)
+  *
+diff --git a/esm/Runtime/mmdRuntimeBone.js b/esm/Runtime/mmdRuntimeBone.js
+index 9145b5adadadac2f13e284d038ce93efed573434..242a6e153e1dd540f010d83c6b32ab91ccc1f52b 100644
+--- a/esm/Runtime/mmdRuntimeBone.js
++++ b/esm/Runtime/mmdRuntimeBone.js
+@@ -1,6 +1,6 @@
+-import { Matrix, Quaternion, Vector3 } from "@babylonjs/core/Maths/math.vector.pure";
+-import { PmxObject } from "../Loader/Parser/pmxObject";
+-import { QuaternionToAxisAngle } from "./Common/quaternionToAxisAngle";
++import { Matrix, Quaternion, Vector3 } from "@babylonjs/core/Maths/math.vector.pure.js";
++import { PmxObject } from "../Loader/Parser/pmxObject.js";
++import { QuaternionToAxisAngle } from "./Common/quaternionToAxisAngle.js";
+ /**
+  * Bone for MMD runtime
+  *
+diff --git a/esm/Runtime/mmdRuntimeShared.js b/esm/Runtime/mmdRuntimeShared.js
+index db0830ca89b17ed2e8f1d93954ab31160a88b728..4374a3cf453e8df1c6fec99b6243bcb416bbfe03 100644
+--- a/esm/Runtime/mmdRuntimeShared.js
++++ b/esm/Runtime/mmdRuntimeShared.js
+@@ -1,3 +1,3 @@
+-import { RegisterMmdRuntimeSharedDefaultMaterialProxy } from "./mmdRuntimeShared.pure";
+-export * from "./mmdRuntimeShared.pure";
++import { RegisterMmdRuntimeSharedDefaultMaterialProxy } from "./mmdRuntimeShared.pure.js";
++export * from "./mmdRuntimeShared.pure.js";
+ RegisterMmdRuntimeSharedDefaultMaterialProxy();
+diff --git a/esm/Runtime/mmdRuntimeShared.pure.js b/esm/Runtime/mmdRuntimeShared.pure.js
+index e34485cb7fcbc817738f7e8bd65f54ac5b08ae9b..eeed5a9ed18bb1f7dd7a21b142e7fed05132a157 100644
+--- a/esm/Runtime/mmdRuntimeShared.pure.js
++++ b/esm/Runtime/mmdRuntimeShared.pure.js
+@@ -1,4 +1,4 @@
+-import { MmdStandardMaterialProxy } from "./mmdStandardMaterialProxy";
++import { MmdStandardMaterialProxy } from "./mmdStandardMaterialProxy.js";
+ /**
+  * Globally shared MMD runtime settings
+  *
+diff --git a/esm/Runtime/mmdStandardMaterialProxy.js b/esm/Runtime/mmdStandardMaterialProxy.js
+index f8e19daaae2be1a353a2e039eb3006103de44214..3bd7fe2d72b226f9d7897e156cedc297361eef53 100644
+--- a/esm/Runtime/mmdStandardMaterialProxy.js
++++ b/esm/Runtime/mmdStandardMaterialProxy.js
+@@ -1,4 +1,4 @@
+-import { StandardMaterialProxy } from "./standardMaterialProxy";
++import { StandardMaterialProxy } from "./standardMaterialProxy.js";
+ /**
+  * MMD standard material proxy
+  *
+diff --git a/esm/Runtime/pure.js b/esm/Runtime/pure.js
+index 38059fb50eaa2e721356695cc59122c516336acc..8a6de0c84da39ec98655a80c7c7bc665ac646a90 100644
+--- a/esm/Runtime/pure.js
++++ b/esm/Runtime/pure.js
+@@ -1,37 +1,37 @@
+ // Animation
+-export * from "./Animation/pure";
++export * from "./Animation/pure.js";
+ // Audio
+-export * from "./Audio/pure";
++export * from "./Audio/pure.js";
+ // Common
+-export * from "./Common/pure";
++export * from "./Common/pure.js";
+ // Optimized
+-export * from "./Optimized/pure";
++export * from "./Optimized/pure.js";
+ // Physics
+-export * from "./Physics/pure";
++export * from "./Physics/pure.js";
+ // Util
+-export * from "./Util/pure";
++export * from "./Util/pure.js";
+ // ./
+-export * from "./appendTransformSolver";
+-export * from "./IDisposeObserable";
+-export * from "./IIkStateContainer";
+-export * from "./ikChainInfo";
+-export * from "./ikSolver";
+-export * from "./ILogger";
+-export * from "./IMmdCamera";
+-export * from "./IMmdMaterialProxy";
+-export * from "./IMmdModel";
+-export * from "./IMmdRuntime";
+-export * from "./IMmdRuntimeAnimatable";
+-export * from "./IMmdRuntimeBone";
+-export * from "./IMmdRuntimeLinkedBone";
+-export * from "./IRIgidBodyStateContainer";
+-export * from "./mmdCamera.pure";
+-export * from "./mmdMesh";
+-export * from "./mmdModel";
+-export * from "./mmdMorphController";
+-export * from "./mmdMorphControllerBase";
+-export * from "./mmdRuntime";
+-export * from "./mmdRuntimeBone";
+-export * from "./mmdRuntimeShared.pure";
+-export * from "./mmdStandardMaterialProxy";
+-export * from "./standardMaterialProxy";
++export * from "./appendTransformSolver.js";
++export * from "./IDisposeObserable.js";
++export * from "./IIkStateContainer.js";
++export * from "./ikChainInfo.js";
++export * from "./ikSolver.js";
++export * from "./ILogger.js";
++export * from "./IMmdCamera.js";
++export * from "./IMmdMaterialProxy.js";
++export * from "./IMmdModel.js";
++export * from "./IMmdRuntime.js";
++export * from "./IMmdRuntimeAnimatable.js";
++export * from "./IMmdRuntimeBone.js";
++export * from "./IMmdRuntimeLinkedBone.js";
++export * from "./IRIgidBodyStateContainer.js";
++export * from "./mmdCamera.pure.js";
++export * from "./mmdMesh.js";
++export * from "./mmdModel.js";
++export * from "./mmdMorphController.js";
++export * from "./mmdMorphControllerBase.js";
++export * from "./mmdRuntime.js";
++export * from "./mmdRuntimeBone.js";
++export * from "./mmdRuntimeShared.pure.js";
++export * from "./mmdStandardMaterialProxy.js";
++export * from "./standardMaterialProxy.js";
+diff --git a/esm/Runtime/standardMaterialProxy.js b/esm/Runtime/standardMaterialProxy.js
+index 7d762ecb45da20c5e90307b4f8ea62ee8f250125..a5f5b4a132bd7df5d0a49de635915f6468ded746 100644
+--- a/esm/Runtime/standardMaterialProxy.js
++++ b/esm/Runtime/standardMaterialProxy.js
+@@ -1,4 +1,4 @@
+-import { Material } from "@babylonjs/core/Materials/material.pure";
++import { Material } from "@babylonjs/core/Materials/material.pure.js";
+ /**
+  * Standard material proxy
+  *
+diff --git a/esm/index.js b/esm/index.js
+index 9ad42e2fc6cbc82a461d0b3d5d3d61eb3775a80a..915bb6564390e4c93ec0057a28fffac6037be6f0 100644
+--- a/esm/index.js
++++ b/esm/index.js
+@@ -1,4 +1,4 @@
+ // Loader
+-export * from "./Loader/index";
++export * from "./Loader/index.js";
+ // Runtime
+-export * from "./Runtime/index";
++export * from "./Runtime/index.js";
+diff --git a/esm/pure.js b/esm/pure.js
+index 05fa3f733213b38b863e47808253f3abba8ee3c1..c26ec5bbf2d9391e87fff7e78096ed29258d6530 100644
+--- a/esm/pure.js
++++ b/esm/pure.js
+@@ -1,4 +1,4 @@
+ // Loader
+-export * from "./Loader/pure";
++export * from "./Loader/pure.js";
+ // Runtime
+-export * from "./Runtime/pure";
++export * from "./Runtime/pure.js";

@@ -222,39 +222,54 @@ function collectMovableBoneFrames(
   return frames;
 }
 
-function calculateVmdByteLength(animation: MmdAnimation): number {
-  const boneFrames = [
-    ...animation.boneTracks.flatMap((track) => collectBoneFrames(track)),
-    ...animation.movableBoneTracks.flatMap((track) =>
-      collectMovableBoneFrames(track),
-    ),
-  ];
+function calculateVmdByteLength(
+  animation: MmdAnimation,
+  includeModelTracks: boolean,
+  includeCameraTrack: boolean,
+): number {
+  const boneFrames = includeModelTracks
+    ? [
+        ...animation.boneTracks.flatMap((track) => collectBoneFrames(track)),
+        ...animation.movableBoneTracks.flatMap((track) =>
+          collectMovableBoneFrames(track),
+        ),
+      ]
+    : [];
 
   let byteLength = VMD_SIGNATURE_BYTES + VMD_MODEL_NAME_BYTES;
   byteLength += 4 + boneFrames.length * (15 + 4 + 12 + 16 + 64);
   byteLength += 4;
-  for (const track of animation.morphTracks) {
-    byteLength += track.frameNumbers.length * (15 + 4 + 4);
+  if (includeModelTracks) {
+    for (const track of animation.morphTracks) {
+      byteLength += track.frameNumbers.length * (15 + 4 + 4);
+    }
   }
   byteLength +=
     4 +
-    animation.cameraTrack.frameNumbers.length * (4 + 4 + 12 + 12 + 24 + 4 + 1);
+    (includeCameraTrack
+      ? animation.cameraTrack.frameNumbers.length *
+        (4 + 4 + 12 + 12 + 24 + 4 + 1)
+      : 0);
   byteLength += 4;
   byteLength += 4;
   byteLength += 4;
-  for (
-    let frameIndex = 0;
-    frameIndex < animation.propertyTrack.frameNumbers.length;
-    frameIndex += 1
-  ) {
-    byteLength += 4 + 1 + 4;
-    byteLength += animation.propertyTrack.ikBoneNames.length * (20 + 1);
+  if (includeModelTracks) {
+    for (
+      let frameIndex = 0;
+      frameIndex < animation.propertyTrack.frameNumbers.length;
+      frameIndex += 1
+    ) {
+      byteLength += 4 + 1 + 4;
+      byteLength += animation.propertyTrack.ikBoneNames.length * (20 + 1);
+    }
   }
   return byteLength;
 }
 
 export interface SerializeVmdOptions {
   modelName?: string;
+  includeModelTracks?: boolean;
+  includeCameraTrack?: boolean;
 }
 
 export function serializeMmdAnimationToVmd(
@@ -262,14 +277,22 @@ export function serializeMmdAnimationToVmd(
   options: SerializeVmdOptions = {},
 ): ArrayBuffer {
   const modelName = options.modelName ?? animation.name ?? "Motion";
-  const boneFrames = [
-    ...animation.boneTracks.flatMap((track) => collectBoneFrames(track)),
-    ...animation.movableBoneTracks.flatMap((track) =>
-      collectMovableBoneFrames(track),
-    ),
-  ];
+  const includeModelTracks = options.includeModelTracks ?? true;
+  const includeCameraTrack = options.includeCameraTrack ?? true;
+  const boneFrames = includeModelTracks
+    ? [
+        ...animation.boneTracks.flatMap((track) => collectBoneFrames(track)),
+        ...animation.movableBoneTracks.flatMap((track) =>
+          collectMovableBoneFrames(track),
+        ),
+      ]
+    : [];
 
-  const byteLength = calculateVmdByteLength(animation);
+  const byteLength = calculateVmdByteLength(
+    animation,
+    includeModelTracks,
+    includeCameraTrack,
+  );
   const buffer = new ArrayBuffer(byteLength);
   const bytes = new Uint8Array(buffer);
   const view = new DataView(buffer);
@@ -311,12 +334,15 @@ export function serializeMmdAnimationToVmd(
     offset += frame.interpolation.length;
   }
 
-  const morphFrameCount = animation.morphTracks.reduce(
-    (total, track) => total + track.frameNumbers.length,
-    0,
-  );
+  const morphFrameCount = includeModelTracks
+    ? animation.morphTracks.reduce(
+        (total, track) => total + track.frameNumbers.length,
+        0,
+      )
+    : 0;
+  const morphTracks = includeModelTracks ? animation.morphTracks : [];
   offset = setUint32(view, offset, morphFrameCount);
-  for (const track of animation.morphTracks) {
+  for (const track of morphTracks) {
     for (let index = 0; index < track.frameNumbers.length; index += 1) {
       writeFixedBytes(
         bytes,
@@ -330,12 +356,11 @@ export function serializeMmdAnimationToVmd(
     }
   }
 
-  offset = setUint32(view, offset, animation.cameraTrack.frameNumbers.length);
-  for (
-    let index = 0;
-    index < animation.cameraTrack.frameNumbers.length;
-    index += 1
-  ) {
+  const cameraFrameCount = includeCameraTrack
+    ? animation.cameraTrack.frameNumbers.length
+    : 0;
+  offset = setUint32(view, offset, cameraFrameCount);
+  for (let index = 0; index < cameraFrameCount; index += 1) {
     offset = setUint32(view, offset, animation.cameraTrack.frameNumbers[index]);
     offset = setFloat32(view, offset, animation.cameraTrack.distances[index]);
     offset = setFloat32(
@@ -382,12 +407,11 @@ export function serializeMmdAnimationToVmd(
 
   offset = setUint32(view, offset, 0);
   offset = setUint32(view, offset, 0);
-  offset = setUint32(view, offset, animation.propertyTrack.frameNumbers.length);
-  for (
-    let frameIndex = 0;
-    frameIndex < animation.propertyTrack.frameNumbers.length;
-    frameIndex += 1
-  ) {
+  const propertyFrameCount = includeModelTracks
+    ? animation.propertyTrack.frameNumbers.length
+    : 0;
+  offset = setUint32(view, offset, propertyFrameCount);
+  for (let frameIndex = 0; frameIndex < propertyFrameCount; frameIndex += 1) {
     offset = setUint32(
       view,
       offset,
