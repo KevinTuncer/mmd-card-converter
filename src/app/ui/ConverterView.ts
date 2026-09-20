@@ -42,7 +42,12 @@ import {
   hasCardMetadataFilterableEntries,
   parseFastButtonRows,
 } from "@/app/converter/CardMetadataMerge";
-import { extractCardPngToZip } from "@/app/converter/CardPngExtractor";
+import {
+  extractCardPngParts,
+  extractCardPngToZip,
+  materializeCardPartsAsFiles,
+  probeCardPngHasChunks,
+} from "@/app/converter/CardPngExtractor";
 import {
   LOCALE_LABELS,
   getErrorStrings,
@@ -540,6 +545,8 @@ interface ConverterViewText {
   sourceBaseImage: string;
   readZip: string;
   readFolder: string;
+  sourceCard: string;
+  readingCard: string;
   filesLoadedLabel: string;
   filesLoadedStatus: string;
   filesLoadedFromSourceStatus: string;
@@ -705,6 +712,8 @@ function getConverterViewText(locale: AppLocale): ConverterViewText {
     sourceBaseImage: "(base image)",
     readZip: "Reading ZIP...",
     readFolder: "Reading folder...",
+    sourceCard: "(card)",
+    readingCard: "Reading card...",
     filesLoadedLabel: "{count} files loaded",
     filesLoadedStatus: "{ready} - {count} file(s) loaded.",
     filesLoadedFromSourceStatus: "{ready} - {count} file(s) loaded {source}.",
@@ -880,6 +889,8 @@ function getConverterViewText(locale: AppLocale): ConverterViewText {
     sourceBaseImage: "(Basisbild)",
     readZip: "Lese ZIP...",
     readFolder: "Lese Ordner...",
+    sourceCard: "(Karte)",
+    readingCard: "Lese Karte...",
     filesLoadedLabel: "{count} Dateien geladen",
     filesLoadedStatus: "{ready} - {count} Datei(en) geladen.",
     filesLoadedFromSourceStatus:
@@ -1058,6 +1069,8 @@ function getConverterViewText(locale: AppLocale): ConverterViewText {
     sourceBaseImage: "（ベース画像）",
     readZip: "ZIP を読み込み中...",
     readFolder: "フォルダーを読み込み中...",
+    sourceCard: "（カード）",
+    readingCard: "カードを読み込み中...",
     filesLoadedLabel: "{count} 件のファイルを読み込みました",
     filesLoadedStatus: "{ready} - {count} 件のファイルを読み込みました。",
     filesLoadedFromSourceStatus:
@@ -1236,6 +1249,8 @@ function getConverterViewText(locale: AppLocale): ConverterViewText {
     sourceBaseImage: "（基础图像）",
     readZip: "正在读取 ZIP...",
     readFolder: "正在读取文件夹...",
+    sourceCard: "（卡片）",
+    readingCard: "正在读取卡片...",
     filesLoadedLabel: "已加载 {count} 个文件",
     filesLoadedStatus: "{ready} - 已加载 {count} 个文件。",
     filesLoadedFromSourceStatus: "{ready} - 已加载 {count} 个文件 {source}。",
@@ -1405,6 +1420,8 @@ function getConverterViewText(locale: AppLocale): ConverterViewText {
     sourceBaseImage: "（基底圖片）",
     readZip: "正在讀取 ZIP...",
     readFolder: "正在讀取資料夾...",
+    sourceCard: "（卡片）",
+    readingCard: "正在讀取卡片...",
     filesLoadedLabel: "已載入 {count} 個檔案",
     filesLoadedStatus: "{ready} - 已載入 {count} 個檔案。",
     filesLoadedFromSourceStatus: "{ready} - 已載入 {count} 個檔案 {source}。",
@@ -5176,7 +5193,10 @@ export function mountConverterView(
   ): Promise<void> {
     cardCreateStatus.textContent = text.readZip;
     try {
-      mergeCardCreateFiles(readZipFiles(await file.arrayBuffer()), sourceLabel);
+      mergeCardCreateFiles(
+        await expandCardCreateCardPngs(readZipFiles(await file.arrayBuffer())),
+        sourceLabel,
+      );
     } catch (err) {
       cardCreateStatus.textContent = `${statusErrorPrefix}: ${err instanceof Error ? err.message : String(err)}`;
     }
@@ -5200,6 +5220,49 @@ export function mountConverterView(
     return result;
   }
 
+  /**
+   * Resolves card PNGs into their constituent chunk parts (model, motion,
+   * audio, metadata, voice samples, own base image). The card itself is
+   * replaced by its parts, each staged under a pseudo folder named after the
+   * card so several resolved cards cannot collide on fixed metadata names.
+   * Regular PNGs (textures, base images) pass through unchanged, and a card
+   * that fails to parse never blocks staging.
+   */
+  async function expandCardCreateCardPngs(
+    files: readonly File[],
+  ): Promise<File[]> {
+    const result: File[] = [];
+    let announcedReading = false;
+    for (const file of files) {
+      if (getFileExt(file.name) !== "png") {
+        result.push(file);
+        continue;
+      }
+      const bytes = new Uint8Array(await file.arrayBuffer());
+      if (!probeCardPngHasChunks(bytes)) {
+        result.push(file);
+        continue;
+      }
+      if (!announcedReading) {
+        cardCreateStatus.textContent = text.readingCard;
+        announcedReading = true;
+      }
+      try {
+        const { parts } = await extractCardPngParts(
+          new File([bytes], file.name, {
+            type: file.type,
+            lastModified: file.lastModified,
+          }),
+        );
+        result.push(...materializeCardPartsAsFiles(file, parts));
+      } catch {
+        // Not a readable card after all – keep the original file staged.
+        result.push(file);
+      }
+    }
+    return result;
+  }
+
   cardCreateFolderBtn.addEventListener("click", () => {
     if (cardCreateBusy) return;
     cardCreateFolderInput.click();
@@ -5217,12 +5280,19 @@ export function mountConverterView(
     cardCreateImageInput.click();
   });
 
-  cardCreateFolderInput.addEventListener("change", () => {
+  cardCreateFolderInput.addEventListener("change", async () => {
     if (cardCreateBusy) return;
     const files = Array.from(cardCreateFolderInput.files ?? []);
     cardCreateFolderInput.value = "";
     if (files.length === 0) return;
-    mergeCardCreateFiles(files, text.sourceFolder);
+    try {
+      mergeCardCreateFiles(
+        await expandCardCreateCardPngs(files),
+        text.sourceFolder,
+      );
+    } catch (err) {
+      cardCreateStatus.textContent = `${statusErrorPrefix}: ${err instanceof Error ? err.message : String(err)}`;
+    }
   });
 
   cardCreateZipInput.addEventListener("change", async () => {
@@ -5239,7 +5309,10 @@ export function mountConverterView(
     cardCreateFilesInput.value = "";
     if (files.length === 0) return;
     try {
-      mergeCardCreateFiles(await expandZipFiles(files), text.sourceFiles);
+      mergeCardCreateFiles(
+        await expandCardCreateCardPngs(await expandZipFiles(files)),
+        text.sourceFiles,
+      );
     } catch (err) {
       cardCreateStatus.textContent = `${statusErrorPrefix}: ${err instanceof Error ? err.message : String(err)}`;
     }
@@ -5396,9 +5469,11 @@ export function mountConverterView(
       cardCreateStatus.textContent = text.readFolder;
       try {
         mergeCardCreateFiles(
-          await readDirectoryEntry(
-            firstEntry as FileSystemDirectoryEntry,
-            firstEntry.name,
+          await expandCardCreateCardPngs(
+            await readDirectoryEntry(
+              firstEntry as FileSystemDirectoryEntry,
+              firstEntry.name,
+            ),
           ),
           text.sourceFolderDrop,
         );
@@ -5412,7 +5487,7 @@ export function mountConverterView(
     if (droppedFiles.length > 0) {
       try {
         mergeCardCreateFiles(
-          await expandZipFiles(droppedFiles),
+          await expandCardCreateCardPngs(await expandZipFiles(droppedFiles)),
           text.sourceFilesDrop,
         );
       } catch (err) {

@@ -125,33 +125,119 @@ interface ParsedChunk {
   data: Uint8Array;
 }
 
-export async function extractCardPngToZip(
+export interface CardPngPartsResult {
+  parts: CardPngExportFile[];
+  report: CardPngExtractionReport;
+}
+
+/**
+ * Parses a card PNG and materializes its embedded chunks as export files.
+ * The sanitized base image is always the first part ("ero.dance.png").
+ * Unless {@link CardPngExtractionOptions.convertToLegacyMmdFiles} is set, no
+ * legacy conversion happens — chunks are only decompressed or passed through.
+ * Shared foundation for the ZIP export ({@link extractCardPngToZip}) and for
+ * staging the parts of a dropped card in the card creator UI.
+ */
+export async function extractCardPngParts(
   pngFile: File,
   options: CardPngExtractionOptions = {},
-): Promise<CardPngExtractionResult> {
+): Promise<CardPngPartsResult> {
   const bytes = new Uint8Array(await pngFile.arrayBuffer());
   const warnings: ConverterWarning[] = [];
   const { cardChunks, sanitizedPng } = parseCardPng(bytes);
 
-  const exportFiles = await buildExportFiles(
+  const parts = await buildExportFiles(
     pngFile.name,
     sanitizedPng,
     cardChunks,
     warnings,
     options,
   );
-  const zipBuffer = buildFilesZip(exportFiles);
 
   return {
-    zipBuffer,
-    files: exportFiles,
+    parts,
     report: {
       foundChunkTypes: cardChunks.map((chunk) => chunk.type),
-      exportedFiles: exportFiles.map((file) => file.fileName),
+      exportedFiles: parts.map((file) => file.fileName),
       sanitizedImageBytes: sanitizedPng.byteLength,
       warnings,
     },
   };
+}
+
+export async function extractCardPngToZip(
+  pngFile: File,
+  options: CardPngExtractionOptions = {},
+): Promise<CardPngExtractionResult> {
+  const { parts, report } = await extractCardPngParts(pngFile, options);
+  const zipBuffer = buildFilesZip(parts);
+
+  return {
+    zipBuffer,
+    files: parts,
+    report,
+  };
+}
+
+/**
+ * Materializes extracted card parts as creator-friendly File objects grouped
+ * under a pseudo folder named after the card (e.g. "MyCard/ero.dance.png").
+ * webkitRelativePath is a getter-only property on File instances, so it is
+ * shadowed via Object.defineProperty — the same pattern used when traversing
+ * dropped directories. The folder prefix lets several resolved cards coexist
+ * without colliding on fixed names such as metadata.fBtn.json.
+ */
+export function materializeCardPartsAsFiles(
+  cardFile: File,
+  parts: readonly CardPngExportFile[],
+): File[] {
+  const folderName = getCardBaseName(cardFile.name);
+  return parts.map((part) => {
+    const segments = part.fileName.split("/");
+    const fileName = segments[segments.length - 1] || part.fileName;
+    const file = new File([part.data], fileName, {
+      type: part.mime,
+      lastModified: cardFile.lastModified,
+    });
+    Object.defineProperty(file, "webkitRelativePath", {
+      value: `${folderName}/${part.fileName}`,
+      configurable: true,
+    });
+    return file;
+  });
+}
+
+/**
+ * Cheap check whether PNG bytes contain any supported card chunk. Only walks
+ * the chunk headers (no data copies, no signature error reporting), so it
+ * never throws — non-PNG or malformed buffers simply yield false. Used by the
+ * card creator UI to decide whether a dropped PNG is a card worth resolving.
+ */
+export function probeCardPngHasChunks(bytes: Uint8Array): boolean {
+  if (
+    bytes.byteLength < PNG_SIGNATURE.length ||
+    !startsWithPngSignature(bytes)
+  ) {
+    return false;
+  }
+
+  let offset = PNG_SIGNATURE.length;
+  while (offset + 12 <= bytes.length) {
+    const length = readUint32BE(bytes, offset);
+    const chunkEnd = offset + length + 12;
+    if (chunkEnd > bytes.length) {
+      return false;
+    }
+    const type = readChunkType(bytes, offset + 4);
+    if (type === "IEND") {
+      return false;
+    }
+    if (isSupportedCardChunkType(type)) {
+      return true;
+    }
+    offset = chunkEnd;
+  }
+  return false;
 }
 
 function parseCardPng(bytes: Uint8Array): {
@@ -526,14 +612,21 @@ function guessMimeType(fileName: string): string {
   }
 }
 
+function startsWithPngSignature(bytes: Uint8Array): boolean {
+  for (let index = 0; index < PNG_SIGNATURE.length; index += 1) {
+    if (bytes[index] !== PNG_SIGNATURE[index]) {
+      return false;
+    }
+  }
+  return true;
+}
+
 function assertPngSignature(bytes: Uint8Array): void {
   if (bytes.byteLength < PNG_SIGNATURE.length) {
     throw new Error(getErrorStrings().pngTooSmall);
   }
-  for (let index = 0; index < PNG_SIGNATURE.length; index += 1) {
-    if (bytes[index] !== PNG_SIGNATURE[index]) {
-      throw new Error(getErrorStrings().pngInvalidSignature);
-    }
+  if (!startsWithPngSignature(bytes)) {
+    throw new Error(getErrorStrings().pngInvalidSignature);
   }
 }
 

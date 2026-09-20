@@ -1,7 +1,17 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from "vitest";
 import { gzipSync, unzipSync } from "fflate";
-import { extractCardPngToZip } from "@/app/converter/CardPngExtractor";
+import {
+  extractCardPngParts,
+  extractCardPngToZip,
+  materializeCardPartsAsFiles,
+  probeCardPngHasChunks,
+} from "@/app/converter/CardPngExtractor";
+import {
+  createCardPngFromFiles,
+  getCardCreatorInputKind,
+  getFilePath,
+} from "@/app/converter/CardPngCreator";
 import { loadBuffer } from "./helpers";
 
 const BASE_PNG = new Uint8Array(
@@ -476,6 +486,187 @@ describe("extractCardPngToZip", () => {
         warning.message.includes("Bevorzugt wurde der letzte fbTn-Eintrag"),
       ),
     ).toBe(true);
+  });
+});
+
+describe("card resolution for the creator staging list", () => {
+  it("detects card chunks cheaply without throwing on non-PNG input", () => {
+    const cardPng = createCardPng([
+      {
+        type: "bpMx",
+        data: gzipSync(new TextEncoder().encode("fake-bpmx-payload")),
+      },
+    ]);
+    const privateNonCardPng = createCardPng([
+      {
+        type: "teSt",
+        data: new TextEncoder().encode("unrelated"),
+      },
+    ]);
+
+    expect(probeCardPngHasChunks(cardPng)).toBe(true);
+    expect(probeCardPngHasChunks(BASE_PNG)).toBe(false);
+    expect(probeCardPngHasChunks(privateNonCardPng)).toBe(false);
+    expect(probeCardPngHasChunks(new Uint8Array([0x00, 0x01, 0x02]))).toBe(
+      false,
+    );
+    expect(probeCardPngHasChunks(new Uint8Array())).toBe(false);
+  });
+
+  it("resolves a card into staged parts under a per-card pseudo folder", async () => {
+    const bpmxPayload = new TextEncoder().encode("fake-bpmx-payload");
+    const bvmdPayload = new TextEncoder().encode("fake-bvmd-payload");
+    const sample1 = new TextEncoder().encode("voice-audio-1");
+    const pngBytes = createCardPng([
+      {
+        type: "bPMX",
+        data: gzipSync(bpmxPayload),
+      },
+      {
+        type: "bVMD",
+        data: gzipSync(bvmdPayload),
+      },
+      {
+        type: "fBtn",
+        data: new TextEncoder().encode(
+          JSON.stringify([{ name: "Smile", action: "morph", morph: 1 }]),
+        ),
+      },
+      {
+        type: "moAi",
+        data: new TextEncoder().encode(
+          JSON.stringify({
+            name: "Model",
+            gender: "f",
+            info: "meta",
+            voiceSamples: [
+              {
+                index: 0,
+                fileName: "voice_sample_intro.webm",
+                sampleName: "Intro",
+                locale: "ja",
+              },
+            ],
+          }),
+        ),
+      },
+      {
+        type: "vcAu",
+        data: serializeTestArrayVarLength([sample1]),
+      },
+    ]);
+    const cardFile = new File([toArrayBuffer(pngBytes)], "MyCard.png", {
+      type: "image/png",
+      lastModified: 1700000000000,
+    });
+
+    const { parts } = await extractCardPngParts(cardFile);
+    expect(parts.map((part) => part.fileName)).toEqual([
+      "ero.dance.png",
+      "MyCard.bpmx",
+      "MyCard.bvmd",
+      "metadata.fBtn.json",
+      "metadata.moAi.json",
+      "metadata.voiceSamples/voice_sample_intro.webm",
+    ]);
+
+    const staged = materializeCardPartsAsFiles(cardFile, parts);
+    expect(
+      staged.map(
+        (file) => `${getFilePath(file)} (${getCardCreatorInputKind(file)})`,
+      ),
+    ).toEqual([
+      "MyCard/ero.dance.png (base-image)",
+      "MyCard/MyCard.bpmx (bpmx)",
+      "MyCard/MyCard.bvmd (bvmd)",
+      "MyCard/metadata.fBtn.json (metadata-fBtn)",
+      "MyCard/metadata.moAi.json (metadata-moAi)",
+      "MyCard/metadata.voiceSamples/voice_sample_intro.webm (voice-clone-sample)",
+    ]);
+    expect(staged.every((file) => file.lastModified === 1700000000000)).toBe(
+      true,
+    );
+
+    const bpmxPart = staged.find(
+      (file) => getCardCreatorInputKind(file) === "bpmx",
+    );
+    if (!bpmxPart) throw new Error("bpmx part missing");
+    expect(decodeUtf8(new Uint8Array(await bpmxPart.arrayBuffer()))).toBe(
+      "fake-bpmx-payload",
+    );
+  });
+
+  it("keeps parts of different cards apart via the folder prefix", async () => {
+    const pngBytes = createCardPng([
+      {
+        type: "fBtn",
+        data: new TextEncoder().encode(
+          JSON.stringify([{ name: "Smile", action: "morph", morph: 1 }]),
+        ),
+      },
+    ]);
+    const cardA = new File([toArrayBuffer(pngBytes)], "CardA.png", {
+      type: "image/png",
+    });
+    const cardB = new File([toArrayBuffer(pngBytes)], "CardB.png", {
+      type: "image/png",
+    });
+
+    const { parts } = await extractCardPngParts(cardA);
+    const stagedKeys = [
+      ...materializeCardPartsAsFiles(cardA, parts),
+      ...materializeCardPartsAsFiles(cardB, parts),
+    ].map((file) => getFilePath(file));
+
+    expect(new Set(stagedKeys).size).toBe(stagedKeys.length);
+    expect(stagedKeys).toContain("CardA/metadata.fBtn.json");
+    expect(stagedKeys).toContain("CardB/metadata.fBtn.json");
+  });
+
+  it("resolves a card built by the creator back into its input parts", async () => {
+    const bpmxBuffer = loadBuffer("public/example/TestModel.bpmx");
+    const files = [
+      new File([toArrayBuffer(BASE_PNG)], "ero.dance.png", {
+        type: "image/png",
+      }),
+      new File([bpmxBuffer], "dance.bpmx"),
+      new File([new TextEncoder().encode("fake-webm-payload")], "dance.webm", {
+        type: "audio/webm",
+      }),
+      new File(
+        [
+          new TextEncoder().encode(
+            JSON.stringify({ auth: "artist", ch: ["hero"], info: "note" }),
+          ),
+        ],
+        "metadata.uInf.json",
+        { type: "application/json" },
+      ),
+    ];
+
+    const created = await createCardPngFromFiles(files, {
+      defaultBaseImageBuffer: loadBuffer("public/eroLogo.png"),
+    });
+    const cardFile = new File([created.pngBuffer], "rebuilt.png", {
+      type: "image/png",
+    });
+
+    const { parts } = await extractCardPngParts(cardFile);
+    const staged = materializeCardPartsAsFiles(cardFile, parts);
+    const bpmxPart = staged.find(
+      (file) => getCardCreatorInputKind(file) === "bpmx",
+    );
+    if (!bpmxPart) throw new Error("bpmx part missing");
+
+    expect(getFilePath(bpmxPart)).toBe("rebuilt/rebuilt.bpmx");
+    expect(
+      Buffer.from(await bpmxPart.arrayBuffer()).equals(Buffer.from(bpmxBuffer)),
+    ).toBe(true);
+
+    const baseImagePart = staged.find(
+      (file) => getCardCreatorInputKind(file) === "base-image",
+    );
+    expect(baseImagePart).toBeDefined();
   });
 });
 
