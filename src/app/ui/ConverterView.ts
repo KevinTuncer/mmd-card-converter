@@ -15,6 +15,14 @@ import {
   LOSSY_QUALITY,
 } from "@/app/converter/ImageCompressor";
 import {
+  collectCachedPreparedImages,
+  mergeCompressionResults,
+  type PreparedCompressionMode,
+  type PreparedImageParams,
+  PreparedImageCache,
+  partitionForCachedCompression,
+} from "@/app/converter/PreparedImageCache";
+import {
   convertAudioFileToWebm,
   getAudioToWebmSupport,
   type AudioConversionSummary,
@@ -53,6 +61,59 @@ function downloadAs(data: ArrayBuffer, fileName: string, mime: string): void {
   anchor.download = fileName;
   anchor.click();
   URL.revokeObjectURL(url);
+}
+
+// ── retained download results ────────────────────────────────────────────────
+// After a successful conversion the produced buffer is kept here so the user
+// can re-trigger the browser save dialog via the per-tab "Download" button
+// (e.g. after accidentally dismissing it). Lives in module scope on purpose:
+// a locale switch rebuilds the whole view, but the retained result should
+// survive until the user changes that tab's inputs.
+type ConverterTabId =
+  | "bpmx2pmx"
+  | "pmx2bpmx"
+  | "motion2bvmd"
+  | "bvmd2vmd"
+  | "audio2webm"
+  | "cardcreate"
+  | "cardextract";
+
+interface RetainedDownload {
+  data: ArrayBuffer;
+  fileName: string;
+  mime: string;
+}
+
+const retainedDownloads = new Map<ConverterTabId, RetainedDownload>();
+
+function createRedownloadControl(
+  tabId: ConverterTabId,
+  button: HTMLButtonElement,
+): {
+  retain: (data: ArrayBuffer, fileName: string, mime: string) => void;
+  invalidate: () => void;
+  sync: () => void;
+} {
+  button.addEventListener("click", () => {
+    const retained = retainedDownloads.get(tabId);
+    if (retained) {
+      downloadAs(retained.data, retained.fileName, retained.mime);
+    }
+  });
+
+  return {
+    retain(data, fileName, mime) {
+      retainedDownloads.set(tabId, { data, fileName, mime });
+      button.hidden = false;
+    },
+    invalidate() {
+      retainedDownloads.delete(tabId);
+      button.hidden = true;
+    },
+    sync() {
+      button.hidden = !retainedDownloads.has(tabId);
+    },
+  };
 }
 
 function stripExt(name: string): string {
@@ -458,6 +519,7 @@ interface ConverterViewText {
   convertToWebm: string;
   createCardPng: string;
   extractAsZip: string;
+  redownload: string;
   fidelityReportTitle: string;
   warningsTitle: string;
   noConversionYet: string;
@@ -622,6 +684,7 @@ function getConverterViewText(locale: AppLocale): ConverterViewText {
     convertToWebm: "Convert to WebM",
     createCardPng: "Create card PNG",
     extractAsZip: "Extract as ZIP",
+    redownload: "Download",
     fidelityReportTitle: "Fidelity report",
     warningsTitle: "Warnings",
     noConversionYet: "No conversion yet.",
@@ -796,6 +859,7 @@ function getConverterViewText(locale: AppLocale): ConverterViewText {
     convertToWebm: "In WebM konvertieren",
     createCardPng: "Card-PNG erstellen",
     extractAsZip: "Als ZIP extrahieren",
+    redownload: "Download",
     fidelityReportTitle: "Fidelity Report",
     warningsTitle: "Warnungen",
     noConversionYet: "Noch keine Konvertierung.",
@@ -972,6 +1036,7 @@ function getConverterViewText(locale: AppLocale): ConverterViewText {
     convertToWebm: "WebM に変換",
     createCardPng: "Card PNG を作成",
     extractAsZip: "ZIP として抽出",
+    redownload: "ダウンロード",
     fidelityReportTitle: "再現性レポート",
     warningsTitle: "警告",
     noConversionYet: "まだ変換されていません。",
@@ -1150,6 +1215,7 @@ function getConverterViewText(locale: AppLocale): ConverterViewText {
     convertToWebm: "转换为 WebM",
     createCardPng: "创建 Card PNG",
     extractAsZip: "提取为 ZIP",
+    redownload: "下载",
     fidelityReportTitle: "保真度报告",
     warningsTitle: "警告",
     noConversionYet: "尚未转换。",
@@ -1318,6 +1384,7 @@ function getConverterViewText(locale: AppLocale): ConverterViewText {
     convertToWebm: "轉換為 WebM",
     createCardPng: "建立 Card PNG",
     extractAsZip: "擷取為 ZIP",
+    redownload: "下載",
     fidelityReportTitle: "保真報告",
     warningsTitle: "警告",
     noConversionYet: "尚未轉換。",
@@ -1514,6 +1581,7 @@ export function mountConverterView(
 
         <div class="actions">
           <button id="bpmx-convert" type="button">${text.convertToPmxZip}</button>
+          <button class="drop-btn" id="bpmx-redownload" type="button" hidden>${text.redownload}</button>
           <span id="bpmx-status" class="status">${statusReady}</span>
         </div>
 
@@ -1564,6 +1632,7 @@ export function mountConverterView(
 
         <div class="actions">
           <button id="pmx-convert" type="button">${text.convertToBpmx}</button>
+          <button class="drop-btn" id="pmx-redownload" type="button" hidden>${text.redownload}</button>
           <span id="pmx-status" class="status">${statusReady}</span>
         </div>
       </section>
@@ -1593,6 +1662,7 @@ export function mountConverterView(
 
         <div class="actions">
           <button id="motion-convert" type="button">${text.convertToBvmd}</button>
+          <button class="drop-btn" id="motion-redownload" type="button" hidden>${text.redownload}</button>
           <span id="motion-status" class="status">${statusReady}</span>
         </div>
 
@@ -1617,6 +1687,7 @@ export function mountConverterView(
 
         <div class="actions">
           <button id="bvmd-motion-convert" type="button">${text.convertToVmd}</button>
+          <button class="drop-btn" id="bvmd-motion-redownload" type="button" hidden>${text.redownload}</button>
           <span id="bvmd-motion-status" class="status">${statusReady}</span>
         </div>
 
@@ -1641,6 +1712,7 @@ export function mountConverterView(
 
         <div class="actions">
           <button id="audio-convert" type="button">${text.convertToWebm}</button>
+          <button class="drop-btn" id="audio-redownload" type="button" hidden>${text.redownload}</button>
           <span id="audio-status" class="status">${statusReady}</span>
         </div>
 
@@ -1783,6 +1855,7 @@ export function mountConverterView(
 
         <div class="actions">
           <button id="cardcreate-build" type="button">${text.createCardPng}</button>
+          <button class="drop-btn" id="cardcreate-redownload" type="button" hidden>${text.redownload}</button>
           <span id="cardcreate-status" class="status">${statusReady}</span>
         </div>
 
@@ -1826,6 +1899,7 @@ export function mountConverterView(
 
         <div class="actions">
           <button id="cardextract-extract" type="button">${text.extractAsZip}</button>
+          <button class="drop-btn" id="cardextract-redownload" type="button" hidden>${text.redownload}</button>
           <span id="cardextract-status" class="status">${statusReady}</span>
         </div>
 
@@ -1957,12 +2031,16 @@ export function mountConverterView(
   const bpmxReport = container.querySelector<HTMLPreElement>("#bpmx-report")!;
   const bpmxWarnings =
     container.querySelector<HTMLPreElement>("#bpmx-warnings")!;
+  const bpmxRedownloadBtn =
+    container.querySelector<HTMLButtonElement>("#bpmx-redownload")!;
+  const bpmxRedownload = createRedownloadControl("bpmx2pmx", bpmxRedownloadBtn);
 
   let stagedBpmxFile: File | null = null;
   let bpmxBusy = false;
 
   function syncBpmxAvailability(): void {
     bpmxConvertBtn.disabled = bpmxBusy || stagedBpmxFile === null;
+    bpmxRedownloadBtn.disabled = bpmxBusy;
     if (!bpmxBusy && stagedBpmxFile === null) {
       bpmxStatus.textContent = EMPTY_INPUT_STATUS;
     }
@@ -1970,6 +2048,7 @@ export function mountConverterView(
 
   function setStagedBpmxFile(file: File): void {
     stagedBpmxFile = file;
+    bpmxRedownload.invalidate();
     bpmxDropLabel.textContent = `${file.name} (${formatSize(file.size)})`;
     bpmxStatus.textContent = `${statusReady} - ${file.name}`;
     syncBpmxAvailability();
@@ -2005,6 +2084,7 @@ export function mountConverterView(
     bpmxStatus.textContent = viewStrings.statusConverting;
     bpmxBusy = true;
     bpmxConvertBtn.disabled = true;
+    bpmxRedownloadBtn.disabled = true;
     bpmxEncoding.disabled = true;
     bpmxRestoreOriginalFormatsInput.disabled = true;
     try {
@@ -2021,11 +2101,9 @@ export function mountConverterView(
         },
       );
 
-      downloadAs(
-        result.zipBuffer,
-        `${stripExt(stagedBpmxFile.name)}.zip`,
-        "application/zip",
-      );
+      const bpmxZipName = `${stripExt(stagedBpmxFile.name)}.zip`;
+      downloadAs(result.zipBuffer, bpmxZipName, "application/zip");
+      bpmxRedownload.retain(result.zipBuffer, bpmxZipName, "application/zip");
       bpmxReport.textContent = JSON.stringify(result.report.totals, null, 2);
       renderWarnings(
         bpmxWarnings,
@@ -2046,6 +2124,11 @@ export function mountConverterView(
   });
 
   syncBpmxAvailability();
+  // Encoding / restore-format changes invalidate the retained zip.
+  const bpmxPanel = container.querySelector<HTMLElement>("#tab-bpmx2pmx")!;
+  bpmxPanel.addEventListener("input", () => bpmxRedownload.invalidate());
+  bpmxPanel.addEventListener("change", () => bpmxRedownload.invalidate());
+  bpmxRedownload.sync();
 
   // ── PMX → BPMX ────────────────────────────────────────────────────────────
 
@@ -2074,12 +2157,18 @@ export function mountConverterView(
   const pmxConvertBtn =
     container.querySelector<HTMLButtonElement>("#pmx-convert")!;
   const pmxStatus = container.querySelector<HTMLSpanElement>("#pmx-status")!;
+  const pmxRedownloadBtn =
+    container.querySelector<HTMLButtonElement>("#pmx-redownload")!;
+  const pmxRedownload = createRedownloadControl("pmx2bpmx", pmxRedownloadBtn);
 
   let stagedPmxFile: File | null = null;
   let stagedAllFiles: File[] = [];
   let compressToAvifSet: Set<File> = new Set();
   let actualResultFiles: File[] | null = null;
   let pmxBusy = false;
+  // Remembers prepared (compressed) textures per file + parameter set so
+  // re-running the conversion only encodes files whose inputs changed.
+  const pmxPreparedImageCache = new PreparedImageCache();
 
   function syncPmxAvailability(): void {
     pmxConvertBtn.disabled = pmxBusy || stagedPmxFile === null;
@@ -2175,6 +2264,7 @@ export function mountConverterView(
     pmxZipInput.disabled = nextBusy;
     pmxCompressModeSelect.disabled = nextBusy;
     pmxSelectAllCompressBtn.disabled = nextBusy;
+    pmxRedownloadBtn.disabled = nextBusy;
     pmxConvertBtn.disabled = nextBusy || stagedPmxFile === null;
     tabBtns.forEach((btn) => {
       btn.disabled = nextBusy;
@@ -2307,6 +2397,9 @@ export function mountConverterView(
   ): void {
     stagedAllFiles = allFiles;
     stagedPmxFile = defaultPmx;
+    // New model context: previous staged files (and their cached results) are
+    // replaced wholesale.
+    pmxPreparedImageCache.clear();
     compressToAvifSet = new Set(
       allFiles.filter((f) => COMPRESSIBLE_IMAGE_EXTS.has(getFileExt(f.name))),
     );
@@ -2327,6 +2420,7 @@ export function mountConverterView(
     }
 
     actualResultFiles = null;
+    pmxRedownload.invalidate();
     renderFileList();
     if (pmxCompressModeSelect.value === "lossy") updateSelectAllBtn();
     syncPmxAvailability();
@@ -2376,6 +2470,13 @@ export function mountConverterView(
 
   updateForceAvifInput();
   syncPmxAvailability();
+  // Compression option / file-list changes invalidate the retained bpmx.
+  // Delegated so per-file lossy checkboxes in the dynamically rendered list
+  // are covered as well.
+  const pmxPanel = container.querySelector<HTMLElement>("#tab-pmx2bpmx")!;
+  pmxPanel.addEventListener("input", () => pmxRedownload.invalidate());
+  pmxPanel.addEventListener("change", () => pmxRedownload.invalidate());
+  pmxRedownload.sync();
 
   pmxSelectAllCompressBtn.addEventListener("click", () => {
     if (pmxBusy) return;
@@ -2389,6 +2490,8 @@ export function mountConverterView(
       compressible.forEach((f) => compressToAvifSet.add(f));
     }
     actualResultFiles = null;
+    // Button click: not covered by the delegated input/change invalidation.
+    pmxRedownload.invalidate();
     renderFileList();
     updateSelectAllBtn();
   });
@@ -2466,29 +2569,74 @@ export function mountConverterView(
       // (result is only kept when it is smaller than the original).
       // When "Verlustbehaftet komprimieren" is active, selected files are also
       // encoded lossily (quality 0.92) instead of losslessly.
-      const compressionMode = pmxCompressModeSelect.value;
+      // Prepared results are kept per file + parameter set, so re-running the
+      // conversion after a small change only re-encodes textures whose inputs
+      // actually changed.
+      const compressionMode =
+        pmxCompressModeSelect.value as PreparedCompressionMode;
+      const forceAvif = pmxForceAvifInput.checked;
+      const resolvePreparedParams = (
+        file: File,
+      ): PreparedImageParams | null => {
+        if (!COMPRESSIBLE_IMAGE_EXTS.has(getFileExt(file.name))) return null;
+        return {
+          compressionMode,
+          forceAvif,
+          isLossyTarget:
+            compressionMode === "lossy" && compressToAvifSet.has(file),
+        };
+      };
       let filesToConvert: File[];
       if (compressionMode === "raw") {
         filesToConvert = stagedAllFiles;
       } else {
-        const compressibleTotal = stagedAllFiles.filter((f) =>
-          COMPRESSIBLE_IMAGE_EXTS.has(getFileExt(f.name)),
-        ).length;
-        pmxStatus.textContent = formatTemplate(text.optimizingTextures, {
-          done: 0,
-          total: compressibleTotal,
-        });
-        filesToConvert = await compressImagesToAvif(
+        const cachedResults = collectCachedPreparedImages(
           stagedAllFiles,
-          (done, total) => {
-            pmxStatus.textContent = formatTemplate(text.optimizingTextures, {
-              done,
-              total,
-            });
-          },
-          compressionMode === "lossy" ? compressToAvifSet : undefined,
-          { forceAvif: pmxForceAvifInput.checked },
+          resolvePreparedParams,
+          pmxPreparedImageCache,
         );
+        const uncachedCompressible = stagedAllFiles.filter(
+          (f) =>
+            !cachedResults.has(f) &&
+            COMPRESSIBLE_IMAGE_EXTS.has(getFileExt(f.name)),
+        );
+        if (uncachedCompressible.length === 0) {
+          // Full cache hit: no texture needs to be re-encoded.
+          filesToConvert = stagedAllFiles.map(
+            (file) => cachedResults.get(file) ?? file,
+          );
+        } else {
+          const partition = partitionForCachedCompression(
+            stagedAllFiles,
+            (file) => cachedResults.get(file),
+          );
+          pmxStatus.textContent = formatTemplate(text.optimizingTextures, {
+            done: 0,
+            total: uncachedCompressible.length,
+          });
+          const processedFiles = await compressImagesToAvif(
+            partition.filesToProcess,
+            (done, total) => {
+              pmxStatus.textContent = formatTemplate(text.optimizingTextures, {
+                done,
+                total,
+              });
+            },
+            compressionMode === "lossy"
+              ? new Set<File>(
+                  uncachedCompressible.filter((f) => compressToAvifSet.has(f)),
+                )
+              : undefined,
+            { forceAvif },
+          );
+          partition.filesToProcess.forEach((file, index) => {
+            const params = resolvePreparedParams(file);
+            if (params !== null) {
+              pmxPreparedImageCache.set(file, params, processedFiles[index]);
+            }
+          });
+          filesToConvert = mergeCompressionResults(partition, processedFiles);
+        }
       }
 
       pmxStatus.textContent = viewStrings.statusConverting;
@@ -2497,6 +2645,7 @@ export function mountConverterView(
       renderFileList();
       const outName = `${stripExt(stagedPmxFile.name)}.bpmx`;
       downloadAs(bpmxBuffer, outName, "application/octet-stream");
+      pmxRedownload.retain(bpmxBuffer, outName, "application/octet-stream");
       pmxStatus.textContent = formatTemplate(text.downloadedStatus, {
         file: outName,
       });
@@ -2531,6 +2680,12 @@ export function mountConverterView(
     container.querySelector<HTMLSpanElement>("#motion-status")!;
   const motionSummary =
     container.querySelector<HTMLPreElement>("#motion-summary")!;
+  const motionRedownloadBtn =
+    container.querySelector<HTMLButtonElement>("#motion-redownload")!;
+  const motionRedownload = createRedownloadControl(
+    "motion2bvmd",
+    motionRedownloadBtn,
+  );
 
   let stagedMotionFiles: File[] = [];
 
@@ -2564,6 +2719,7 @@ export function mountConverterView(
       removeBtn.textContent = text.remove;
       removeBtn.addEventListener("click", () => {
         stagedMotionFiles = stagedMotionFiles.filter((f) => f !== file);
+        motionRedownload.invalidate();
         renderMotionFileList();
         syncMotionAvailability();
       });
@@ -2575,6 +2731,7 @@ export function mountConverterView(
 
   function setStagedMotionFiles(files: File[]): void {
     stagedMotionFiles = files;
+    motionRedownload.invalidate();
     renderMotionFileList();
     if (stagedMotionFiles.length === 1) {
       const file = stagedMotionFiles[0]!;
@@ -2593,6 +2750,7 @@ export function mountConverterView(
   function setMotionBusy(nextBusy: boolean): void {
     motionFileBtn.disabled = nextBusy;
     motionFileInput.disabled = nextBusy;
+    motionRedownloadBtn.disabled = nextBusy;
     motionConvertBtn.disabled = nextBusy || stagedMotionFiles.length === 0;
     motionDropZone.classList.toggle("drop-zone-disabled", nextBusy);
     motionFileListEl.classList.toggle("file-list-disabled", nextBusy);
@@ -2613,6 +2771,7 @@ export function mountConverterView(
 
   motionClearFilesBtn.addEventListener("click", () => {
     stagedMotionFiles = [];
+    motionRedownload.invalidate();
     renderMotionFileList();
     syncMotionAvailability();
   });
@@ -2643,9 +2802,15 @@ export function mountConverterView(
       renderMotionSummary(motionSummary, result.summary);
       const baseName =
         result.outputBaseName ?? stripExt(stagedMotionFiles[0]!.name);
-      downloadAs(result.buffer, `${baseName}.bvmd`, "application/octet-stream");
+      const bvmdName = `${baseName}.bvmd`;
+      downloadAs(result.buffer, bvmdName, "application/octet-stream");
+      motionRedownload.retain(
+        result.buffer,
+        bvmdName,
+        "application/octet-stream",
+      );
       motionStatus.textContent = formatTemplate(text.downloadedStatus, {
-        file: `${baseName}.bvmd`,
+        file: bvmdName,
       });
     } catch (err) {
       motionStatus.textContent = `${statusErrorPrefix}: ${err instanceof Error ? err.message : String(err)}`;
@@ -2655,6 +2820,7 @@ export function mountConverterView(
   });
 
   syncMotionAvailability();
+  motionRedownload.sync();
 
   // ── BVMD → VMD ──────────────────────────────────────────────────────────
 
@@ -2678,6 +2844,13 @@ export function mountConverterView(
   const bvmdMotionSummary = container.querySelector<HTMLPreElement>(
     "#bvmd-motion-summary",
   )!;
+  const bvmdMotionRedownloadBtn = container.querySelector<HTMLButtonElement>(
+    "#bvmd-motion-redownload",
+  )!;
+  const bvmdMotionRedownload = createRedownloadControl(
+    "bvmd2vmd",
+    bvmdMotionRedownloadBtn,
+  );
 
   let stagedBvmdMotionFile: File | null = null;
 
@@ -2690,6 +2863,7 @@ export function mountConverterView(
 
   function setStagedBvmdMotionFile(file: File): void {
     stagedBvmdMotionFile = file;
+    bvmdMotionRedownload.invalidate();
     bvmdMotionDropLabel.textContent = `${file.name} (${formatSize(file.size)})`;
     bvmdMotionStatus.textContent = `${statusReady} - ${file.name}`;
     syncBvmdMotionAvailability();
@@ -2698,6 +2872,7 @@ export function mountConverterView(
   function setBvmdMotionBusy(nextBusy: boolean): void {
     bvmdMotionFileBtn.disabled = nextBusy;
     bvmdMotionFileInput.disabled = nextBusy;
+    bvmdMotionRedownloadBtn.disabled = nextBusy;
     bvmdMotionConvertBtn.disabled = nextBusy || stagedBvmdMotionFile === null;
     bvmdMotionDropZone.classList.toggle("drop-zone-disabled", nextBusy);
   }
@@ -2738,17 +2913,19 @@ export function mountConverterView(
       renderMotionSummary(bvmdMotionSummary, result.summary);
       if (result.cameraVmd) {
         const zipName = `${stripExt(stagedBvmdMotionFile.name)}.legacy-vmd.zip`;
-        downloadAs(
-          buildZipFromFiles([
-            {
-              fileName: result.modelVmd.fileName,
-              data: result.modelVmd.buffer,
-            },
-            {
-              fileName: result.cameraVmd.fileName,
-              data: result.cameraVmd.buffer,
-            },
-          ]),
+        const legacyZipBuffer = buildZipFromFiles([
+          {
+            fileName: result.modelVmd.fileName,
+            data: result.modelVmd.buffer,
+          },
+          {
+            fileName: result.cameraVmd.fileName,
+            data: result.cameraVmd.buffer,
+          },
+        ]);
+        downloadAs(legacyZipBuffer, zipName, "application/zip");
+        bvmdMotionRedownload.retain(
+          legacyZipBuffer,
           zipName,
           "application/zip",
         );
@@ -2758,6 +2935,11 @@ export function mountConverterView(
         );
       } else {
         downloadAs(
+          result.modelVmd.buffer,
+          result.modelVmd.fileName,
+          "application/octet-stream",
+        );
+        bvmdMotionRedownload.retain(
           result.modelVmd.buffer,
           result.modelVmd.fileName,
           "application/octet-stream",
@@ -2774,6 +2956,7 @@ export function mountConverterView(
   });
 
   syncBvmdMotionAvailability();
+  bvmdMotionRedownload.sync();
 
   // ── Audio → WebM ────────────────────────────────────────────────────────
 
@@ -2791,6 +2974,12 @@ export function mountConverterView(
     container.querySelector<HTMLSpanElement>("#audio-status")!;
   const audioSummary =
     container.querySelector<HTMLPreElement>("#audio-summary")!;
+  const audioRedownloadBtn =
+    container.querySelector<HTMLButtonElement>("#audio-redownload")!;
+  const audioRedownload = createRedownloadControl(
+    "audio2webm",
+    audioRedownloadBtn,
+  );
 
   let stagedAudioFile: File | null = null;
 
@@ -2803,6 +2992,7 @@ export function mountConverterView(
 
   function setStagedAudioFile(file: File): void {
     stagedAudioFile = file;
+    audioRedownload.invalidate();
     audioDropLabel.textContent = `${file.name} (${formatSize(file.size)})`;
     audioStatus.textContent = `${statusReady} - ${file.name}`;
     syncAudioAvailability();
@@ -2811,6 +3001,7 @@ export function mountConverterView(
   function setAudioBusy(nextBusy: boolean): void {
     audioFileBtn.disabled = nextBusy;
     audioFileInput.disabled = nextBusy;
+    audioRedownloadBtn.disabled = nextBusy;
     audioConvertBtn.disabled = nextBusy || stagedAudioFile === null;
     audioDropZone.classList.toggle("drop-zone-disabled", nextBusy);
   }
@@ -2854,6 +3045,7 @@ export function mountConverterView(
       const result = await convertAudioFileToWebm(stagedAudioFile);
       renderAudioSummary(audioSummary, result.summary);
       downloadAs(result.buffer, result.outputFileName, result.mime);
+      audioRedownload.retain(result.buffer, result.outputFileName, result.mime);
       audioStatus.textContent = formatTemplate(text.downloadedStatus, {
         file: result.outputFileName,
       });
@@ -2865,6 +3057,7 @@ export function mountConverterView(
   });
 
   syncAudioAvailability();
+  audioRedownload.sync();
 
   // ── Card Creator ───────────────────────────────────────────────────────
 
@@ -2930,6 +3123,13 @@ export function mountConverterView(
   const cardCreateSummary = container.querySelector<HTMLPreElement>(
     "#cardcreate-summary",
   )!;
+  const cardCreateRedownloadBtn = container.querySelector<HTMLButtonElement>(
+    "#cardcreate-redownload",
+  )!;
+  const cardCreateRedownload = createRedownloadControl(
+    "cardcreate",
+    cardCreateRedownloadBtn,
+  );
   const cardCreateUInfSource = container.querySelector<HTMLParagraphElement>(
     "#cardcreate-uinf-source",
   )!;
@@ -3016,6 +3216,16 @@ export function mountConverterView(
   let cardCreateBusy = false;
   let cardCreateCompressToAvifSet: Set<File> = new Set();
   let cardCreateActualResultFiles: Map<string, File> | null = null;
+  // Remembers prepared (compressed) textures per file + parameter set so
+  // rebuilding a card only encodes files whose inputs actually changed.
+  const cardCreatePreparedImageCache = new PreparedImageCache();
+  // Keeps the invariant "cache ⊆ staged files": drops every cache entry whose
+  // file is no longer in the visible list (removed, replaced, …).
+  function pruneCardCreatePreparedImageCache(): void {
+    cardCreatePreparedImageCache.retainFileKeys(
+      new Set(stagedCardCreateFiles.map(getCardCreateFileKey)),
+    );
+  }
   let cardCreateUInfDraft = createEmptyUInfDraft();
   let cardCreateFBtnDrafts: FastButtonDraft[] = [createEmptyFastButtonDraft()];
   let cardCreateMoAiDraft = createEmptyMoAiDraft();
@@ -3185,6 +3395,8 @@ export function mountConverterView(
 
   function clearCardCreateActualResultFiles(): void {
     cardCreateActualResultFiles = null;
+    // Any staged-file/option mutation also invalidates the retained card PNG.
+    cardCreateRedownload.invalidate();
   }
 
   function updateCardCreateLoadedState(preferSelectionMessage = false): void {
@@ -4640,6 +4852,7 @@ export function mountConverterView(
     cardCreateCompressMode.disabled = nextBusy;
     cardCreateDropZone.classList.toggle("drop-zone-disabled", nextBusy);
     cardCreateFileList.classList.toggle("file-list-disabled", nextBusy);
+    cardCreateRedownloadBtn.disabled = nextBusy;
     tabBtns.forEach((btn) => {
       btn.disabled = nextBusy;
     });
@@ -4660,6 +4873,8 @@ export function mountConverterView(
     cardCreateBusy = false;
     cardCreateCompressToAvifSet = new Set();
     cardCreateActualResultFiles = null;
+    cardCreateRedownload.invalidate();
+    cardCreatePreparedImageCache.clear();
     cardCreateUInfDraft = createEmptyUInfDraft();
     cardCreateFBtnDrafts = [createEmptyFastButtonDraft()];
     cardCreateMoAiDraft = createEmptyMoAiDraft();
@@ -4854,6 +5069,7 @@ export function mountConverterView(
           (candidate) => candidate !== file,
         );
         cardCreateFileSeqByKey.delete(getCardCreateFileKey(file));
+        pruneCardCreatePreparedImageCache();
         if (selectedCardCreateBaseImage === file) {
           selectedCardCreateBaseImage = null;
         }
@@ -4916,11 +5132,17 @@ export function mountConverterView(
           configurable: true,
         });
         cardCreateDisplayKeyOverrides.set(file, key);
+      } else if (existing !== undefined && existing !== file) {
+        // Re-drop under an existing key: the new File object replaces the old
+        // one, so prepared results recorded for this key are stale.
+        cardCreatePreparedImageCache.evictFile(key);
       }
       merged.set(getCardCreateFileKey(file), file);
     }
 
     const mergedKeys = new Set(merged.keys());
+    // Drop cached results for keys that are no longer staged at all.
+    cardCreatePreparedImageCache.retainFileKeys(mergedKeys);
     for (const key of Array.from(cardCreateFileSeqByKey.keys())) {
       if (!mergedKeys.has(key)) cardCreateFileSeqByKey.delete(key);
     }
@@ -5051,6 +5273,8 @@ export function mountConverterView(
       stagedCardCreateFiles = stagedCardCreateFiles.filter(
         (file) => file !== selectedCardCreateBaseImage,
       );
+      // The removed file must not keep any prepared results alive.
+      pruneCardCreatePreparedImageCache();
     }
 
     cardCreatePreferDefaultBaseImage = true;
@@ -5234,6 +5458,28 @@ export function mountConverterView(
       const defaultBaseImageBuffer = selectedCardCreateBaseImage
         ? undefined
         : await getDefaultCardCreateBaseImageBuffer();
+      const compressionMode = cardCreateCompressMode.value as
+        | "lossless"
+        | "lossy"
+        | "raw";
+      const forceAvif = cardCreateForceAvifInput.checked;
+      const resolvePreparedParams = (
+        file: File,
+      ): PreparedImageParams | null => {
+        if (!isCardCreateTextureCandidate(file)) return null;
+        return {
+          compressionMode,
+          forceAvif,
+          isLossyTarget:
+            compressionMode === "lossy" &&
+            cardCreateCompressToAvifSet.has(file),
+        };
+      };
+      const cachedImageConversions = collectCachedPreparedImages(
+        filesForBuild,
+        resolvePreparedParams,
+        cardCreatePreparedImageCache,
+      );
       const result = await createCardPngFromFiles(filesForBuild, {
         baseImageFile: selectedCardCreateBaseImage,
         defaultBaseImageBuffer,
@@ -5241,19 +5487,24 @@ export function mountConverterView(
         metadataOverrides: collectCardCreateMetadataOverrides(),
         voiceCloneSampleFiles:
           voiceCloneSampleFiles.length > 0 ? voiceCloneSampleFiles : undefined,
-        compressionMode: cardCreateCompressMode.value as
-          | "lossless"
-          | "lossy"
-          | "raw",
-        forceAvif: cardCreateForceAvifInput.checked,
+        compressionMode,
+        forceAvif,
         lossyImageTargets:
-          cardCreateCompressMode.value === "lossy"
+          compressionMode === "lossy"
             ? new Set(
                 Array.from(cardCreateCompressToAvifSet).filter((file) =>
                   filesForBuild.includes(file),
                 ),
               )
             : undefined,
+        cachedImageConversions:
+          cachedImageConversions.size > 0 ? cachedImageConversions : undefined,
+        onImageConverted: (source, prepared) => {
+          const params = resolvePreparedParams(source);
+          if (params !== null) {
+            cardCreatePreparedImageCache.set(source, params, prepared);
+          }
+        },
         onImageProgress: (done, total) => {
           cardCreateStatus.textContent = formatTemplate(
             text.optimizingTextures,
@@ -5273,6 +5524,11 @@ export function mountConverterView(
       renderCardCreateSummary(cardCreateSummary, result.report);
       renderCardCreateFileList();
       downloadAs(result.pngBuffer, result.report.outputFileName, "image/png");
+      cardCreateRedownload.retain(
+        result.pngBuffer,
+        result.report.outputFileName,
+        "image/png",
+      );
       cardCreateStatus.textContent = formatTemplate(text.downloadedStatus, {
         file: result.report.outputFileName,
       });
@@ -5290,6 +5546,18 @@ export function mountConverterView(
   renderWebmAudioSelect();
   void refreshCardCreateMetadataEditors();
   syncCardCreateBuildAvailability(false);
+  // Metadata drafts (uInf/moAi fields, fast-button, morph and voice rows) and
+  // the WebM selection affect the built card as well: invalidate the retained
+  // download on any of those edits (delegated to the panel).
+  const cardCreatePanel =
+    container.querySelector<HTMLElement>("#tab-cardcreate")!;
+  cardCreatePanel.addEventListener("input", () =>
+    cardCreateRedownload.invalidate(),
+  );
+  cardCreatePanel.addEventListener("change", () =>
+    cardCreateRedownload.invalidate(),
+  );
+  cardCreateRedownload.sync();
 
   // ── Card Extract → ZIP ─────────────────────────────────────────────────
 
@@ -5325,6 +5593,13 @@ export function mountConverterView(
   const cardExtractSummary = container.querySelector<HTMLPreElement>(
     "#cardextract-summary",
   )!;
+  const cardExtractRedownloadBtn = container.querySelector<HTMLButtonElement>(
+    "#cardextract-redownload",
+  )!;
+  const cardExtractRedownload = createRedownloadControl(
+    "cardextract",
+    cardExtractRedownloadBtn,
+  );
 
   let stagedCardExtractFile: File | null = null;
 
@@ -5337,6 +5612,7 @@ export function mountConverterView(
 
   function setStagedCardExtractFile(file: File): void {
     stagedCardExtractFile = file;
+    cardExtractRedownload.invalidate();
     cardExtractDropLabel.textContent = `${file.name} (${formatSize(file.size)})`;
     cardExtractStatus.textContent = `${statusReady} - ${file.name}`;
     syncCardExtractAvailability();
@@ -5351,6 +5627,7 @@ export function mountConverterView(
     cardExtractRestoreOriginalFormatsInput.disabled =
       nextBusy || !cardExtractConvertLegacyInput.checked;
     cardExtractExtractBtn.disabled = nextBusy || stagedCardExtractFile === null;
+    cardExtractRedownloadBtn.disabled = nextBusy;
     tabBtns.forEach((btn) => {
       btn.disabled = nextBusy;
     });
@@ -5419,9 +5696,11 @@ export function mountConverterView(
         },
       });
       renderCardExtractSummary(cardExtractSummary, result.report);
-      downloadAs(
+      const cardExtractZipName = `${stripExt(stagedCardExtractFile.name)}.card-extract.zip`;
+      downloadAs(result.zipBuffer, cardExtractZipName, "application/zip");
+      cardExtractRedownload.retain(
         result.zipBuffer,
-        `${stripExt(stagedCardExtractFile.name)}.card-extract.zip`,
+        cardExtractZipName,
         "application/zip",
       );
       cardExtractStatus.textContent = formatTemplate(
@@ -5439,6 +5718,16 @@ export function mountConverterView(
 
   syncCardExtractLegacyOptions();
   syncCardExtractAvailability();
+  // Legacy-conversion option changes invalidate the retained zip.
+  const cardExtractPanel =
+    container.querySelector<HTMLElement>("#tab-cardextract")!;
+  cardExtractPanel.addEventListener("input", () =>
+    cardExtractRedownload.invalidate(),
+  );
+  cardExtractPanel.addEventListener("change", () =>
+    cardExtractRedownload.invalidate(),
+  );
+  cardExtractRedownload.sync();
 
   // ── Theme update (without DOM rebuild) ────────────────────────────────────
   function updateTheme(nextTheme: AppTheme): void {

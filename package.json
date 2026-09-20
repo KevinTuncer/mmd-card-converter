@@ -36,7 +36,8 @@
     "babylon-mmd": "^1.3.0",
     "encoding-japanese": "^2.4.0",
     "fflate": "^0.8.3",
-    "mediabunny": "^1.58.1"
+    "mediabunny": "^1.58.1",
+    "pako": "^2"
   },
   "patchedDependencies": {
     "babylon-mmd@1.3.0": "patches/babylon-mmd@1.3.0.patch"

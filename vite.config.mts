@@ -20,6 +20,7 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": normalizePath(resolve(import.meta.dirname, "src")),
+      "@lib": normalizePath(resolve(import.meta.dirname, "lib")),
     },
   },
   optimizeDeps: {

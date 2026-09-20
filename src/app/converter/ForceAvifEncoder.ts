@@ -68,9 +68,45 @@ function decodeBmpToImageData(buffer: ArrayBuffer): ImageData {
   return makeImageData(rgba, width, height);
 }
 
+function isPngBuffer(bytes: Uint8Array): boolean {
+  return (
+    bytes[0] === 0x89 &&
+    bytes[1] === 0x50 &&
+    bytes[2] === 0x4e &&
+    bytes[3] === 0x47
+  );
+}
+
+async function isPngFile(file: File): Promise<boolean> {
+  return isPngBuffer(new Uint8Array(await file.slice(0, 4).arrayBuffer()));
+}
+
+/**
+ * Decodes a PNG without going through a 2D canvas. The canvas stores pixels
+ * premultiplied, which irreversibly shifts the RGB values of semi-transparent
+ * pixels and zeroes the RGB of fully transparent pixels. UPNG returns the
+ * straight-alpha RGBA values exactly as stored in the file.
+ */
+async function decodePngToImageData(buffer: ArrayBuffer): Promise<ImageData> {
+  const { default: UPNG } = await import("@lib/upng");
+  const png = UPNG.decode(buffer);
+  const frame = UPNG.toRGBA8(png)[0];
+  return makeImageData(new Uint8ClampedArray(frame), png.width, png.height);
+}
+
 async function decodeFileToImageData(file: File): Promise<ImageData> {
+  // PNGs must never take the canvas path: canvas premultiplication would
+  // alter the pixel values that the "lossless" AVIF encode then stores.
+  if (await isPngFile(file)) {
+    return decodePngToImageData(await file.arrayBuffer());
+  }
+
   if (typeof createImageBitmap === "function") {
-    const bitmap = await createImageBitmap(file);
+    const bitmap = await createImageBitmap(file, {
+      // Never apply ICC/gamma conversion implicitly: the raw pixel values are
+      // what gets encoded, and the AVIF does not carry the PNG's ICC profile.
+      colorSpaceConversion: "none",
+    });
     try {
       if (typeof OffscreenCanvas !== "undefined") {
         const canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
@@ -117,6 +153,9 @@ export async function encodeToAvifViaJsquash(
       : {
           lossless: false,
           quality: Math.max(0, Math.min(100, Math.round(quality * 100))),
+          // 4:4:4 statt 4:2:0 (jsquash-Default): ohne Chroma-Subsampling
+          // färben sich neutrale Grauflächen nicht von farbigen Nachbarn ein.
+          subsample: 3,
         },
   );
 

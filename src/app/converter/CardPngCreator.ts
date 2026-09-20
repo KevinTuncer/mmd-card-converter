@@ -3,6 +3,10 @@ import { compressGzip } from "@/app/converter/GzipCodec";
 import { convertMotionFileToBvmd } from "@/app/converter/MmdMotionConverter";
 import { convertPmxToBpmx } from "@/app/converter/PmxToBpmxConverter";
 import { compressImagesToAvif } from "@/app/converter/ImageCompressor";
+import {
+  mergeCompressionResults,
+  partitionForCachedCompression,
+} from "@/app/converter/PreparedImageCache";
 import type { ConverterWarning } from "@/app/converter/types";
 import { getErrorStrings } from "@/i18n/localization";
 import packageInfo from "../../../package.json";
@@ -78,6 +82,10 @@ export interface CardPngCreateOptions {
   compressionMode?: CardCreateCompressionMode;
   forceAvif?: boolean;
   lossyImageTargets?: ReadonlySet<File>;
+  /** Previously prepared image results (source → compressed) that can be reused instead of re-encoding. */
+  cachedImageConversions?: ReadonlyMap<File, File>;
+  /** Fired for every image that was freshly processed (not served from `cachedImageConversions`). */
+  onImageConverted?: (source: File, result: File) => void;
   onImageProgress?: (done: number, total: number) => void;
   metadataOverrides?: Partial<Record<MetadataChunkType, unknown>>;
   voiceCloneSampleFiles?: File[];
@@ -597,7 +605,7 @@ async function preparePmxFilesForCardConversion(
 }> {
   const pmxReferenceFiles = collectPmxReferenceFiles(files);
   const compressionMode = options.compressionMode ?? "lossless";
-  const preparedImageFiles = pmxReferenceFiles
+  const passthroughPreparedImageFiles = pmxReferenceFiles
     .filter((file) =>
       COMPRESSIBLE_IMAGE_EXTS.has(getFileExt(getFilePath(file))),
     )
@@ -609,35 +617,61 @@ async function preparePmxFilesForCardConversion(
   if (compressionMode === "raw") {
     return {
       filesForConversion: pmxReferenceFiles,
-      preparedImageFiles,
+      preparedImageFiles: passthroughPreparedImageFiles,
     };
   }
 
-  const compressibleFiles = pmxReferenceFiles.filter((file) =>
-    COMPRESSIBLE_IMAGE_EXTS.has(getFileExt(getFilePath(file))),
-  );
-  const lossyTargets =
-    compressionMode === "lossy"
-      ? options.lossyImageTargets
-        ? new Set<File>(
-            compressibleFiles.filter((file) =>
-              options.lossyImageTargets?.has(file),
-            ),
-          )
-        : new Set<File>(compressibleFiles)
-      : undefined;
+  const isCompressible = (file: File): boolean =>
+    COMPRESSIBLE_IMAGE_EXTS.has(getFileExt(getFilePath(file)));
 
-  const filesForConversion = await compressImagesToAvif(
-    pmxReferenceFiles,
-    options.onImageProgress,
-    lossyTargets,
-    { forceAvif: options.forceAvif ?? false },
+  // Reuse cached compression results whenever the file identity and every
+  // conversion parameter are unchanged; only the remaining files are encoded.
+  const partition = partitionForCachedCompression(pmxReferenceFiles, (file) =>
+    options.cachedImageConversions?.get(file),
   );
+
+  let filesForConversion: File[];
+  const uncachedCompressible = partition.filesToProcess.filter(isCompressible);
+  if (uncachedCompressible.length === 0) {
+    // All images are served from the cache. Remaining filesToProcess entries
+    // are non-image pass-throughs, which the compressor would return
+    // unchanged anyway — skip the call entirely.
+    filesForConversion = mergeCompressionResults(
+      partition,
+      partition.filesToProcess,
+    );
+  } else {
+    const lossyTargets =
+      compressionMode === "lossy"
+        ? options.lossyImageTargets
+          ? new Set<File>(
+              uncachedCompressible.filter((file) =>
+                options.lossyImageTargets?.has(file),
+              ),
+            )
+          : new Set<File>(uncachedCompressible)
+        : undefined;
+
+    const processedFiles = await compressImagesToAvif(
+      partition.filesToProcess,
+      options.onImageProgress,
+      lossyTargets,
+      { forceAvif: options.forceAvif ?? false },
+    );
+    filesForConversion = mergeCompressionResults(partition, processedFiles);
+    if (options.onImageConverted) {
+      processedFiles.forEach((result, index) => {
+        const source = partition.filesToProcess[index];
+        if (!isCompressible(source)) return;
+        options.onImageConverted?.(source, result);
+      });
+    }
+  }
 
   return {
     filesForConversion,
     preparedImageFiles: pmxReferenceFiles.flatMap((file, index) => {
-      if (!COMPRESSIBLE_IMAGE_EXTS.has(getFileExt(getFilePath(file)))) {
+      if (!isCompressible(file)) {
         return [];
       }
 
