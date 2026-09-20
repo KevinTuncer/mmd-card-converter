@@ -65,8 +65,8 @@ If multiple model files are found in a folder or ZIP, the CLI will interactively
 
 - `bpmx-to-pmx <file>`: Convert BPMX model to PMX (output: ZIP)
 - `pmx-to-bpmx <file>`: Convert PMX model to BPMX (reads textures from same directory or ZIP)
-- `motion-to-bvmd <file>`: Convert VMD/VPD/VMP motion to BVMD
-- `bvmd-to-vmd <file>`: Convert BVMD motion to VMD
+- `motion-to-bvmd <files...>`: Convert VMD/VPD/VMP motion(s) to BVMD; multiple `.vmd` files (model + camera) are merged into one BVMD
+- `bvmd-to-vmd <file>`: Convert BVMD motion to VMD (model + camera as separate files; `--combined` for a single file)
 - `audio-to-webm <file>`: Convert WAV/MP3 audio to WebM (Opus)
 - `card-extract <file>`: Extract files from an ero.dance card PNG
 - `card-create <files...>`: Create an ero.dance card PNG from input files, folders, or ZIPs

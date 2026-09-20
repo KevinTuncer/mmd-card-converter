@@ -4,7 +4,7 @@ import { convertBpmxToPmx } from "@/app/converter/BpmxToPmxConverter";
 import { parseBpmx } from "@/app/converter/BpmxReaderAdapter";
 import {
   convertBvmdFileToLegacyVmdFiles,
-  convertMotionFileToBvmd,
+  convertMotionFilesToBvmd,
   type MotionSummary,
 } from "@/app/converter/MmdMotionConverter";
 import { convertPmxToBpmx } from "@/app/converter/PmxToBpmxConverter";
@@ -563,8 +563,8 @@ function getConverterViewText(locale: AppLocale): ConverterViewText {
       "Load the complete PMX model folder (PMX + textures), either as a folder or a ZIP archive.",
     motionTitle: "Convert VMD / VPD / VMP-like pose to BVMD",
     motionHint:
-      "Loads MMD motions (.vmd) or text-based pose files (.vpd, .vmp) and converts them to .bvmd.",
-    motionDropLabel: "Drop motion file here, or",
+      "Loads MMD motions (.vmd) or text-based pose files (.vpd, .vmp) and converts them to .bvmd. Multiple .vmd files (e.g. model and camera animation) are merged into a single BVMD.",
+    motionDropLabel: "Drop motion file(s) here, or",
     motionSummaryTitle: "Motion summary",
     bvmdTitle: "Convert BVMD to VMD",
     bvmdHint:
@@ -736,8 +736,8 @@ function getConverterViewText(locale: AppLocale): ConverterViewText {
       "Lade den kompletten PMX-Modell-Ordner (PMX + Texturen) - entweder als Ordner oder als ZIP-Archiv.",
     motionTitle: "VMD / VPD / VMP-ähnliche Pose zu BVMD konvertieren",
     motionHint:
-      "Lädt MMD-Motions (.vmd) oder textbasierte Pose-Dateien (.vpd, .vmp) und wandelt sie in .bvmd um.",
-    motionDropLabel: "Motion-Datei hier ablegen oder",
+      "Lädt MMD-Motions (.vmd) oder textbasierte Pose-Dateien (.vpd, .vmp) und wandelt sie in .bvmd um. Mehrere .vmd-Dateien (z. B. Figuren- und Kamera-Animation) werden zu einer BVMD zusammengeführt.",
+    motionDropLabel: "Motion-Datei(en) hier ablegen oder",
     motionSummaryTitle: "Motion-Übersicht",
     bvmdTitle: "BVMD zu VMD konvertieren",
     bvmdHint:
@@ -912,7 +912,7 @@ function getConverterViewText(locale: AppLocale): ConverterViewText {
       "PMX モデル一式（PMX とテクスチャ）を、フォルダーまたは ZIP として読み込みます。",
     motionTitle: "VMD / VPD / VMP 系ポーズを BVMD に変換",
     motionHint:
-      "MMD モーション（.vmd）またはテキストベースのポーズファイル（.vpd、.vmp）を .bvmd に変換します。",
+      "MMD モーション（.vmd）またはテキストベースのポーズファイル（.vpd、.vmp）を .bvmd に変換します。複数の .vmd ファイル（モデル・カメラなど）は 1 つの BVMD に統合されます。",
     motionDropLabel: "ここにモーションファイルをドロップするか、",
     motionSummaryTitle: "モーション概要",
     bvmdTitle: "BVMD を VMD に変換",
@@ -1091,7 +1091,7 @@ function getConverterViewText(locale: AppLocale): ConverterViewText {
       "加载完整的 PMX 模型文件夹（PMX + 纹理），可作为文件夹或 ZIP 压缩包。",
     motionTitle: "将类似 VMD / VPD / VMP 的姿态转换为 BVMD",
     motionHint:
-      "加载 MMD 动作（.vmd）或文本姿态文件（.vpd、.vmp），并转换为 .bvmd。",
+      "加载 MMD 动作（.vmd）或文本姿态文件（.vpd、.vmp），并转换为 .bvmd。多个 .vmd 文件（如人物与相机动画）将合并为一个 BVMD。",
     motionDropLabel: "将动作文件拖到这里，或",
     motionSummaryTitle: "动作概览",
     bvmdTitle: "将 BVMD 转换为 VMD",
@@ -1259,7 +1259,7 @@ function getConverterViewText(locale: AppLocale): ConverterViewText {
       "載入完整的 PMX 模型資料夾（PMX + 材質），可使用資料夾或 ZIP 壓縮檔。",
     motionTitle: "將類似 VMD / VPD / VMP 的姿勢轉換為 BVMD",
     motionHint:
-      "載入 MMD 動作（.vmd）或文字姿勢檔（.vpd、.vmp），並轉換為 .bvmd。",
+      "載入 MMD 動作（.vmd）或文字姿勢檔（.vpd、.vmp），並轉換為 .bvmd。多個 .vmd 檔案（如人物與攝影機動畫）將合併為一個 BVMD。",
     motionDropLabel: "將動作檔拖曳到這裡，或",
     motionSummaryTitle: "動作概覽",
     bvmdTitle: "將 BVMD 轉換為 VMD",
@@ -1578,9 +1578,17 @@ export function mountConverterView(
             <span id="motion-drop-label">${text.motionDropLabel}</span>
           </div>
           <div class="drop-zone-buttons">
-            <button class="drop-btn" id="motion-file-btn" type="button">🎞️ ${text.loadFile}</button>
+            <button class="drop-btn" id="motion-file-btn" type="button">🎞️ ${text.loadFiles}</button>
           </div>
-          <input id="motion-file" type="file" accept=".vmd,.vpd,.vmp,.bvmd,text/plain,application/octet-stream" hidden />
+          <input id="motion-file" type="file" accept=".vmd,.vpd,.vmp,.bvmd,text/plain,application/octet-stream" multiple hidden />
+        </div>
+
+        <div id="motion-file-list-wrap" class="file-list-wrap" hidden>
+          <div class="file-list-header">
+            <h3>${text.detectedFiles}</h3>
+            <button class="drop-btn" id="motion-clear-files" type="button">${text.clearAll}</button>
+          </div>
+          <ul class="file-list" id="motion-file-list"></ul>
         </div>
 
         <div class="actions">
@@ -2509,6 +2517,14 @@ export function mountConverterView(
     container.querySelector<HTMLInputElement>("#motion-file")!;
   const motionDropLabel =
     container.querySelector<HTMLSpanElement>("#motion-drop-label")!;
+  const motionFileListWrap = container.querySelector<HTMLDivElement>(
+    "#motion-file-list-wrap",
+  )!;
+  const motionFileListEl =
+    container.querySelector<HTMLUListElement>("#motion-file-list")!;
+  const motionClearFilesBtn = container.querySelector<HTMLButtonElement>(
+    "#motion-clear-files",
+  )!;
   const motionConvertBtn =
     container.querySelector<HTMLButtonElement>("#motion-convert")!;
   const motionStatus =
@@ -2516,34 +2532,89 @@ export function mountConverterView(
   const motionSummary =
     container.querySelector<HTMLPreElement>("#motion-summary")!;
 
-  let stagedMotionFile: File | null = null;
+  let stagedMotionFiles: File[] = [];
 
   function syncMotionAvailability(): void {
-    motionConvertBtn.disabled = stagedMotionFile === null;
-    if (stagedMotionFile === null) {
+    motionConvertBtn.disabled = stagedMotionFiles.length === 0;
+    if (stagedMotionFiles.length === 0) {
       motionStatus.textContent = EMPTY_INPUT_STATUS;
+      motionDropLabel.textContent = text.motionDropLabel;
     }
   }
 
-  function setStagedMotionFile(file: File): void {
-    stagedMotionFile = file;
-    motionDropLabel.textContent = `${file.name} (${formatSize(file.size)})`;
-    motionStatus.textContent = `${statusReady} - ${file.name}`;
+  function renderMotionFileList(): void {
+    motionFileListEl.innerHTML = "";
+    motionFileListWrap.hidden = stagedMotionFiles.length === 0;
+    motionClearFilesBtn.hidden = stagedMotionFiles.length === 0;
+    for (const file of stagedMotionFiles) {
+      const li = document.createElement("li");
+      li.classList.add("other-entry");
+
+      const pathSpan = document.createElement("span");
+      pathSpan.className = "file-path";
+      pathSpan.textContent = file.name;
+
+      const meta = document.createElement("span");
+      meta.className = "file-meta";
+      meta.textContent = formatSize(file.size);
+
+      const removeBtn = document.createElement("button");
+      removeBtn.type = "button";
+      removeBtn.className = "drop-btn";
+      removeBtn.textContent = text.remove;
+      removeBtn.addEventListener("click", () => {
+        stagedMotionFiles = stagedMotionFiles.filter((f) => f !== file);
+        renderMotionFileList();
+        syncMotionAvailability();
+      });
+
+      li.append(pathSpan, meta, removeBtn);
+      motionFileListEl.append(li);
+    }
+  }
+
+  function setStagedMotionFiles(files: File[]): void {
+    stagedMotionFiles = files;
+    renderMotionFileList();
+    if (stagedMotionFiles.length === 1) {
+      const file = stagedMotionFiles[0]!;
+      motionDropLabel.textContent = `${file.name} (${formatSize(file.size)})`;
+      motionStatus.textContent = `${statusReady} - ${file.name}`;
+    } else if (stagedMotionFiles.length > 1) {
+      const loadedLabel = formatTemplate(text.filesLoadedLabel, {
+        count: stagedMotionFiles.length,
+      });
+      motionDropLabel.textContent = loadedLabel;
+      motionStatus.textContent = `${statusReady} - ${loadedLabel}`;
+    }
     syncMotionAvailability();
   }
 
   function setMotionBusy(nextBusy: boolean): void {
     motionFileBtn.disabled = nextBusy;
     motionFileInput.disabled = nextBusy;
-    motionConvertBtn.disabled = nextBusy || stagedMotionFile === null;
+    motionConvertBtn.disabled = nextBusy || stagedMotionFiles.length === 0;
     motionDropZone.classList.toggle("drop-zone-disabled", nextBusy);
+    motionFileListEl.classList.toggle("file-list-disabled", nextBusy);
+    motionClearFilesBtn.disabled = nextBusy;
+    motionFileListEl
+      .querySelectorAll<HTMLButtonElement>("button")
+      .forEach((btn) => {
+        btn.disabled = nextBusy;
+      });
   }
 
   motionFileBtn.addEventListener("click", () => motionFileInput.click());
   motionFileInput.addEventListener("change", () => {
-    const file = motionFileInput.files?.[0];
+    const picked = Array.from(motionFileInput.files ?? []);
     motionFileInput.value = "";
-    if (file) setStagedMotionFile(file);
+    if (picked.length > 0) setStagedMotionFiles(picked);
+  });
+
+  motionClearFilesBtn.addEventListener("click", () => {
+    stagedMotionFiles = [];
+    renderMotionFileList();
+    syncMotionAvailability();
   });
 
   motionDropZone.addEventListener("dragover", (e) => {
@@ -2556,27 +2627,25 @@ export function mountConverterView(
   motionDropZone.addEventListener("drop", (e) => {
     e.preventDefault();
     motionDropZone.classList.remove("drag-over");
-    const file = e.dataTransfer?.files[0];
-    if (file) setStagedMotionFile(file);
+    const dropped = Array.from(e.dataTransfer?.files ?? []);
+    if (dropped.length > 0) setStagedMotionFiles(dropped);
   });
 
   motionConvertBtn.addEventListener("click", async () => {
-    if (!stagedMotionFile) {
+    if (stagedMotionFiles.length === 0) {
       motionStatus.textContent = text.pleaseSelectMotion;
       return;
     }
     setMotionBusy(true);
     motionStatus.textContent = viewStrings.statusConverting;
     try {
-      const result = await convertMotionFileToBvmd(stagedMotionFile);
+      const result = await convertMotionFilesToBvmd(stagedMotionFiles);
       renderMotionSummary(motionSummary, result.summary);
-      downloadAs(
-        result.buffer,
-        `${stripExt(stagedMotionFile.name)}.bvmd`,
-        "application/octet-stream",
-      );
+      const baseName =
+        result.outputBaseName ?? stripExt(stagedMotionFiles[0]!.name);
+      downloadAs(result.buffer, `${baseName}.bvmd`, "application/octet-stream");
       motionStatus.textContent = formatTemplate(text.downloadedStatus, {
-        file: `${stripExt(stagedMotionFile.name)}.bvmd`,
+        file: `${baseName}.bvmd`,
       });
     } catch (err) {
       motionStatus.textContent = `${statusErrorPrefix}: ${err instanceof Error ? err.message : String(err)}`;

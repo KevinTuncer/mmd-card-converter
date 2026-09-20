@@ -36,7 +36,7 @@ import {
   ensurePmxLoaderRegistered,
 } from "./src/app/converter/PmxToBpmxConverter";
 import {
-  convertMotionFileToBvmd,
+  convertMotionFilesToBvmd,
   convertBvmdFileToVmd,
   convertBvmdFileToLegacyVmdFiles,
 } from "./src/app/converter/MmdMotionConverter";
@@ -67,8 +67,11 @@ Usage:
 Commands:
   bpmx-to-pmx <file>         Convert BPMX model to PMX (output: ZIP with PMX + textures)
   pmx-to-bpmx <file>         Convert PMX model to BPMX (reads textures from same directory)
-  motion-to-bvmd <file>      Convert VMD/VPD/VMP motion to BVMD
-  bvmd-to-vmd <file>         Convert BVMD motion to VMD
+  motion-to-bvmd <files...>    Convert VMD/VPD/VMP motion(s) to BVMD; multiple
+                             .vmd files (e.g. model + camera) are merged
+                             into one BVMD
+  bvmd-to-vmd <file>         Convert BVMD motion to VMD (model + camera as
+                             separate files)
   audio-to-webm <file>       Convert WAV/MP3 audio to WebM (Opus)
   card-extract <file>        Extract files from an ero.dance card PNG
   card-create <files...>     Create an ero.dance card PNG from input files
@@ -90,9 +93,10 @@ Command Options:
     --force-avif             Force real AVIF output via @jsquash/avif (default: off)
 
   bvmd-to-vmd:
-    --split-camera           Write model and camera animation as separate VMD
-                             files (<name>.vmd + <name>_camera.vmd); place the
-                             flag after the input path and -o value
+    --combined               Write one combined VMD containing model and camera
+                             animation (default: separate <name>.vmd +
+                             <name>_camera.vmd files; --split-camera is the
+                             legacy spelling and stays accepted)
 
   card-extract:
     --convert-legacy         Convert embedded BPMX/BVMD to legacy PMX/VMD (default: off)
@@ -108,8 +112,9 @@ Examples:
   bun run cli.ts bpmx-to-pmx model.bpmx
   bun run cli.ts pmx-to-bpmx model.pmx -o output.bpmx
   bun run cli.ts motion-to-bvmd dance.vmd
+  bun run cli.ts motion-to-bvmd dance.vmd dance_camera.vmd -o merged.bvmd
   bun run cli.ts bvmd-to-vmd dance.bvmd
-  bun run cli.ts bvmd-to-vmd dance.bvmd --split-camera -o out.vmd
+  bun run cli.ts bvmd-to-vmd dance.bvmd --combined -o out.vmd
   bun run cli.ts audio-to-webm song.wav
   bun run cli.ts card-extract ero.dance.png
   bun run cli.ts card-create model.bpmx motion.bvmd --base-image cover.png
@@ -265,22 +270,45 @@ async function cmdPmxToBpmx(args: ParsedArgs): Promise<void> {
 }
 
 async function cmdMotionToBvmd(args: ParsedArgs): Promise<void> {
-  const inputPath = args.positional[0];
-  if (!inputPath) {
+  const inputPaths = args.positional;
+  if (inputPaths.length === 0) {
     console.error("Error: No input file specified.");
-    console.error("Usage: bun run cli.ts motion-to-bvmd <file.vmd|vpd|vmp>");
+    console.error(
+      "Usage: bun run cli.ts motion-to-bvmd <file.vmd|vpd|vmp> [more.vmd ...]",
+    );
     process.exit(1);
   }
 
-  console.log(`Reading ${inputPath} ...`);
-  const file = readFileAsFile(inputPath);
-  console.log(
-    `  Input: ${formatSize(file.size)} | Type: ${inputPath.split(".").pop()?.toLowerCase() ?? "unknown"}`,
-  );
-  console.log("Converting motion → BVMD ...");
-  const result = await convertMotionFileToBvmd(file);
+  const files: File[] = [];
+  for (const inputPath of inputPaths) {
+    console.log(`Reading ${inputPath} ...`);
+    const file = readFileAsFile(inputPath);
+    console.log(
+      `  Input: ${formatSize(file.size)} | Type: ${inputPath.split(".").pop()?.toLowerCase() ?? "unknown"}`,
+    );
+    files.push(file);
+  }
 
-  const outputPath = resolveOutputPath(inputPath, ".bvmd", args.options);
+  const isMerge = files.length > 1;
+  console.log(
+    isMerge
+      ? `Merging ${files.length} motions → BVMD ...`
+      : "Converting motion → BVMD ...",
+  );
+  const result = await convertMotionFilesToBvmd(files);
+
+  let outputPath: string;
+  if (args.options["output"]) {
+    outputPath = path.resolve(args.options["output"]);
+  } else if (isMerge) {
+    const firstDir = path.dirname(path.resolve(inputPaths[0]!));
+    outputPath = path.join(
+      firstDir,
+      `${result.outputBaseName ?? path.parse(inputPaths[0]!).name}.bvmd`,
+    );
+  } else {
+    outputPath = resolveOutputPath(inputPaths[0]!, ".bvmd", args.options);
+  }
   console.log(`Writing ${outputPath} ...`);
   writeFile(outputPath, result.buffer);
 
@@ -338,12 +366,14 @@ async function cmdBvmdToVmd(args: ParsedArgs): Promise<void> {
   const file = readFileAsFile(inputPath);
   console.log(`  Input: ${formatSize(file.size)}`);
 
-  if (args.flags.has("split-camera")) {
+  if (!args.flags.has("combined")) {
+    // Default: split into model + camera VMD files. --split-camera is the
+    // legacy spelling of this behavior and stays accepted as a no-op.
     await writeSplitCameraVmds(args, inputPath, file);
     return;
   }
 
-  console.log("Converting BVMD → VMD ...");
+  console.log("Converting BVMD → VMD (combined) ...");
   const result = await convertBvmdFileToVmd(file);
 
   const outputPath = resolveOutputPath(inputPath, ".vmd", args.options);

@@ -143,13 +143,46 @@ describe("CLI motion-to-bvmd", () => {
     expect(fs.existsSync(outputPath)).toBe(true);
     expect(fs.statSync(outputPath).size).toBeGreaterThan(0);
   });
+
+  it("merges multiple VMD files (model + camera) into one BVMD", () => {
+    // First split the fixture into model + camera VMD files (CLI default).
+    const modelPath = tmpPath("MergeSource.vmd");
+    const cameraPath = tmpPath("MergeSource_camera.vmd");
+    const splitResult = runCli([
+      "bvmd-to-vmd",
+      "public/example/TestMotion.bvmd",
+      "-o",
+      modelPath,
+    ]);
+    expect(splitResult.exitCode).toBe(0);
+    expect(fs.existsSync(modelPath)).toBe(true);
+    expect(fs.existsSync(cameraPath)).toBe(true);
+
+    const outputPath = tmpPath("MergedMotion.bvmd");
+    const result = runCli([
+      "motion-to-bvmd",
+      modelPath,
+      cameraPath,
+      "-o",
+      outputPath,
+    ]);
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toContain("Merging 2 motions");
+    expect(result.stdout).toContain("✓");
+    expect(fs.existsSync(outputPath)).toBe(true);
+
+    const magic = fs.readFileSync(outputPath).subarray(0, 4).toString("utf-8");
+    expect(magic).toBe("BVMD");
+  });
 });
 
 // ── bvmd-to-vmd ──────────────────────────────────────────────────────────────
 
 describe("CLI bvmd-to-vmd", () => {
-  it("converts TestMotion.bvmd to VMD", () => {
+  it("splits into model and camera VMD files by default", () => {
     const outputPath = tmpPath("TestMotion.vmd");
+    const cameraPath = tmpPath("TestMotion_camera.vmd");
     const result = runCli([
       "bvmd-to-vmd",
       "public/example/TestMotion.bvmd",
@@ -160,10 +193,38 @@ describe("CLI bvmd-to-vmd", () => {
     expect(result.exitCode).toBe(0);
     expect(result.stdout).toContain("✓");
     expect(fs.existsSync(outputPath)).toBe(true);
+    expect(fs.existsSync(cameraPath)).toBe(true);
 
     // Verify VMD magic bytes: "Vocaloid Motion Data"
-    const vmdData = fs.readFileSync(outputPath);
-    const header = vmdData.subarray(0, 30).toString("utf-8");
+    for (const filePath of [outputPath, cameraPath]) {
+      const header = fs
+        .readFileSync(filePath)
+        .subarray(0, 30)
+        .toString("utf-8");
+      expect(header).toContain("Vocaloid Motion Data");
+    }
+  });
+
+  it("writes a single combined VMD with --combined", () => {
+    const outputPath = tmpPath("CombinedMotion.vmd");
+    const cameraPath = tmpPath("CombinedMotion_camera.vmd");
+    const result = runCli([
+      "bvmd-to-vmd",
+      "public/example/TestMotion.bvmd",
+      "-o",
+      outputPath,
+      "--combined",
+    ]);
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toContain("combined");
+    expect(fs.existsSync(outputPath)).toBe(true);
+    expect(fs.existsSync(cameraPath)).toBe(false);
+
+    const header = fs
+      .readFileSync(outputPath)
+      .subarray(0, 30)
+      .toString("utf-8");
     expect(header).toContain("Vocaloid Motion Data");
   });
 
