@@ -26,10 +26,11 @@ export async function convertBpmxToPmx(
   // evaluatedTransparency fallback) so the generated PMX enables alpha
   // blending where MMD requires it (MMD only honors texture alpha when the
   // material diffuse alpha is < 1).
-  const { translucency } = await resolveMaterialTranslucency(bpmx);
+  const { translucency, sources } = await resolveMaterialTranslucency(bpmx);
 
   const { pmx, report } = mapBpmxToPmxObject(bpmx, encoding, {
     materialTranslucency: translucency,
+    materialTranslucencySources: sources,
   });
   const pmxBuffer = serializePmx(pmx);
   const outputImages = restoreOriginalImageFormats

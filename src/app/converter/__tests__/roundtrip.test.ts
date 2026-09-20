@@ -1,6 +1,8 @@
 // @vitest-environment jsdom
+import * as fs from "node:fs";
+import * as path from "node:path";
 import { describe, it, expect } from "vitest";
-import { PmxReader, type PmxObject } from "babylon-mmd";
+import { BpmxReader, PmxReader, type PmxObject } from "babylon-mmd";
 import { convertBpmxToPmx } from "@/app/converter/BpmxToPmxConverter";
 import { MMD_BLEND_ENABLE_ALPHA } from "@/app/converter/ReverseMappingRules";
 import {
@@ -48,7 +50,8 @@ function assertPmxStructuralEquality(
     ]);
     if (r.diffuse[3] !== o.diffuse[3]) {
       expect(o.diffuse[3]).toBeGreaterThanOrEqual(1);
-      expect(r.diffuse[3]).toBe(MMD_BLEND_ENABLE_ALPHA);
+      // PMX stores diffuse as float32; 0.9999 round-trips as its f32 value.
+      expect(r.diffuse[3]).toBe(Math.fround(MMD_BLEND_ENABLE_ALPHA));
     }
   }
 
@@ -113,6 +116,37 @@ describe("Round-trip: BPMX → PMX → BPMX", () => {
   });
 });
 
+describe("PMX → BPMX translucency metadata (evaluatedTransparency)", () => {
+  it("TestModelAsPmx/Ai.pmx: materials carry explicit ET bits instead of 0x3f", async () => {
+    const { pmxFile, allFiles } = loadPmxFolder(
+      "public/example/TestModelAsPmx",
+    );
+    const originalPmx = await PmxReader.ParseAsync(await pmxFile.arrayBuffer());
+
+    const bpmxBuffer = await convertPmxToBpmx(pmxFile, allFiles);
+    const bpmx = await BpmxReader.ParseAsync(bpmxBuffer);
+
+    expect(bpmx.materials.length).toBe(originalPmx.materials.length);
+
+    // BPMX material order corresponds to the PMX material order (the PMX
+    // index buffer is material-grouped, so the loader's submesh encounter
+    // order matches). A material is "not opaque" (bits 4-5 = 01) either when
+    // its diffuse alpha is < 1 (material-alpha path) or when its diffuse
+    // texture contains transparent pixels (texture-scan path) – hence ET
+    // 0x12 is also valid for alpha = 1 materials.
+    const allowedEtValues = new Set([0x00, 0x12, 0x1f]);
+    for (let i = 0; i < bpmx.materials.length; ++i) {
+      const et = bpmx.materials[i].evaluatedTransparency;
+      // 0x3f = "not evaluated" – the pre-fix value that lost the transparency
+      // metadata for the card → PMX conversion (opaque fishnet in MMD).
+      expect(allowedEtValues.has(et)).toBe(true);
+      if (originalPmx.materials[i].diffuse[3] < 1) {
+        expect(et).toBe(0x12);
+      }
+    }
+  });
+});
+
 describe("Round-trip: PMX → BPMX → PMX", () => {
   it("TestModelAsPmx/Ai.pmx: structural fidelity after PMX→BPMX→PMX", async () => {
     const { pmxFile, allFiles } = loadPmxFolder(
@@ -172,4 +206,124 @@ describe("Round-trip: PMX → BPMX → PMX", () => {
       "ローザスタウト.pmx",
     );
   });
+});
+
+describe("Fishnet regression: 2B HIMEKAWA (TestFishnet)", () => {
+  it("preserves material order and translucency through PMX → BPMX → PMX", async () => {
+    const { pmxFile, allFiles } = loadPmxFolder(
+      "public/example/TestFishnet/2B",
+    );
+    expect(pmxFile.name.toLowerCase()).toContain("himekawa");
+
+    const original = await PmxReader.ParseAsync(await pmxFile.arrayBuffer());
+    const dumpOriginal = original.materials
+      .map((material, index) => {
+        const texture =
+          material.textureIndex >= 0
+            ? original.textures[material.textureIndex]
+            : "-";
+        return `[${index}] "${material.name}" alpha=${material.diffuse[3]} tex=${texture} faces=${material.indexCount / 3}`;
+      })
+      .join("\n");
+    console.log(`=== ORIGINAL PMX materials ===\n${dumpOriginal}`);
+
+    const bpmxBuffer = await convertPmxToBpmx(pmxFile, allFiles);
+    const bpmx = await BpmxReader.ParseAsync(bpmxBuffer);
+    const dumpBpmx = bpmx.materials
+      .map(
+        (material, index) =>
+          `[${index}] "${material.name}" alpha=${material.diffuse[3]} ET=0x${material.evaluatedTransparency.toString(16)}`,
+      )
+      .join("\n");
+    const geometrySequence = bpmx.geometries
+      .map((geometry) =>
+        Array.isArray(geometry.materialIndex)
+          ? `sub(${geometry.materialIndex
+              .map((sub) => sub.materialIndex)
+              .join(",")})`
+          : String(geometry.materialIndex),
+      )
+      .join(",");
+    console.log(
+      `=== BPMX materials (serialized order) ===\n${dumpBpmx}\n=== BPMX geometry → material sequence ===\n${geometrySequence}`,
+    );
+
+    const { pmxBuffer, zipBuffer } = await convertBpmxToPmx(bpmxBuffer);
+    const roundTripped = await PmxReader.ParseAsync(pmxBuffer);
+    const dumpRoundTripped = roundTripped.materials
+      .map(
+        (material, index) =>
+          `[${index}] "${material.name}" alpha=${material.diffuse[3]} faces=${material.indexCount / 3}`,
+      )
+      .join("\n");
+    console.log(`=== ROUNDTRIPPED PMX materials ===\n${dumpRoundTripped}`);
+
+    // Persist the round-tripped model so it can be opened in MMD directly.
+    const outDir = path.resolve(process.cwd(), "temp/fishnet-roundtrip");
+    fs.mkdirSync(outDir, { recursive: true });
+    const zipPath = path.join(outDir, "2B-roundtrip-pmx.zip");
+    fs.writeFileSync(zipPath, new Uint8Array(zipBuffer));
+    console.log(`Round-tripped model written to: ${zipPath}`);
+
+    // Material count and order must survive the round-trip (MMD draws
+    // materials strictly in list order – a reorder would put translucent
+    // materials before opaque ones and break the fishnet rendering).
+    expect(roundTripped.materials.length).toBe(original.materials.length);
+    for (let i = 0; i < original.materials.length; ++i) {
+      expect(roundTripped.materials[i].name).toBe(original.materials[i].name);
+    }
+
+    // SDEF regression: the BPMX carries an all-zero SDEF row (c/r0/r1) for
+    // BDEF vertices; the PMX mapping must not misclassify those rows as SDEF
+    // (previously ~38k vertices flipped from BDEF to SDEF, deforming meshes
+    // so the skin displaced over the fishnet).
+    const weightHist = (pmx: PmxObject) => {
+      const hist = [0, 0, 0, 0, 0]; // Bdef1, Bdef2, Bdef4, Sdef, Qdef
+      for (const vertex of pmx.vertices) hist[vertex.weightType] += 1;
+      return hist;
+    };
+    const originalWeights = weightHist(original);
+    const roundTrippedWeights = weightHist(roundTripped);
+    console.log(
+      `WEIGHTS original   : Bdef1=${originalWeights[0]} Bdef2=${originalWeights[1]} Bdef4=${originalWeights[2]} Sdef=${originalWeights[3]}`,
+    );
+    console.log(
+      `WEIGHTS roundtripped: Bdef1=${roundTrippedWeights[0]} Bdef2=${roundTrippedWeights[1]} Bdef4=${roundTrippedWeights[2]} Sdef=${roundTrippedWeights[3]}`,
+    );
+    // SDEF must be exact – that is the regression (net displaced under skin).
+    expect(roundTrippedWeights[3]).toBe(originalWeights[3]);
+    // Bdef1 is stable (single active weight).
+    expect(roundTrippedWeights[0]).toBe(originalWeights[0]);
+    // The BPMX does not carry the original weight type for vertices with
+    // degenerate (≈0) secondary weights, so a few Bdef4 may normalize to
+    // Bdef2 (observed: 14 of 122988 ≈ 0.011%). Bdef2+Bdef4 total is stable.
+    expect(roundTrippedWeights[1] + roundTrippedWeights[2]).toBe(
+      originalWeights[1] + originalWeights[2],
+    );
+    expect(
+      Math.abs(roundTrippedWeights[1] - originalWeights[1]),
+    ).toBeLessThanOrEqual(Math.ceil(original.vertices.length * 0.001));
+
+    // Materials without a sphere texture must keep SphereTextureMode.Off.
+    for (let i = 0; i < original.materials.length; ++i) {
+      if (original.materials[i].sphereTextureIndex < 0) {
+        expect(roundTripped.materials[i].sphereTextureMode).toBe(0);
+      }
+    }
+
+    // The stockings material (fishnet over skin) must end up translucent in
+    // the round-tripped PMX so MMD enables alpha blending for it.
+    const stockingsIndices = original.materials
+      .map((material, index) =>
+        material.textureIndex >= 0 &&
+        /stockings|tights|net/i.test(original.textures[material.textureIndex])
+          ? index
+          : -1,
+      )
+      .filter((index) => index >= 0);
+    expect(stockingsIndices.length).toBeGreaterThan(0);
+    for (const index of stockingsIndices) {
+      expect(roundTripped.materials[index].diffuse[3]).toBeLessThan(1);
+    }
+  }, 300_000);
 });

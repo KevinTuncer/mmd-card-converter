@@ -15,7 +15,7 @@ import {
 import { readZip } from "@/app/converter/ZipReader";
 import { detectImageFormat } from "@/app/converter/ImageCompressor";
 import { encodeToAvifViaJsquash } from "@/app/converter/ForceAvifEncoder";
-import { loadBuffer } from "./helpers";
+import { loadBuffer, makeTgaBuffer } from "./helpers";
 
 ensurePmxLoaderRegistered();
 
@@ -392,6 +392,30 @@ describe("resolveMaterialTranslucency (MaterialTransparencyResolver)", () => {
     const result = await resolveMaterialTranslucency(bpmx);
 
     expect(result.translucency).toEqual([false]);
+    expect(result.sources).toEqual(["texture-scan"]);
+  });
+
+  it("TGA diffuse textures are decoded via the built-in TGA decoder", async () => {
+    // 32-bit uncompressed TGA, 1x1 with a fully transparent pixel. TGA has no
+    // magic bytes – the format is identified via the .tga file extension.
+    const tga = makeTgaBuffer({
+      width: 1,
+      height: 1,
+      pixelDepth: 32,
+      imageType: 2,
+      pixelBytes: [30, 20, 10, 0],
+    });
+
+    const bpmx = makeBpmx(
+      [makeGeometry([0, 1, 2], 0)],
+      [makeMaterial({ textureIndex: 0 })],
+      [{ relativePath: "tex/tights.tga", mimeType: undefined, data: tga }],
+      [{ flag: 0, samplingMode: 0, imageIndex: 0 }],
+    );
+
+    const result = await resolveMaterialTranslucency(bpmx);
+
+    expect(result.translucency).toEqual([true]);
     expect(result.sources).toEqual(["texture-scan"]);
   });
 });

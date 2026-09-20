@@ -1,4 +1,5 @@
 import { decode as decodeAvif, encode as encodeAvif } from "@jsquash/avif";
+import { decodePngToImageData } from "@/app/converter/ForceAvifEncoder";
 import type { BpmxObject } from "babylon-mmd";
 
 export type ImageFormat = "PNG" | "JPEG" | "BMP" | "WebP" | "AVIF" | "?";
@@ -214,6 +215,12 @@ export async function decodeImageData(
 
   if (format === "BMP") {
     return decodeBmpToImageData(data);
+  }
+
+  if (format === "PNG") {
+    // Decode via UPNG instead of the 2D canvas: canvas stores pixels
+    // premultiplied and is unavailable in headless (Node/CLI) environments.
+    return decodePngToImageData(data);
   }
 
   const mimeType = mimeTypeForFormat(format);

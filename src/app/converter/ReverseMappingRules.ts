@@ -3,6 +3,7 @@ import {
   type BpmxObject,
   type PmxObject as PmxObjectType,
 } from "babylon-mmd";
+import type { MaterialTranslucencySource } from "@/app/converter/MaterialTransparencyResolver";
 import type { FidelityReport } from "@/app/converter/types";
 
 interface ReverseMappingResult {
@@ -50,6 +51,11 @@ export interface MapBpmxToPmxObjectOptions {
    * lowered to {@link MMD_BLEND_ENABLE_ALPHA} so MMD enables alpha blending.
    */
   materialTranslucency?: readonly boolean[];
+  /**
+   * Per-material decision sources matching {@link mapBpmxToPmxObjectOptions.materialTranslucency}.
+   * Used to emit diagnostics into the fidelity report.
+   */
+  materialTranslucencySources?: readonly MaterialTranslucencySource[];
 }
 
 /**
@@ -135,8 +141,25 @@ export function mapBpmxToPmxObject(
           w3 > EPSILON,
         ].filter(Boolean).length;
 
+        // A BPMX carries an SDEF row (c/r0/r1) for every vertex; the rows of
+        // BDEF vertices are all zeros. Only treat a vertex as SDEF when its
+        // row actually contains data, otherwise every weighted vertex would
+        // be misclassified as SDEF and deform incorrectly (net displaced
+        // under the skin).
         const sdef = geometry.skinning.sdef;
-        if (sdef && w0 + w1 > EPSILON) {
+        const base = i * 3;
+        const hasSdefRow =
+          sdef !== undefined &&
+          (sdef.c[base] !== 0 ||
+            sdef.c[base + 1] !== 0 ||
+            sdef.c[base + 2] !== 0 ||
+            sdef.r0[base] !== 0 ||
+            sdef.r0[base + 1] !== 0 ||
+            sdef.r0[base + 2] !== 0 ||
+            sdef.r1[base] !== 0 ||
+            sdef.r1[base + 1] !== 0 ||
+            sdef.r1[base + 2] !== 0);
+        if (hasSdefRow && w0 + w1 > EPSILON) {
           weightType = PmxObject.Vertex.BoneWeightType.Sdef;
           boneWeight = {
             boneIndices: [b0, b1],
@@ -305,9 +328,53 @@ export function mapBpmxToPmxObject(
         ...material,
         diffuse,
         indexCount: materialIndexCounts[index] ?? 0,
+        // Materials without a sphere texture must keep SphereTextureMode.Off:
+        // the babylon material reports its (ADD) default blend mode even when
+        // no sphere texture is bound, which would corrupt the PMX round-trip.
+        sphereTextureMode:
+          material.sphereTextureIndex < 0
+            ? PmxObject.Material.SphereTextureMode.Off
+            : material.sphereTextureMode,
       };
     },
   );
+
+  if (options.materialTranslucency) {
+    // Diagnostic summary of how each material's translucency was decided so
+    // misses (e.g. undecodable diffuse textures) become visible in the report.
+    const translucency = options.materialTranslucency;
+    const sources = options.materialTranslucencySources;
+    const counts: Record<MaterialTranslucencySource, number> = {
+      "material-alpha": 0,
+      "texture-scan": 0,
+      "evaluated-transparency": 0,
+    };
+    let translucentCount = 0;
+    const uncertain: string[] = [];
+
+    for (let index = 0; index < translucency.length; ++index) {
+      const source = sources?.[index];
+      if (translucency[index]) {
+        translucentCount += 1;
+        if (source) counts[source] += 1;
+      } else if (source === "evaluated-transparency") {
+        const material = bpmx.materials[index];
+        uncertain.push(
+          `Material ${index} (${material.name}): Alpha ${material.diffuse[3]} beibehalten; Erkennung nur via evaluatedTransparency-Fallback - moeglicherweise fehlende Transparenz (z. B. nicht dekodierbare Textur).`,
+        );
+      }
+    }
+
+    if (translucentCount > 0 || uncertain.length > 0) {
+      warnings.push({
+        level: "info",
+        message: `Transparenz-Erkennung: ${translucentCount}/${translucency.length} Materialien transluzent (material-alpha: ${counts["material-alpha"]}, texture-scan: ${counts["texture-scan"]}, evaluated-transparency: ${counts["evaluated-transparency"]}).`,
+      });
+    }
+    for (const line of uncertain) {
+      warnings.push({ level: "info", message: line });
+    }
+  }
 
   const morphs: PmxObjectType["morphs"] = bpmx.morphs.map((morph) => {
     switch (morph.type) {

@@ -3,6 +3,10 @@ import {
   decodeImageData,
   detectFormatFromBytes,
 } from "@/app/converter/ImageFormatRestorer";
+import {
+  decodeTgaToImageData,
+  hasTgaFileExtension,
+} from "@/app/converter/TgaDecoder";
 
 /**
  * How the translucency decision for a material was made.
@@ -32,7 +36,7 @@ const ET_IS_NOT_OPAQUE = 0b01;
 const ET_ALPHA_BLEND = 0b10;
 const ET_ALPHA_TEST_AND_BLEND = 0b11;
 
-function imageDataHasTransparentPixels(imageData: ImageData): boolean {
+export function imageDataHasTransparentPixels(imageData: ImageData): boolean {
   const data = imageData.data;
   for (let offset = 3; offset < data.length; offset += 4) {
     if (data[offset] < 255) return true;
@@ -51,8 +55,9 @@ function imageDataHasTransparentPixels(imageData: ImageData): boolean {
  * the BPMX itself:
  *
  * 1. material diffuse alpha < 1 → translucent
- * 2. diffuse texture decodable (AVIF/PNG/WebP/BMP) → translucent when any
- *    pixel has alpha < 255 (JPEG counts as opaque — no alpha channel)
+ * 2. diffuse texture decodable (AVIF/PNG/WebP/BMP, plus TGA identified via
+ *    its file extension) → translucent when any pixel has alpha < 255
+ *    (JPEG counts as opaque — no alpha channel)
  * 3. otherwise → native evaluatedTransparency field of the BPMX material
  */
 export async function resolveMaterialTranslucency(
@@ -75,7 +80,16 @@ export async function resolveMaterialTranslucency(
         const format = detectFormatFromBytes(new Uint8Array(image.data));
         if (format === "JPEG") {
           result = false; // JPEG has no alpha channel
-        } else if (format !== "?") {
+        } else if (format === "?") {
+          // TGA has no magic bytes; identify it via the embedded file name
+          // and decode with the built-in TGA decoder. Everything else stays
+          // undecodable (evaluatedTransparency fallback).
+          if (hasTgaFileExtension(image.relativePath)) {
+            result = imageDataHasTransparentPixels(
+              await decodeTgaToImageData(image.data),
+            );
+          }
+        } else {
           result = imageDataHasTransparentPixels(
             await decodeImageData(image.data, format),
           );

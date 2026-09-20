@@ -39,6 +39,63 @@ export interface PmxFolderContents {
   allFiles: File[];
 }
 
+export interface TgaFixtureOptions {
+  width: number;
+  height: number;
+  pixelDepth: number;
+  imageType: number;
+  /** TGA image descriptor byte (row origin, alpha depth bits). */
+  descriptor?: number;
+  /** Optional image ID field content. */
+  id?: readonly number[];
+  colorMap?: {
+    firstIndex: number;
+    entrySize: number;
+    /** Raw color map bytes (entrySize/8 bytes per entry). */
+    entryBytes: readonly number[];
+  };
+  /** Raw pixel data bytes in storage order. */
+  pixelBytes: readonly number[];
+}
+
+/**
+ * Builds a synthetic TGA binary (header + id + color map + pixel data) for
+ * decoder and transparency-scanner tests.
+ */
+export function makeTgaBuffer(options: TgaFixtureOptions): ArrayBuffer {
+  const idLength = options.id?.length ?? 0;
+  const colorMap = options.colorMap;
+  const header = new Uint8Array(18);
+  const view = new DataView(header.buffer);
+  header[0] = idLength;
+  header[1] = colorMap ? 1 : 0;
+  header[2] = options.imageType;
+  if (colorMap) {
+    view.setUint16(3, colorMap.firstIndex, true);
+    view.setUint16(
+      5,
+      colorMap.entryBytes.length / (colorMap.entrySize / 8),
+      true,
+    );
+    header[7] = colorMap.entrySize;
+  }
+  view.setUint16(12, options.width, true);
+  view.setUint16(14, options.height, true);
+  header[16] = options.pixelDepth;
+  header[17] = options.descriptor ?? 0;
+
+  const idBytes = options.id ?? [];
+  const colorMapBytes = colorMap?.entryBytes ?? [];
+  const total =
+    18 + idLength + colorMapBytes.length + options.pixelBytes.length;
+  const bytes = new Uint8Array(total);
+  bytes.set(header, 0);
+  bytes.set(idBytes, 18);
+  bytes.set(colorMapBytes, 18 + idLength);
+  bytes.set(options.pixelBytes, 18 + idLength + colorMapBytes.length);
+  return bytes.buffer as ArrayBuffer;
+}
+
 /**
  * Recursively reads a PMX model folder from disk and returns:
  *  - `pmxFile`: the .pmx File, with `name` set to its path relative to the folder root

@@ -10,8 +10,10 @@ import {
   BpmxConverter,
   MmdStandardMaterialBuilder,
   PmxLoader,
+  PmxReader,
 } from "babylon-mmd";
 import type { MmdMesh } from "babylon-mmd/esm/Runtime/mmdMesh";
+import { resolvePmxMaterialTranslucency } from "@/app/converter/PmxMaterialTranslucency";
 
 export interface PmxToBpmxOptions {
   buildSkeleton?: boolean;
@@ -49,20 +51,30 @@ export async function convertPmxToBpmx(
   const scene = new Scene(engine);
 
   try {
-    const container = await LoadAssetContainerAsync(pmxFile, scene, {
-      rootUrl,
-      pluginOptions: {
-        mmdmodel: {
-          materialBuilder,
-          buildSkeleton,
-          buildMorph,
-          boundingBoxMargin: 0,
-          preserveSerializationData: true,
-          referenceFiles: allFiles,
-          loggingEnabled: false,
+    // Evaluate per-material translucency from the PMX + its texture files so
+    // the BPMX carries explicit evaluatedTransparency bits (like official ero
+    // cards). Without them the card only renders translucent in viewers that
+    // re-evaluate texture alpha at runtime, and converting the card back to
+    // PMX loses the transparency entirely (opaque fishnet artifact in MMD).
+    const [container, translucency] = await Promise.all([
+      LoadAssetContainerAsync(pmxFile, scene, {
+        rootUrl,
+        pluginOptions: {
+          mmdmodel: {
+            materialBuilder,
+            buildSkeleton,
+            buildMorph,
+            boundingBoxMargin: 0,
+            preserveSerializationData: true,
+            referenceFiles: allFiles,
+            loggingEnabled: false,
+          },
         },
-      },
-    });
+      }),
+      PmxReader.ParseAsync(await pmxFile.arrayBuffer()).then((pmx) =>
+        resolvePmxMaterialTranslucency(pmx, allFiles, rootUrl),
+      ),
+    ]);
 
     container.addAllToScene();
 
@@ -72,6 +84,8 @@ export async function convertPmxToBpmx(
     return converter.convert(mmdMesh, {
       includeSkinningData: buildSkeleton,
       includeMorphData: buildMorph,
+      translucentMaterials: [...translucency.translucentMaterials],
+      alphaEvaluateResults: [...translucency.alphaEvaluateResults],
     });
   } finally {
     scene.dispose();

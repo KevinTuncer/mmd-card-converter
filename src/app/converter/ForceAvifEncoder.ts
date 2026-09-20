@@ -87,7 +87,9 @@ async function isPngFile(file: File): Promise<boolean> {
  * pixels and zeroes the RGB of fully transparent pixels. UPNG returns the
  * straight-alpha RGBA values exactly as stored in the file.
  */
-async function decodePngToImageData(buffer: ArrayBuffer): Promise<ImageData> {
+export async function decodePngToImageData(
+  buffer: ArrayBuffer,
+): Promise<ImageData> {
   const { default: UPNG } = await import("@lib/upng");
   const png = UPNG.decode(buffer);
   const frame = UPNG.toRGBA8(png)[0];
