@@ -34,9 +34,47 @@ function sum(values: readonly number[]): number {
   return total;
 }
 
+/**
+ * MMD activates alpha blending (and thereby honors the diffuse texture's
+ * alpha channel) only when the material diffuse alpha is below 1.0. Models
+ * whose transparency lives in the texture alpha therefore use a material
+ * alpha slightly below 1 (common PMXE convention: 0.9999).
+ */
+export const MMD_BLEND_ENABLE_ALPHA = 0.9999;
+
+/** Options for {@link mapBpmxToPmxObject}. */
+export interface MapBpmxToPmxObjectOptions {
+  /**
+   * Per-material translucency hints (e.g. from resolveMaterialTranslucency).
+   * When true for a material whose diffuse alpha is >= 1, the alpha is
+   * lowered to {@link MMD_BLEND_ENABLE_ALPHA} so MMD enables alpha blending.
+   */
+  materialTranslucency?: readonly boolean[];
+}
+
+/**
+ * Appends the triangles of a geometry's local index buffer range [start, end)
+ * to the target material bucket. The winding order is reversed to undo the
+ * PMX loader's left-handed → right-handed conversion.
+ */
+function pushFlippedTriangles(
+  bucket: number[],
+  localIndices: readonly number[],
+  start: number,
+  end: number,
+  vertexOffset: number,
+): void {
+  for (let i = start; i + 2 < end; i += 3) {
+    bucket.push(localIndices[i + 0] + vertexOffset);
+    bucket.push(localIndices[i + 2] + vertexOffset);
+    bucket.push(localIndices[i + 1] + vertexOffset);
+  }
+}
+
 export function mapBpmxToPmxObject(
   bpmx: BpmxObject,
   encoding: PmxObject.Header.Encoding = PmxObject.Header.Encoding.Utf8,
+  options: MapBpmxToPmxObjectOptions = {},
 ): ReverseMappingResult {
   const warnings: FidelityReport["warnings"] = [];
 
@@ -44,9 +82,13 @@ export function mapBpmxToPmxObject(
   const vertices: PmxObjectType["vertices"] extends readonly (infer T)[]
     ? T[]
     : never = [];
-  const flattenedIndices: number[] = [];
-
-  const materialIndexCounts = new Array<number>(bpmx.materials.length).fill(0);
+  // Triangles grouped per material. PMX draw ranges require the index buffer
+  // to be sorted by material (in material order); this is reconstructed here
+  // explicitly instead of relying on the geometry order inside the BPMX.
+  const materialTriangles: number[][] = Array.from(
+    { length: bpmx.materials.length },
+    () => [],
+  );
 
   for (let meshIndex = 0; meshIndex < bpmx.geometries.length; ++meshIndex) {
     const geometry = bpmx.geometries[meshIndex];
@@ -157,34 +199,71 @@ export function mapBpmxToPmxObject(
       });
     }
 
-    // Reverse winding order to undo the PMX loader's left-handed → right-handed conversion
-    for (let i = 0; i + 2 < localIndices.length; i += 3) {
-      flattenedIndices.push(localIndices[i + 0] + vertexOffset);
-      flattenedIndices.push(localIndices[i + 2] + vertexOffset);
-      flattenedIndices.push(localIndices[i + 1] + vertexOffset);
-    }
-
     const materialLink = geometry.materialIndex;
     if (Array.isArray(materialLink)) {
       warnings.push({
         level: "info",
         message: `Mesh ${meshIndex} nutzt SubGeometries. Material indexCount wurde aus SubMesh-Info rekonstruiert.`,
       });
+      let droppedIndexCount = 0;
       for (let i = 0; i < materialLink.length; ++i) {
         const sub = materialLink[i];
-        if (
-          0 <= sub.materialIndex &&
-          sub.materialIndex < materialIndexCounts.length
-        ) {
-          materialIndexCounts[sub.materialIndex] += sub.indexCount;
+        const bucket =
+          0 <= sub.materialIndex && sub.materialIndex < materialTriangles.length
+            ? materialTriangles[sub.materialIndex]
+            : undefined;
+        const start = Math.max(0, sub.indexStart);
+        const end = Math.min(
+          sub.indexStart + sub.indexCount,
+          localIndices.length,
+        );
+        if (bucket === undefined || start >= end) {
+          droppedIndexCount += sub.indexCount;
+          continue;
         }
+        droppedIndexCount += sub.indexCount - (end - start);
+        pushFlippedTriangles(bucket, localIndices, start, end, vertexOffset);
+      }
+      if (droppedIndexCount > 0) {
+        warnings.push({
+          level: "warn",
+          message: `Mesh ${meshIndex}: ${droppedIndexCount} SubGeometry-Indices konnten keinem gueltigen Material zugeordnet werden und wurden verworfen.`,
+        });
       }
     } else if (
       typeof materialLink === "number" &&
       0 <= materialLink &&
-      materialLink < materialIndexCounts.length
+      materialLink < materialTriangles.length
     ) {
-      materialIndexCounts[materialLink] += localIndices.length;
+      pushFlippedTriangles(
+        materialTriangles[materialLink],
+        localIndices,
+        0,
+        localIndices.length,
+        vertexOffset,
+      );
+    } else if (localIndices.length > 0) {
+      warnings.push({
+        level: "warn",
+        message: `Mesh ${meshIndex} verweist auf kein gueltiges Material (${materialLink}). Seine Dreiecke wurden verworfen.`,
+      });
+    }
+  }
+
+  // Concatenate the per-material buckets in material order. The BPMX material
+  // order corresponds to the original PMX material order (babylon-mmd creates
+  // one mesh per material), so the draw order of the source model is kept.
+  const flattenedIndices: number[] = [];
+  const materialIndexCounts: number[] = [];
+  for (
+    let materialIndex = 0;
+    materialIndex < materialTriangles.length;
+    ++materialIndex
+  ) {
+    const bucket = materialTriangles[materialIndex];
+    materialIndexCounts.push(bucket.length);
+    for (let i = 0; i < bucket.length; ++i) {
+      flattenedIndices.push(bucket[i]);
     }
   }
 
@@ -205,10 +284,29 @@ export function mapBpmxToPmxObject(
   });
 
   const materials: PmxObjectType["materials"] = bpmx.materials.map(
-    (material, index) => ({
-      ...material,
-      indexCount: materialIndexCounts[index] ?? 0,
-    }),
+    (material, index) => {
+      const sourceDiffuse = material.diffuse;
+      const needsBlendEnable =
+        (options.materialTranslucency?.[index] ?? false) &&
+        sourceDiffuse[3] >= 1;
+      const diffuse: PmxObjectType["materials"][number]["diffuse"] = [
+        sourceDiffuse[0],
+        sourceDiffuse[1],
+        sourceDiffuse[2],
+        needsBlendEnable ? MMD_BLEND_ENABLE_ALPHA : sourceDiffuse[3],
+      ];
+      if (needsBlendEnable) {
+        warnings.push({
+          level: "info",
+          message: `Material ${index} (${material.name}): Alpha ${sourceDiffuse[3]} -> ${MMD_BLEND_ENABLE_ALPHA} gesetzt, damit MMD Alpha-Blending aktiviert und die Textur-Transparenz uebernimmt.`,
+        });
+      }
+      return {
+        ...material,
+        diffuse,
+        indexCount: materialIndexCounts[index] ?? 0,
+      };
+    },
   );
 
   const morphs: PmxObjectType["morphs"] = bpmx.morphs.map((morph) => {

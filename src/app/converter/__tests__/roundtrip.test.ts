@@ -2,6 +2,7 @@
 import { describe, it, expect } from "vitest";
 import { PmxReader, type PmxObject } from "babylon-mmd";
 import { convertBpmxToPmx } from "@/app/converter/BpmxToPmxConverter";
+import { MMD_BLEND_ENABLE_ALPHA } from "@/app/converter/ReverseMappingRules";
 import {
   convertPmxToBpmx,
   ensurePmxLoaderRegistered,
@@ -30,6 +31,25 @@ function assertPmxStructuralEquality(
     expect(roundTripped.materials[i].indexCount).toBe(
       original.materials[i].indexCount,
     );
+  }
+
+  // Material order, names and diffuse colors survive the round-trip. RGB
+  // must stay identical; the alpha may only be lowered to the MMD
+  // blend-enable value when the material was detected as translucent via
+  // its texture alpha channel (e.g. mesh stockings).
+  for (let i = 0; i < original.materials.length; i++) {
+    const o = original.materials[i];
+    const r = roundTripped.materials[i];
+    expect(r.name).toBe(o.name);
+    expect([r.diffuse[0], r.diffuse[1], r.diffuse[2]]).toEqual([
+      o.diffuse[0],
+      o.diffuse[1],
+      o.diffuse[2],
+    ]);
+    if (r.diffuse[3] !== o.diffuse[3]) {
+      expect(o.diffuse[3]).toBeGreaterThanOrEqual(1);
+      expect(r.diffuse[3]).toBe(MMD_BLEND_ENABLE_ALPHA);
+    }
   }
 
   // Total index count must be preserved

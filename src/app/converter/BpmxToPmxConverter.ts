@@ -1,6 +1,7 @@
 import { PmxObject } from "babylon-mmd";
 import { parseBpmx } from "@/app/converter/BpmxReaderAdapter";
 import { restoreImagesToNamedFormats } from "@/app/converter/ImageFormatRestorer";
+import { resolveMaterialTranslucency } from "@/app/converter/MaterialTransparencyResolver";
 import { mapBpmxToPmxObject } from "@/app/converter/ReverseMappingRules";
 import { serializePmx } from "@/app/converter/PmxSerializer";
 import { buildOutputZip } from "@/app/converter/ZipBuilder";
@@ -21,7 +22,15 @@ export async function convertBpmxToPmx(
   const restoreOriginalImageFormats =
     options.restoreOriginalImageFormats ?? true;
 
-  const { pmx, report } = mapBpmxToPmxObject(bpmx, encoding);
+  // Detect per-material translucency (diffuse texture alpha scan with an
+  // evaluatedTransparency fallback) so the generated PMX enables alpha
+  // blending where MMD requires it (MMD only honors texture alpha when the
+  // material diffuse alpha is < 1).
+  const { translucency } = await resolveMaterialTranslucency(bpmx);
+
+  const { pmx, report } = mapBpmxToPmxObject(bpmx, encoding, {
+    materialTranslucency: translucency,
+  });
   const pmxBuffer = serializePmx(pmx);
   const outputImages = restoreOriginalImageFormats
     ? await restoreImagesToNamedFormats(

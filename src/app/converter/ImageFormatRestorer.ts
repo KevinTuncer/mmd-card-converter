@@ -1,14 +1,18 @@
 import { decode as decodeAvif, encode as encodeAvif } from "@jsquash/avif";
 import type { BpmxObject } from "babylon-mmd";
 
-type ImageFormat = "PNG" | "JPEG" | "BMP" | "WebP" | "AVIF" | "?";
+export type ImageFormat = "PNG" | "JPEG" | "BMP" | "WebP" | "AVIF" | "?";
 type RestorableImageFormat = Exclude<ImageFormat, "?">;
 
 function getFileExt(path: string): string {
   return (path.split(".").pop() ?? "").toLowerCase();
 }
 
-function detectFormatFromBytes(bytes: Uint8Array): ImageFormat {
+/**
+ * Detects the actual image format of a byte buffer via magic bytes,
+ * independent of any file name or extension.
+ */
+export function detectFormatFromBytes(bytes: Uint8Array): ImageFormat {
   const text = (start: number, count: number): string =>
     Array.from(bytes.subarray(start, start + count))
       .map((value) => String.fromCharCode(value))
@@ -196,7 +200,7 @@ async function imageDataFromBitmapSource(
   }
 }
 
-async function decodeImageData(
+export async function decodeImageData(
   data: ArrayBuffer,
   format: ImageFormat,
 ): Promise<ImageData> {
