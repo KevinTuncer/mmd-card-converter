@@ -10,6 +10,8 @@ export default tseslint.config(
       "public/**",
       // Legacy reference copies of the converter code — not part of the build
       "JUSTFORCOMPARISON/**",
+      // Local (gitignored) Morph-AI Lab tooling — kept out of repo linting
+      "workspace/**",
       // Vendored UPNG library source
       "lib/upng/upng.js",
     ],

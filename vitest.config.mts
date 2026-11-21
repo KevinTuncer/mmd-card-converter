@@ -9,7 +9,11 @@ export default defineConfig({
     },
   },
   test: {
-    include: ["src/**/*.test.ts"],
+    include: [
+      "src/**/*.test.ts",
+      // Local (gitignored) Morph-AI Lab tooling tests
+      "workspace/morph-lab/**/*.test.ts",
+    ],
     setupFiles: ["src/app/converter/__tests__/setup.ts"],
     testTimeout: 120_000,
     hookTimeout: 120_000,

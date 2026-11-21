@@ -266,16 +266,21 @@ class PatchedCanvasContext {
     dirtyWidth?: number,
     dirtyHeight?: number,
   ): void {
+    // @napi-rs/canvas 1.1 putImageData requires its own ImageData type
+    // (with `pixelFormat`); accept the DOM type and cast at the boundary.
+    const native = imageData as unknown as Parameters<
+      SKRSContext2D["putImageData"]
+    >[0];
     if (
       dirtyX === undefined ||
       dirtyY === undefined ||
       dirtyWidth === undefined ||
       dirtyHeight === undefined
     ) {
-      this._ctx.putImageData(imageData, dx, dy);
+      this._ctx.putImageData(native, dx, dy);
     } else {
       this._ctx.putImageData(
-        imageData,
+        native,
         dx,
         dy,
         dirtyX,

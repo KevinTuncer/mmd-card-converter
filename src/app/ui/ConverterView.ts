@@ -790,7 +790,7 @@ function getConverterViewText(locale: AppLocale): ConverterViewText {
     voiceCloneSelectFile: "Select file…",
     voiceClonePlay: "Play",
     voiceCloneStop: "Stop",
-    voiceCloneDurationError: "Duration must be 3–20 seconds",
+    voiceCloneDurationError: "Duration must be 3–30 seconds",
     voiceCloneFileMissing: "File not found",
     voiceCloneLocalePlaceholder: "Select locale…",
     webmAudioTitle: "WebM Audio",
@@ -969,7 +969,7 @@ function getConverterViewText(locale: AppLocale): ConverterViewText {
     voiceCloneSelectFile: "Datei auswählen…",
     voiceClonePlay: "Abspielen",
     voiceCloneStop: "Stoppen",
-    voiceCloneDurationError: "Dauer muss zwischen 3 und 20 Sekunden liegen",
+    voiceCloneDurationError: "Dauer muss zwischen 3 und 30 Sekunden liegen",
     voiceCloneFileMissing: "Datei nicht gefunden",
     voiceCloneLocalePlaceholder: "Locale auswählen…",
     webmAudioTitle: "WebM-Audio",
@@ -1151,7 +1151,7 @@ function getConverterViewText(locale: AppLocale): ConverterViewText {
     voiceCloneSelectFile: "ファイルを選択…",
     voiceClonePlay: "再生",
     voiceCloneStop: "停止",
-    voiceCloneDurationError: "再生時間は3～20秒にしてください",
+    voiceCloneDurationError: "再生時間は3～30秒にしてください",
     voiceCloneFileMissing: "ファイルが見つかりません",
     voiceCloneLocalePlaceholder: "ロケールを選択…",
     webmAudioTitle: "WebMオーディオ",
@@ -1322,7 +1322,7 @@ function getConverterViewText(locale: AppLocale): ConverterViewText {
     voiceCloneSelectFile: "选择文件…",
     voiceClonePlay: "播放",
     voiceCloneStop: "停止",
-    voiceCloneDurationError: "时长必须在3到20秒之间",
+    voiceCloneDurationError: "时长必须在3到30秒之间",
     voiceCloneFileMissing: "文件未找到",
     voiceCloneLocalePlaceholder: "选择区域…",
     webmAudioTitle: "WebM音频",
@@ -1493,7 +1493,7 @@ function getConverterViewText(locale: AppLocale): ConverterViewText {
     voiceCloneSelectFile: "選擇檔案…",
     voiceClonePlay: "播放",
     voiceCloneStop: "停止",
-    voiceCloneDurationError: "時長必須在3到20秒之間",
+    voiceCloneDurationError: "時長必須在3到30秒之間",
     voiceCloneFileMissing: "檔案未找到",
     voiceCloneLocalePlaceholder: "選擇地區…",
     webmAudioTitle: "WebM音訊",
@@ -4255,7 +4255,7 @@ export function mountConverterView(
           const objectUrl = URL.createObjectURL(file);
           try {
             const duration = await getAudioDuration(objectUrl);
-            if (duration < 3 || duration > 20) {
+            if (duration < 3 || duration > 30) {
               // Revert selection and show toast notification
               const previousValue = draft.fileName;
               showToastNotification(
